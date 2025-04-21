@@ -40,7 +40,7 @@ This system mainly solves the following problems:
 
 1. Clone the repository to your local machine:
 ```bash
-git clone https://github.com/yourusername/blind-navigation.git
+git clone https://github.com/wink-wink-wink555/blind-navigation.git
 cd blind-navigation
 ```
 
