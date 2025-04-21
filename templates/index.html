@@ -1,0 +1,3094 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盲道导航助手</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- 百度地图API -->
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=your_api_key"></script>
+    <style>
+        :root {
+            --primary-color: #4dabf7;
+            --primary-dark: #339af0;
+            --secondary-color: #f06595;
+            --text-color: #343a40;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --accent-color: #74c0fc;
+            --border-radius: 12px;
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--box-shadow);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 95%;
+            margin: 0 auto;
+            padding-bottom: 2rem;
+        }
+        
+        /* 新增两列布局 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .content-full {
+            grid-column: 1 / -1;
+        }
+        
+        .content-left {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .content-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 0;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .card-title i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .upload-form {
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed #dee2e6;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .upload-form.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(77, 171, 247, 0.05);
+        }
+
+        .upload-form:hover {
+            border-color: var(--primary-color);
+        }
+
+        .upload-title {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            color: #495057;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 30px;
+            cursor: pointer;
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .file-input:hover + .file-input-label {
+            background-color: var(--primary-dark);
+        }
+
+        .file-name {
+            margin-top: 0.5rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .upload-btn {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+            margin-top: 1rem;
+        }
+
+        .upload-btn:hover {
+            background-color: #4dabf7;
+            transform: scale(1.05);
+        }
+
+        .upload-btn:disabled {
+            background-color: #ced4da;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #uploadStatus {
+            margin-top: 1rem;
+            font-style: italic;
+            color: #6c757d;
+        }
+
+        .video-feed {
+            text-align: center;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            min-height: 360px;
+            background-color: #2c3e50;
+            position: relative;
+        }
+
+        .video-feed img {
+            width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .speech-text {
+            padding: 1.5rem;
+            background-color: #e9ecef;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            margin: 2rem 0;
+            transition: var(--transition);
+            min-height: 100px;
+        }
+
+        .speech-text:hover {
+            background-color: #e2e6ea;
+        }
+
+        .input-area {
+            display: flex;
+            margin-top: 1.5rem;
+        }
+
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 30px 0 0 30px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .input-area input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        .input-area button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 0 30px 30px 0;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .input-area button:hover {
+            background-color: #e64980;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .success-feedback {
+            border-color: #40c057 !important;
+            box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.25) !important;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .upload-instructions {
+            margin: 1rem 0;
+            color: #6c757d;
+        }
+
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+            margin-top: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 用户设置样式 */
+        .settings-btn, .help-btn {
+            position: absolute;
+            top: 1rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .settings-btn {
+            left: 1rem;
+        }
+        
+        .help-btn {
+            left: 4rem;
+        }
+
+        .settings-btn:hover, .help-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: rotate(30deg);
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .settings-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalFadeIn 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #adb5bd;
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        .settings-close:hover {
+            color: #495057;
+        }
+
+        .settings-title {
+            color: var(--primary-dark);
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.25);
+        }
+
+        .settings-save {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .settings-save:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* 用户模式切换样式 */
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .toggle-btn {
+            background-color: #e9ecef;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .toggle-btn:first-child {
+            border-radius: 30px 0 0 30px;
+        }
+
+        .toggle-btn:last-child {
+            border-radius: 0 30px 30px 0;
+        }
+
+        .toggle-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .settings-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .settings-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+        }
+
+        .user-mode-icon {
+            margin-right: 0.5rem;
+        }
+
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.8rem 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-icon {
+            margin-right: 0.5rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .container {
+                width: 95%;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            .upload-form {
+                padding: 1.5rem;
+            }
+
+            .input-area {
+                flex-direction: column;
+            }
+
+            .input-area input[type="text"] {
+                border-radius: 30px;
+                margin-bottom: 0.5rem;
+            }
+
+            .input-area button {
+                border-radius: 30px;
+                width: 100%;
+            }
+
+            .tab {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .tab-icon {
+                margin-right: 0.3rem;
+            }
+        }
+
+        /* 添加用户控制按钮样式 */
+        .user-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info i {
+            margin-right: 0.5rem;
+        }
+
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .logout-btn i {
+            margin-right: 0.5rem;
+        }
+
+        /* 地图模块样式优化 */
+        .map-container {
+            width: 100%;
+            height: 300px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .location-info {
+            margin-top: 1rem;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+        }
+        
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .location-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .blindway-list {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+        }
+        
+        .blindway-item {
+            background-color: white;
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--primary-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .blindway-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .blindway-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .blindway-name {
+            font-weight: 500;
+        }
+        
+        .blindway-distance {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .map-controls {
+            position: relative;
+            z-index: 2;
+            margin: 15px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .main-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .map-btn {
+            padding: 10px 15px;
+            background-color: #fff;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .map-btn:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .search-container {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-width: 200px;
+        }
+        
+        .search-input {
+            padding: 10px 15px;
+            border: none;
+            flex-grow: 1;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .search-btn {
+            padding: 10px 12px;
+            border-radius: 0;
+            box-shadow: none;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .search-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .more-menu {
+            position: relative;
+        }
+        
+        .more-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            min-width: 180px;
+            z-index: 3;
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 15px;
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--text-color);
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .dropdown-item i {
+            width: 16px;
+            text-align: center;
+        }
+        
+        .show-dropdown {
+            display: block;
+        }
+        
+        /* 系统状态卡片样式 */
+        .system-status {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .status-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: var(--transition);
+        }
+        
+        .status-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .status-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .quick-settings {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .quick-btn {
+            flex: 1;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid #dee2e6;
+            padding: 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        
+        .quick-btn i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .quick-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .quick-btn:hover i {
+            color: white;
+        }
+        
+        /* 视频上传和显示优化 */
+        .upload-form {
+            text-align: center;
+            padding: 1.5rem;
+            border: 2px dashed #dee2e6;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            position: relative;
+            background-color: #f8f9fa;
+        }
+        
+        .video-feed {
+            text-align: center;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            min-height: 320px;
+            background-color: #2c3e50;
+            position: relative;
+            border: 1px solid #dee2e6;
+        }
+        
+        .video-feed::before {
+            content: "视频分析画面";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.5);
+            font-size: 1.2rem;
+            z-index: 0;
+        }
+        
+        .video-feed img {
+            width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 语音提示优化 */
+        .speech-text {
+            padding: 1.5rem;
+            background-color: #e9ecef;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            min-height: 100px;
+            position: relative;
+        }
+        
+        .speech-text::before {
+            content: """;
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            font-size: 3rem;
+            color: rgba(0,0,0,0.1);
+            line-height: 1;
+        }
+        
+        .speech-text p {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            outline: none;
+            transition: var(--transition);
+        }
+        
+        .input-area input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.25);
+        }
+        
+        .input-area button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 0 1.5rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        
+        .input-area button:hover {
+            background-color: #e64980;
+            transform: translateY(-2px);
+        }
+        
+        /* 响应式设计优化 */
+        @media (max-width: 992px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-left, .content-right {
+                grid-column: 1 / -1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .container {
+                width: 95%;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            .upload-form {
+                padding: 1rem;
+            }
+
+            .input-area {
+                flex-direction: column;
+            }
+
+            .input-area input[type="text"] {
+                border-radius: 8px;
+                margin-bottom: 0.5rem;
+            }
+
+            .input-area button {
+                border-radius: 8px;
+                width: 100%;
+                padding: 0.8rem;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 帮助模态框分页样式 */
+        .help-pagination {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        
+        .pagination-btn {
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .pagination-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .pagination-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .help-page {
+            display: none;
+        }
+        
+        .help-page.active {
+            display: block;
+        }
+
+        /* 视频播放时的按钮禁用样式 */
+        .disabled-during-video {
+            opacity: 0.6;
+            cursor: not-allowed;
+            position: relative;
+        }
+        
+        .disabled-during-video:hover::after {
+            content: "视频播放过程中无法使用该功能";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+        
+        /* 目的地信息面板样式 */
+        .destination-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .destination-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .destination-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .destination-text i {
+            color: var(--primary-color);
+        }
+        
+        .navigation-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .navigation-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        /* 安全提示标签 */
+        .safety-warning {
+            display: inline-block;
+            padding: 3px 8px;
+            margin-left: 10px;
+            background-color: #fff3cd;
+            color: #856404;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>智能盲道识别与反馈系统·展示平台</h1>
+        <div class="subtitle">视障人士的贴心导航伙伴</div>
+        <button class="settings-btn" onclick="openSettings()">
+            <i class="fas fa-cog"></i>
+        </button>
+        <button class="help-btn" onclick="openHelp()">
+            <i class="fas fa-question-circle"></i>
+        </button>
+        <div class="user-controls">
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                {{ current_user.username }}
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                退出登录
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content-grid">
+            <!-- 左侧内容列 -->
+            <div class="content-left">
+                <!-- 视频上传和分析卡片 -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-video"></i> 盲道视频分析
+                    </div>
+                    <div class="upload-form" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h2 class="upload-title">上传视频进行盲道分析</h2>
+                        <p class="upload-instructions">拖放视频文件到此处，或点击下方按钮选择</p>
+                        <form id="videoUploadForm" enctype="multipart/form-data">
+                            <div class="file-input-wrapper">
+                                <input type="file" name="video" id="videoFile" class="file-input" accept="video/*">
+                                <label for="videoFile" class="file-input-label"><i class="fas fa-file-video"></i> 选择视频文件</label>
+                            </div>
+                            <div class="file-name" id="fileName">未选择文件</div>
+                            <button type="button" id="uploadBtn" class="upload-btn" onclick="uploadVideo()" disabled><i class="fas fa-upload"></i> 开始分析</button>
+                        </form>
+                        <div id="uploadStatus"></div>
+                        <div class="loader" id="uploadLoader"></div>
+                    </div>
+
+                    <div class="video-feed">
+                        <img src="{{ url_for('video_feed') }}" alt="视频分析画面">
+                    </div>
+                </div>
+                
+                <!-- 语音提示卡片 -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-volume-up"></i> 语音导航提示
+                    </div>
+                    <div class="speech-text" id="speechText">
+                        <p>提示：上传视频后，系统将分析盲道方向，当方向发生变化时会自动播报语音提示。</p>
+                    </div>
+
+                    <div id="messageInputArea" class="input-area" {% if settings.user_mode == "盲人端" %}style="display: none;"{% endif %}>
+                        <input type="text" id="familyMessage" placeholder="想发送语音消息给视障人士？在这里输入...">
+                        <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i> 发送</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧内容列 -->
+            <div class="content-right">
+                <!-- 地图定位卡片 -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-map-marker-alt"></i> 定位导航
+                    </div>
+                    
+                    <div class="map-controls">
+                        <div class="main-controls">
+                            <button class="map-btn" onclick="locateMe()">
+                                <i class="fas fa-crosshairs"></i> 定位我的位置
+                            </button>
+                            <div class="search-container">
+                                <input type="text" id="destinationInput" placeholder="输入目的地..." class="search-input">
+                                <button class="map-btn search-btn" onclick="searchDestination()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div class="more-menu">
+                                <button class="map-btn more-btn" onclick="toggleMoreMenu()">
+                                    <i class="fas fa-ellipsis-h"></i> 更多
+                                </button>
+                                <div class="more-dropdown" id="moreDropdown">
+                                    <button class="dropdown-item" onclick="enableManualStartLocation()">
+                                        <i class="fas fa-map-pin"></i> 手动选择当前位置
+                                    </button>
+                                    <button class="dropdown-item" onclick="enableManualDestination()">
+                                        <i class="fas fa-map-marker-alt"></i> 手动选择目的地
+                                    </button>
+                                    <button class="dropdown-item" onclick="planRoute()">
+                                        <i class="fas fa-directions"></i> 规划路线
+                                    </button>
+                                    <button class="dropdown-item" onclick="showNearbyBlindways()">
+                                        <i class="fas fa-route"></i> 查找周边盲道
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 目的地信息和导航按钮区域 -->
+                        <div class="destination-info" id="destinationInfoPanel" style="display: none;">
+                            <div class="destination-content">
+                                <div class="destination-text">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>您的目的地是：</span>
+                                    <span id="destinationName">未设置</span>
+                                </div>
+                                <button class="map-btn navigation-btn" onclick="startNavigation()">
+                                    <i class="fas fa-location-arrow"></i> 定位并开始导航
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="map-container">
+                        <div id="map"></div>
+                    </div>
+                    
+                    <div class="location-info">
+                        <div class="location-item">
+                            <span>当前位置：</span>
+                            <span id="currentAddress">等待定位...</span>
+                        </div>
+                        <div class="location-item">
+                            <span>距离最近盲道：</span>
+                            <span id="nearestBlindway">未知</span>
+                        </div>
+                    </div>
+                    
+                    <div class="blindway-list" id="blindwayList" style="display:none;">
+                        <h4 style="margin: 0.5rem 0;">附近盲道</h4>
+                        <div id="blindwayItems"></div>
+                    </div>
+                </div>
+                
+                <!-- 系统状态卡片 - 新增 -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-info-circle"></i> 系统状态
+                    </div>
+                    <div class="system-status">
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-label">视频分析</div>
+                                <div class="status-value" id="videoStatus">未开始</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">位置定位</div>
+                                <div class="status-value" id="locationStatus">未定位</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">语音系统</div>
+                                <div class="status-value" id="voiceStatus">就绪</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">使用模式</div>
+                                <div class="status-value">{{ settings.user_mode }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="quick-settings">
+                            <button class="quick-btn" onclick="testVoice()">
+                                <i class="fas fa-play"></i> 测试语音
+                            </button>
+                            <button class="quick-btn" onclick="openSettings()">
+                                <i class="fas fa-cog"></i> 更多设置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户设置模态框 -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <button class="settings-close" onclick="closeSettings()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="settings-title">设置</h2>
+
+            <!-- 标签页导航 -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('modeTab')">
+                    <i class="fas fa-exchange-alt tab-icon"></i>模式
+                </div>
+                <div class="tab" onclick="switchTab('profileTab')">
+                    <i class="fas fa-user tab-icon"></i>个人信息
+                </div>
+                <div class="tab" onclick="switchTab('voiceTab')">
+                    <i class="fas fa-volume-up tab-icon"></i>语音设置
+                </div>
+            </div>
+
+            <form id="settingsForm">
+                <!-- 用户模式标签页 -->
+                <div id="modeTab" class="tab-content active">
+                    <div class="section-title">选择使用模式</div>
+                    <p style="margin-bottom: 1rem; color: #6c757d;">不同的模式功能不同。请在视障人士出行前完成相关设置。</p>
+                    <div class="toggle-container">
+                        <button type="button" id="blindModeBtn" class="toggle-btn {% if settings.user_mode == '盲人端' %}active{% endif %}" onclick="switchUserMode('盲人端')">
+                            <i class="fas fa-blind user-mode-icon"></i>盲人端
+                        </button>
+                        <button type="button" id="familyModeBtn" class="toggle-btn {% if settings.user_mode == '家属端' %}active{% endif %}" onclick="switchUserMode('家属端')">
+                            <i class="fas fa-user-friends user-mode-icon"></i>家属端
+                        </button>
+                    </div>
+                    <input type="hidden" id="settingUserMode" value="{{ settings.user_mode }}">
+
+                    <div style="margin-top: 1.5rem;">
+                        <div class="section-title">模式说明</div>
+                        <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                            <p><b>盲人端：</b> 实时接收语音导航，并收取家属发送的消息。</p>
+                            <p><b>家属端：</b> 可发送语音消息给视障人士，并实时查看画面。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 个人信息标签页 -->
+                <div id="profileTab" class="tab-content">
+                    <div class="section-title">个人基本信息</div>
+                    <p style="margin-bottom: 1rem; color: #6c757d;">填写个人信息，系统将根据这些信息提供更个性化的语音提示服务。请在视障人士出行前完成相关设置。</p>
+                    <div class="form-group">
+                        <label for="settingName">您的称呼</label>
+                        <input type="text" id="settingName" placeholder="请输入您的称呼" value="{{ settings.name }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingGender">性别</label>
+                        <select id="settingGender">
+                            <option value="未指定" {% if settings.gender == "未指定" %}selected{% endif %}>不指定</option>
+                            <option value="男" {% if settings.gender == "男" %}selected{% endif %}>男</option>
+                            <option value="女" {% if settings.gender == "女" %}selected{% endif %}>女</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingAge">年龄</label>
+                        <select id="settingAge">
+                            <option value="未指定" {% if settings.age == "未指定" %}selected{% endif %}>不指定</option>
+                            <option value="青年" {% if settings.age == "青年" %}selected{% endif %}>青年</option>
+                            <option value="中年" {% if settings.age == "中年" %}selected{% endif %}>中年</option>
+                            <option value="老年" {% if settings.age == "老年" %}selected{% endif %}>老年</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 语音设置标签页 -->
+                <div id="voiceTab" class="tab-content">
+                    <div class="section-title">语音播报设置</div>
+                    <p style="margin-bottom: 1rem; color: #6c757d;">调整语音播报的速度和音量，点击下方按钮可测试当前设置效果。请在视障人士出行前完成相关设置。</p>
+
+                    <div class="form-group">
+                        <label for="settingVoiceSpeed">语音速度</label>
+                        <select id="settingVoiceSpeed">
+                            <option value="慢" {% if settings.voice_speed == "慢" %}selected{% endif %}>慢速</option>
+                            <option value="中等" {% if settings.voice_speed == "中等" %}selected{% endif %}>中等</option>
+                            <option value="快" {% if settings.voice_speed == "快" %}selected{% endif %}>快速</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingVoiceVolume">语音音量</label>
+                        <select id="settingVoiceVolume">
+                            <option value="低" {% if settings.voice_volume == "低" %}selected{% endif %}>低音量</option>
+                            <option value="中等" {% if settings.voice_volume == "中等" %}selected{% endif %}>中等音量</option>
+                            <option value="高" {% if settings.voice_volume == "高" %}selected{% endif %}>高音量</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-top: 1rem;">
+                        <button type="button" class="upload-btn" style="width: 100%; margin: 0;" onclick="testVoice()">
+                            <i class="fas fa-play"></i> 测试当前语音设置
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" class="settings-save" onclick="saveSettings()">
+                    <i class="fas fa-save"></i> 保存全部设置
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 帮助模态框 -->
+    <div class="settings-modal" id="helpModal">
+        <div class="settings-content" style="max-width: 800px;">
+            <button class="settings-close" onclick="closeHelp()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="settings-title">系统实现原理与架构</h2>
+            
+            <!-- 添加翻页导航 -->
+            <div class="help-pagination">
+                <button class="pagination-btn active" onclick="switchHelpPage('systemOverview')">系统概述</button>
+                <button class="pagination-btn" onclick="switchHelpPage('coreTech')">核心技术实现</button>
+                <button class="pagination-btn" onclick="switchHelpPage('workflow')">详细工作流程</button>
+                <button class="pagination-btn" onclick="switchHelpPage('navSystem')">导航定位系统</button>
+            </div>
+            
+            <div style="height: 70vh; overflow-y: auto; padding-right: 10px;">
+                <!-- 系统概述页面 -->
+                <div class="help-page active" id="systemOverview">
+                    <div class="help-section">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                            <i class="fas fa-info-circle"></i> 系统概述
+                        </h3>
+                        <p style="line-height: 1.8;">本系统是一款集成计算机视觉、自然语言处理与语音合成技术的盲道导航辅助系统，旨在帮助视障人士安全、独立地在盲道上行走。系统核心功能是实时检测盲道方向变化，通过智能语音提示引导用户正确转向，同时支持家属远程关注与消息提醒。</p>
+                        
+                        <!-- 系统架构图 -->
+                        <div style="margin: 2rem 0; text-align: center;">
+                            <div style="font-weight: bold; margin-bottom: 1rem; color: var(--primary-dark);">系统整体架构</div>
+                            <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: #f8f9fa; text-align: center;">
+                                <div style="width: 90%; margin: 0 auto; position: relative;">
+                                    <!-- 前端层 -->
+                                    <div style="border: 2px solid #339af0; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #e7f5ff;">
+                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">前端展示层</div>
+                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-desktop"></i> Web界面
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-video"></i> 视频播放
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-cog"></i> 用户设置
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <div style="text-align: center; margin: -0.5rem 0;">
+                                        <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
+                                    </div>
+                                    
+                                    <!-- 应用层 -->
+                                    <div style="border: 2px solid #20c997; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #e6fcf5;">
+                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">应用服务层</div>
+                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-user-shield"></i> 用户管理
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-upload"></i> 视频处理
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-volume-up"></i> 语音服务
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <div style="text-align: center; margin: -0.5rem 0;">
+                                        <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
+                                    </div>
+                                    
+                                    <!-- 算法层 -->
+                                    <div style="border: 2px solid #f06595; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #fff0f6;">
+                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">算法核心层</div>
+                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-eye"></i> YOLO盲道检测
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-brain"></i> Ollama语言模型
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-chart-line"></i> 方向分析算法
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <div style="text-align: center; margin: -0.5rem 0;">
+                                        <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
+                                    </div>
+                                    
+                                    <!-- 数据层 -->
+                                    <div style="border: 2px solid #9775fa; border-radius: 8px; padding: 0.8rem; background: #f3f0ff;">
+                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">数据存储层</div>
+                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-database"></i> MySQL数据库
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-file-video"></i> 视频文件存储
+                                            </div>
+                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
+                                                <i class="fas fa-user-cog"></i> 用户设置数据
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 核心技术实现页面 -->
+                <div class="help-page" id="coreTech">
+                    <div class="help-section">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                            <i class="fas fa-microchip"></i> 核心技术实现
+                        </h3>
+                        
+                        <!-- 技术实现表格 -->
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #dee2e6;">
+                                <thead>
+                                    <tr style="background-color: var(--primary-color); color: white;">
+                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">技术模块</th>
+                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">使用技术</th>
+                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">实现功能</th>
+                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">技术细节</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">计算机视觉</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">YOLO模型</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">盲道检测与跟踪</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">使用经过定制训练的YOLO模型识别盲道，精确捕捉形状和方向变化</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">自然语言处理</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">Ollama/qwen2.5</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">提示内容生成</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">结合用户个人信息生成自然、友好的语音提示内容，考虑年龄和性别因素</td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">语音合成</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">pyttsx3</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">文本转语音</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">支持中文语音合成，可调节语速和音量，适应不同用户需求</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">Web框架</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">Flask</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">前后端交互</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">负责路由管理、用户认证、视频流处理和实时通信</td>
+                                    </tr>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">数据存储</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">MySQL</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">用户数据管理</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">存储用户账号、个人设置和使用偏好，支持多用户系统</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">算法模块</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">线性回归</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">方向判断</td>
+                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">使用斜率分析算法判断盲道方向变化，阈值为±0.41</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 创新特点 -->
+                        <div class="help-section">
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                                <i class="fas fa-lightbulb"></i> 创新特点与应用价值
+                            </h3>
+                            
+                            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0;">
+                                <!-- 特点1 -->
+                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary-color); padding: 1rem; min-width: 250px;">
+                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--primary-dark);">
+                                        <i class="fas fa-users"></i> 双端模式设计
+                                    </div>
+                                    <p style="font-size: 0.9rem; margin: 0;">盲人端接收实时导航指引，家属端可远程监控并发送语音消息，增强安全性和使用便捷性</p>
+                                </div>
+                                
+                                <!-- 特点2 -->
+                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #fd7e14; padding: 1rem; min-width: 250px;">
+                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #e67700;">
+                                        <i class="fas fa-user-cog"></i> 个性化体验
+                                    </div>
+                                    <p style="font-size: 0.9rem; margin: 0;">根据用户性别、年龄等信息调整语音提示风格，提供贴心且个性化的语音导航体验</p>
+                                </div>
+                                
+                                <!-- 特点3 -->
+                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #20c997; padding: 1rem; min-width: 250px;">
+                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #087f5b;">
+                                        <i class="fas fa-shield-alt"></i> 多重安全机制
+                                    </div>
+                                    <p style="font-size: 0.9rem; margin: 0;">实时分析盲道走向和行走路线安全性，提前预警危险情况，增强视障人士出行安全</p>
+                                </div>
+                                
+                                <!-- 特点4 -->
+                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f06595; padding: 1rem; min-width: 250px;">
+                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #d6336c;">
+                                        <i class="fas fa-universal-access"></i> 无障碍设计
+                                    </div>
+                                    <p style="font-size: 0.9rem; margin: 0;">采用通用无障碍设计原则，确保界面适配视障用户需求，提供多种使用方式</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 详细工作流程页面 -->
+                <div class="help-page" id="workflow">
+                    <div class="help-section">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                            <i class="fas fa-project-diagram"></i> 详细工作流程
+                        </h3>
+                        
+                        <!-- 流程图 -->
+                        <div style="margin: 1.5rem 0; text-align: center;">
+                            <div style="display: flex; flex-direction: column; align-items: center; max-width: 600px; margin: 0 auto;">
+                                <!-- 步骤1 -->
+                                <div style="width: 80%; background: #e7f5ff; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
+                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</span>
+                                    <b>视频输入处理</b>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">系统接收上传的视频或摄像头输入，转换为帧序列供模型分析</p>
+                                </div>
+                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                                
+                                <!-- 步骤2 -->
+                                <div style="width: 80%; background: #fff4e6; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
+                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #fd7e14; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</span>
+                                    <b>YOLO模型盲道检测</b>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">每帧图像通过YOLO模型检测盲道位置，返回盲道的坐标框和置信度</p>
+                                </div>
+                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                                
+                                <!-- 步骤3 -->
+                                <div style="width: 80%; background: #f3f0ff; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
+                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #7950f2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</span>
+                                    <b>盲道方向分析</b>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">应用线性回归计算盲道中心点的斜率，判断盲道是否转向及转向方向</p>
+                                </div>
+                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                                
+                                <!-- 步骤4 -->
+                                <div style="width: 80%; background: #e6fcf5; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
+                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #20c997; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">4</span>
+                                    <b>提示内容生成</b>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">根据方向分析结果，调用Ollama大模型生成个性化语音提示内容</p>
+                                </div>
+                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                                
+                                <!-- 步骤5 -->
+                                <div style="width: 80%; background: #fff0f6; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
+                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #f06595; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">5</span>
+                                    <b>语音合成与播报</b>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">将生成的文本转换为语音，根据用户设置调整语速和音量后播放</p>
+                                </div>
+                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                                
+                                <!-- 步骤6 -->
+                                <div style="width: 80%; background: #edf2ff; border-radius: 8px; padding: 1rem; text-align: left; position: relative;">
+                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #4c6ef5; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">6</span>
+                                    <b>交互反馈</b>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">前端展示实时视频分析画面，显示语音提示内容，家属端可发送额外消息</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 导航定位系统页面（新增） -->
+                <div class="help-page" id="navSystem">
+                    <div class="help-section">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                            <i class="fas fa-compass"></i> 导航定位系统
+                        </h3>
+                        
+                        <p style="line-height: 1.8;">导航定位系统是本平台的关键组成部分，为视障人士提供精准的位置服务和路线规划功能，主要由地图定位、路线规划和盲道发现三大模块组成。</p>
+                        
+                        <!-- 导航定位系统特点 -->
+                        <div style="margin: 1.5rem 0;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">系统特点</h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li style="margin-bottom: 1rem; display: flex; align-items: flex-start;">
+                                    <div style="min-width: 30px; height: 30px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                        <i class="fas fa-map-marked-alt"></i>
+                                    </div>
+                                    <div>
+                                        <b>双向定位能力</b>
+                                        <p style="margin: 0.3rem 0 0 0; color: #495057;">同时支持自动定位和手动选择位置，解决非https环境下浏览器定位问题</p>
+                                    </div>
+                                </li>
+                                <li style="margin-bottom: 1rem; display: flex; align-items: flex-start;">
+                                    <div style="min-width: 30px; height: 30px; background-color: var(--secondary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                        <i class="fas fa-route"></i>
+                                    </div>
+                                    <div>
+                                        <b>智能路线规划</b>
+                                        <p style="margin: 0.3rem 0 0 0; color: #495057;">基于百度地图API提供多种出行方式的路线规划，未来将优先选择有盲道的路线</p>
+                                    </div>
+                                </li>
+                                <li style="margin-bottom: 1rem; display: flex; align-items: flex-start;">
+                                    <div style="min-width: 30px; height: 30px; background-color: #20c997; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                        <i class="fas fa-blind"></i>
+                                    </div>
+                                    <div>
+                                        <b>盲道优先导航</b>
+                                        <p style="margin: 0.3rem 0 0 0; color: #495057;">系统能够检索周边盲道信息，为视障人士提供更安全的出行路线</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 未来发展 -->
+                        <div style="margin: 2rem 0; padding: 1.5rem; background-color: #f8f9fa; border-radius: 10px; border-left: 5px solid var(--primary-color);">
+                            <h4 style="color: var(--primary-dark); margin-top: 0;">未来规划与扩展</h4>
+                            <p style="line-height: 1.8;">未来系统将扩展至完整的"盲道地图"服务，通过以下方式提升导航能力：</p>
+                            <ol style="padding-left: 1.5rem; margin-top: 1rem;">
+                                <li style="margin-bottom: 0.7rem;">
+                                    <b>众包盲道数据采集</b> - 记录用户实际行走轨迹，自动标记盲道位置并上传至云端数据库
+                                </li>
+                                <li style="margin-bottom: 0.7rem;">
+                                    <b>盲道路网构建</b> - 根据行走记录构建盲人导向的地图，形成全国范围的盲道路网
+                                </li>
+                                <li style="margin-bottom: 0.7rem;">
+                                    <b>智能推荐系统</b> - 优先选择有盲道的路线进行行走，并考虑路线安全性和便捷性
+                                </li>
+                                <li style="margin-bottom: 0.7rem;">
+                                    <b>社区反馈机制</b> - 允许用户标记盲道状态（是否损坏、施工等），提高导航准确性
+                                </li>
+                                <li style="margin-bottom: 0.7rem;">
+                                    <b>多模态导航</b> - 结合视觉识别、地图定位和语音引导，提供全方位无障碍导航体验
+                                </li>
+                            </ol>
+                        </div>
+                        
+                        <!-- 技术架构 -->
+                        <div style="margin: 1.5rem 0;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">系统技术架构</h4>
+                            <div style="width: 100%; border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden;">
+                                <div style="padding: 1rem; background-color: #e7f5ff; border-bottom: 1px solid #dee2e6;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-weight: bold;"><i class="fas fa-layer-group"></i> 前端展示层</span>
+                                        <span style="color: #666; font-size: 0.9rem;">百度地图JavaScript API</span>
+                                    </div>
+                                </div>
+                                <div style="padding: 1rem; background-color: #fff; border-bottom: 1px solid #dee2e6;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-weight: bold;"><i class="fas fa-exchange-alt"></i> 接口服务层</span>
+                                        <span style="color: #666; font-size: 0.9rem;">Flask API服务，位置信息传输</span>
+                                    </div>
+                                </div>
+                                <div style="padding: 1rem; background-color: #e7f5ff; border-bottom: 1px solid #dee2e6;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-weight: bold;"><i class="fas fa-cogs"></i> 业务逻辑层</span>
+                                        <span style="color: #666; font-size: 0.9rem;">路线规划，盲道匹配算法</span>
+                                    </div>
+                                </div>
+                                <div style="padding: 1rem; background-color: #fff;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-weight: bold;"><i class="fas fa-database"></i> 数据存储层</span>
+                                        <span style="color: #666; font-size: 0.9rem;">盲道位置信息，用户行走记录</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加函数来检查视频播放状态
+        function isVideoPlaying() {
+            const videoStatus = document.getElementById('videoStatus');
+            return videoStatus.textContent === '正在分析';
+        }
+
+        // 更新设置模态框功能
+        function openSettings() {
+            // 检查视频是否正在播放
+            if (isVideoPlaying()) {
+                showMessage("已检测到实时视频流，暂不支持打开设置");
+                return;
+            }
+            
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        // 更新测试语音设置功能
+        async function testVoice() {
+            // 检查视频是否正在播放
+            if (isVideoPlaying()) {
+                showMessage("已检测到实时视频流，暂不支持测试语音");
+                return;
+            }
+            
+            const settings = {
+                voice_speed: document.getElementById('settingVoiceSpeed').value,
+                voice_volume: document.getElementById('settingVoiceVolume').value
+            };
+
+            console.log("测试语音设置:", settings);
+
+            try {
+                const response = await fetch('/test_voice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+                if (result.status !== 'success') {
+                    alert(`测试失败: ${result.message}`);
+                } else {
+                    console.log("语音测试已启动");
+                }
+            } catch (error) {
+                console.error('测试语音出错:', error);
+                alert('测试语音失败，请重试');
+            }
+        }
+
+        // 更新系统状态检查函数，当视频正在播放时添加视觉提示
+        function updateSystemStatus() {
+            // 检查是否有视频正在分析
+            const videoFeed = document.querySelector('.video-feed img');
+            if (videoFeed.src.includes('?t=')) {
+                videoStatus.textContent = '正在分析';
+                videoStatus.style.color = '#20c997';
+                
+                // 当视频正在播放时，为相关按钮添加禁用样式
+                document.querySelectorAll('.quick-btn, .settings-btn').forEach(btn => {
+                    if (btn.onclick.toString().includes('openSettings') || btn.onclick.toString().includes('testVoice')) {
+                        btn.classList.add('disabled-during-video');
+                        btn.title = "视频播放过程中无法使用该功能";
+                    }
+                });
+            } else {
+                videoStatus.textContent = '未开始';
+                videoStatus.style.color = '#adb5bd';
+                
+                // 移除禁用样式
+                document.querySelectorAll('.disabled-during-video').forEach(btn => {
+                    btn.classList.remove('disabled-during-video');
+                    btn.title = "";
+                });
+            }
+            
+            // 检查位置状态
+            if (currentPosition) {
+                locationStatus.textContent = '已定位';
+                locationStatus.style.color = '#20c997';
+            } else {
+                locationStatus.textContent = '未定位';
+                locationStatus.style.color = '#adb5bd';
+            }
+        }
+
+        // 系统状态更新
+        const videoStatus = document.getElementById('videoStatus');
+        const locationStatus = document.getElementById('locationStatus');
+        const voiceStatus = document.getElementById('voiceStatus');
+        
+        // 初始状态
+        function updateSystemStatus() {
+            // 检查是否有视频正在分析
+            const videoFeed = document.querySelector('.video-feed img');
+            if (videoFeed.src.includes('?t=')) {
+                videoStatus.textContent = '正在分析';
+                videoStatus.style.color = '#20c997';
+            } else {
+                videoStatus.textContent = '未开始';
+                videoStatus.style.color = '#adb5bd';
+            }
+            
+            // 检查位置状态
+            if (currentPosition) {
+                locationStatus.textContent = '已定位';
+                locationStatus.style.color = '#20c997';
+            } else {
+                locationStatus.textContent = '未定位';
+                locationStatus.style.color = '#adb5bd';
+            }
+        }
+        
+        // 每5秒更新一次系统状态
+        setInterval(updateSystemStatus, 5000);
+        
+        // 在相关事件中更新状态
+        function updateVideoStatus(status) {
+            videoStatus.textContent = status;
+            if (status === '正在分析') {
+                videoStatus.style.color = '#20c997';
+            } else if (status === '已完成') {
+                videoStatus.style.color = '#4dabf7';
+            } else if (status === '错误') {
+                videoStatus.style.color = '#fa5252';
+            } else {
+                videoStatus.style.color = '#adb5bd';
+            }
+        }
+        
+        function updateLocationStatus(status) {
+            locationStatus.textContent = status;
+            if (status === '已定位') {
+                locationStatus.style.color = '#20c997';
+            } else if (status === '定位中') {
+                locationStatus.style.color = '#4dabf7';
+            } else if (status === '定位失败') {
+                locationStatus.style.color = '#fa5252';
+            } else {
+                locationStatus.style.color = '#adb5bd';
+            }
+        }
+        
+        function updateVoiceStatus(status) {
+            voiceStatus.textContent = status;
+            if (status === '播放中') {
+                voiceStatus.style.color = '#20c997';
+            } else if (status === '就绪') {
+                voiceStatus.style.color = '#4dabf7';
+            } else if (status === '错误') {
+                voiceStatus.style.color = '#fa5252';
+            } else {
+                voiceStatus.style.color = '#adb5bd';
+            }
+        }
+
+        // 显示选择的文件名并启用上传按钮
+        document.getElementById('videoFile').addEventListener('change', function() {
+            const fileName = this.files.length ? this.files[0].name : '未选择文件';
+            document.getElementById('fileName').textContent = fileName;
+
+            // 启用或禁用上传按钮
+            document.getElementById('uploadBtn').disabled = !this.files.length;
+        });
+
+        // 拖放功能
+        const dropArea = document.getElementById('uploadArea');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('dragover');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('dragover');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length) {
+                document.getElementById('videoFile').files = files;
+                const fileName = files[0].name;
+                document.getElementById('fileName').textContent = fileName;
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        }
+
+        async function fetchSpeechText() {
+            try {
+                console.log("开始监听语音文本流...");
+                const response = await fetch('/stream_speech_text');
+
+                if (!response.ok) {
+                    console.error("语音文本流连接失败:", response.status);
+                    return;
+                }
+
+                const reader = response.body.getReader();
+                let textBuffer = "";
+
+                while(true) {
+                    const { value, done } = await reader.read();
+                    if(done) {
+                        console.log("语音文本流结束");
+                        break;
+                    }
+
+                    const text = new TextDecoder("utf-8").decode(value);
+                    if(text.trim()) {
+                        // 处理直接接收到的文本，不需要提取data:后的内容
+                        const displayText = text.replace(/\n\n/g, "").trim();
+                        if(displayText) {
+                            console.log("收到语音文本:", displayText);
+                            document.getElementById('speechText').innerHTML = `<p>${displayText}</p>`;
+                            
+                            // 更新语音状态
+                            if (displayText !== "提示：系统会实时分析盲道方向，当方向发生变化时会自动播报语音提示。") {
+                                updateVoiceStatus('播放中');
+                                setTimeout(() => {
+                                    updateVoiceStatus('就绪');
+                                }, 5000);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("监听语音文本出错:", error);
+                // 更新语音状态
+                updateVoiceStatus('错误');
+                // 3秒后重试连接
+                setTimeout(fetchSpeechText, 3000);
+            }
+        }
+
+        // 启动语音文本流监听
+        fetchSpeechText();
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('familyMessage');
+            const message = messageInput.value.trim();
+            if(!message) return;
+
+            try {
+                messageInput.classList.add('success-feedback');
+                
+                // 更新语音状态
+                updateVoiceStatus('播放中');
+
+                const response = await fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                if(data.status === 'success') {
+                    messageInput.value = '';
+                    setTimeout(() => messageInput.classList.remove('success-feedback'), 1000);
+                    
+                    // 更新语音状态
+                    setTimeout(() => {
+                        updateVoiceStatus('就绪');
+                    }, 5000);
+                } else {
+                    alert(data.message);
+                    messageInput.classList.remove('success-feedback');
+                    updateVoiceStatus('错误');
+                }
+            } catch (error) {
+                console.error('发送消息出错:', error);
+                alert('发送消息失败，请重试');
+                messageInput.classList.remove('success-feedback');
+                updateVoiceStatus('错误');
+            }
+        }
+
+        async function uploadVideo() {
+            const fileInput = document.getElementById('videoFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            const uploadLoader = document.getElementById('uploadLoader');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!fileInput.files.length) {
+                statusDiv.textContent = '请先选择视频文件';
+                statusDiv.style.color = '#dc3545';
+                return;
+            }
+
+            // 显示加载动画
+            uploadLoader.style.display = 'block';
+            uploadBtn.disabled = true;
+            
+            // 更新视频状态
+            updateVideoStatus('上传中');
+
+            const formData = new FormData();
+            formData.append('video', fileInput.files[0]);
+
+            statusDiv.textContent = '正在上传视频...';
+            statusDiv.style.color = '#6c757d';
+
+            try {
+                const response = await fetch('/upload_video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    statusDiv.textContent = '视频上传成功，正在分析...';
+                    statusDiv.style.color = '#198754';
+                    // 刷新视频流
+                    const videoFeed = document.querySelector('.video-feed img');
+                    videoFeed.src = `${videoFeed.src}?t=${new Date().getTime()}`;
+                    
+                    // 更新视频状态
+                    updateVideoStatus('正在分析');
+                } else {
+                    statusDiv.textContent = `上传失败: ${result.message}`;
+                    statusDiv.style.color = '#dc3545';
+                    uploadBtn.disabled = false;
+                    
+                    // 更新视频状态
+                    updateVideoStatus('错误');
+                }
+            } catch (error) {
+                statusDiv.textContent = `上传错误: ${error.message}`;
+                statusDiv.style.color = '#dc3545';
+                console.error('上传错误:', error);
+                uploadBtn.disabled = false;
+                
+                // 更新视频状态
+                updateVideoStatus('错误');
+            } finally {
+                // 隐藏加载动画
+                uploadLoader.style.display = 'none';
+            }
+        }
+
+        // 设置模态框功能
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // 标签页切换
+        function switchTab(tabId) {
+            // 隐藏所有标签页内容
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.classList.remove('active'));
+
+            // 显示选定的标签页
+            document.getElementById(tabId).classList.add('active');
+
+            // 更新标签按钮状态
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // 用户模式切换
+        function switchUserMode(mode) {
+            document.getElementById('settingUserMode').value = mode;
+
+            // 更新按钮状态
+            if (mode === '盲人端') {
+                document.getElementById('blindModeBtn').classList.add('active');
+                document.getElementById('familyModeBtn').classList.remove('active');
+            } else {
+                document.getElementById('blindModeBtn').classList.remove('active');
+                document.getElementById('familyModeBtn').classList.add('active');
+            }
+        }
+
+        async function saveSettings() {
+            const settings = {
+                name: document.getElementById('settingName').value,
+                gender: document.getElementById('settingGender').value,
+                age: document.getElementById('settingAge').value,
+                voice_speed: document.getElementById('settingVoiceSpeed').value,
+                voice_volume: document.getElementById('settingVoiceVolume').value,
+                user_mode: document.getElementById('settingUserMode').value
+            };
+
+            try {
+                const response = await fetch('/update_settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('设置已保存');
+                    closeSettings();
+
+                    // 根据用户模式控制消息输入框的显示/隐藏
+                    const messageInputArea = document.getElementById('messageInputArea');
+                    if (settings.user_mode === '盲人端') {
+                        messageInputArea.style.display = 'none';
+                    } else {
+                        messageInputArea.style.display = 'flex';
+                    }
+                } else {
+                    alert(`保存失败: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('保存设置出错:', error);
+                alert('保存设置失败，请重试');
+            }
+        }
+
+        // 当用户点击模态框背景时关闭模态框
+        window.addEventListener('click', function(event) {
+            const settingsModal = document.getElementById('settingsModal');
+            const helpModal = document.getElementById('helpModal');
+            if (event.target === settingsModal) {
+                closeSettings();
+            }
+            if (event.target === helpModal) {
+                closeHelp();
+            }
+        });
+
+        // 响应式键盘事件
+        document.getElementById('familyMessage').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function logout() {
+            // 跳转到登出页面
+            window.location.href = "/logout";
+        }
+
+        // 帮助模态框功能
+        function openHelp() {
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // 地图功能
+        let map, marker, currentPosition;
+        let geolocationControl, zoomControl;
+        let nearbyBlindwayMarkers = [];
+        let nearbyBlindwayPolylines = [];
+        
+        // 将原来的locateMe函数完全替换为下面的代码
+        function locateMe() {
+            console.log("开始定位...");
+            try {
+                // 更新位置状态
+                updateLocationStatus('定位中');
+                
+                // 跳过百度地图定位，直接使用浏览器定位
+                tryBrowserGeolocation();
+            } catch (e) {
+                console.error("定位函数执行出错:", e);
+                alert("定位过程中出错: " + e.message);
+                updateLocationStatus('错误');
+            }
+        }
+        
+        // 修改浏览器定位函数，提供更好的错误处理
+        function tryBrowserGeolocation() {
+            console.log("尝试使用浏览器原生定位...");
+            if (navigator.geolocation) {
+                updateLocationStatus('正在定位...');
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    console.log("浏览器定位成功:", position.coords.latitude, position.coords.longitude);
+                    
+                    // 创建百度坐标点
+                    var point = new BMap.Point(position.coords.longitude, position.coords.latitude);
+                    
+                    // 清除旧标记
+                    if (marker) {
+                        map.removeOverlay(marker);
+                    }
+                    
+                    // 添加新标记
+                    marker = new BMap.Marker(point);
+                    map.addOverlay(marker);
+                    map.centerAndZoom(point, 17);
+                    
+                    currentPosition = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    // 获取地址
+                    getAddressFromPoint(point);
+                    
+                    // 发送位置到服务器
+                    updateLocationOnServer(position.coords.latitude, position.coords.longitude);
+                    
+                    // 更新位置状态
+                    updateLocationStatus('已定位(浏览器)');
+                    
+                    showMessage("使用浏览器定位成功，但可能存在坐标偏移");
+                }, function(error) {
+                    console.error("浏览器定位失败:", error);
+                    var errorMessage = "";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "用户拒绝了定位请求";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "位置信息不可用";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "定位请求超时";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            errorMessage = "未知错误";
+                            break;
+                    }
+                    showMessage("浏览器定位失败：" + errorMessage + "\n请尝试使用'手动选择位置'功能");
+                    updateLocationStatus('定位失败');
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                showMessage("您的浏览器不支持地理定位\n请尝试使用'手动选择位置'功能");
+                updateLocationStatus('不支持');
+            }
+        }
+        
+        // 初始化地图
+        function initMap() {
+            console.log("初始化地图...");
+            try {
+                // 创建地图实例
+                map = new BMap.Map("map");
+                
+                // 创建点坐标
+                let point = new BMap.Point(116.404, 39.915); // 默认北京坐标
+                map.centerAndZoom(point, 15);
+                
+                // 添加控件
+                map.enableScrollWheelZoom(); // 启用滚轮放大缩小
+                zoomControl = new BMap.NavigationControl();
+                map.addControl(zoomControl);
+                
+                // 添加比例尺控件
+                var scaleControl = new BMap.ScaleControl();
+                map.addControl(scaleControl);
+                
+                console.log("地图初始化完成");
+                
+                // 可以选择在地图加载后自动尝试定位
+                // 地图加载完成后尝试定位
+                map.addEventListener("tilesloaded", function() {
+                    console.log("地图图块加载完成，准备自动定位");
+                    // 这里不再自动定位，让用户手动点击定位按钮
+                    // locateMe();
+                });
+            } catch (e) {
+                console.error("地图初始化失败:", e);
+                alert("地图初始化失败: " + e.message);
+            }
+        }
+        
+        // 更新地图位置
+        function updateMapPosition(point) {
+            map.centerAndZoom(point, 17);
+            
+            // 清除旧标记
+            if (marker) {
+                map.removeOverlay(marker);
+            }
+            
+            // 添加新标记
+            marker = new BMap.Marker(point);
+            map.addOverlay(marker);
+            
+            // 添加信息窗口
+            let infoWindow = new BMap.InfoWindow("当前位置", {
+                width: 100,
+                height: 50,
+                title: "您在这里"
+            });
+            marker.addEventListener("click", function() {
+                this.openInfoWindow(infoWindow);
+            });
+        }
+        
+        // 从坐标获取地址
+        function getAddressFromPoint(point) {
+            let geoc = new BMap.Geocoder();
+            geoc.getLocation(point, function(rs) {
+                let addComp = rs.addressComponents;
+                let address = addComp.province + addComp.city + addComp.district + addComp.street + addComp.streetNumber;
+                document.getElementById("currentAddress").innerText = address;
+            });
+        }
+        
+        // 将位置信息发送到服务器
+        function updateLocationOnServer(lat, lng) {
+            fetch('/update_location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lat: lat,
+                    lng: lng
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("位置更新成功:", data);
+            })
+            .catch(error => {
+                console.error("位置更新失败:", error);
+            });
+        }
+        
+        // 获取附近盲道
+        function showNearbyBlindways() {
+            if (!currentPosition) {
+                alert("请先定位您的位置");
+                return;
+            }
+            
+            fetch(`/nearby_blindways?lat=${currentPosition.lat}&lng=${currentPosition.lng}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    // 清除之前的标记和线条
+                    clearNearbyBlindways();
+                    
+                    // 显示盲道列表
+                    document.getElementById("blindwayList").style.display = "block";
+                    
+                    // 更新最近盲道信息
+                    if (data.blindways.length > 0) {
+                        const nearest = data.blindways[0];
+                        document.getElementById("nearestBlindway").innerText = 
+                            `${nearest.name} (${nearest.distance}米)`;
+                        
+                        // 生成盲道列表
+                        const blindwayItems = document.getElementById("blindwayItems");
+                        blindwayItems.innerHTML = "";
+                        
+                        data.blindways.forEach(blindway => {
+                            const item = document.createElement("div");
+                            item.className = "blindway-item";
+                            item.innerHTML = `
+                                <div class="blindway-name">${blindway.name}</div>
+                                <div class="blindway-distance">${blindway.distance}米</div>
+                            `;
+                            
+                            // 点击盲道项目时在地图上显示
+                            item.addEventListener("click", function() {
+                                showBlindwayOnMap(blindway);
+                            });
+                            
+                            blindwayItems.appendChild(item);
+                        });
+                        
+                        // 在地图上显示所有盲道
+                        data.blindways.forEach(blindway => {
+                            drawBlindwayOnMap(blindway);
+                        });
+                    } else {
+                        document.getElementById("nearestBlindway").innerText = "附近未找到盲道";
+                        document.getElementById("blindwayItems").innerHTML = 
+                            "<div style='padding: 1rem; text-align: center; color: #6c757d;'>附近未找到盲道</div>";
+                    }
+                } else {
+                    alert("获取盲道数据失败: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("获取盲道数据出错:", error);
+                alert("获取盲道数据出错，请重试");
+            });
+        }
+        
+        // 在地图上绘制盲道
+        function drawBlindwayOnMap(blindway) {
+            // 创建盲道点标记
+            blindway.points.forEach(point => {
+                let baiduPoint = new BMap.Point(point.lng, point.lat);
+                let pointMarker = new BMap.Marker(baiduPoint, {
+                    icon: new BMap.Icon(
+                        // 使用自定义图标，此处可替换为实际的盲道图标
+                        "https://api.map.baidu.com/images/markers.png",
+                        new BMap.Size(23, 25),
+                        {
+                            offset: new BMap.Size(10, 25),
+                            imageOffset: new BMap.Size(0, 0)
+                        }
+                    )
+                });
+                
+                map.addOverlay(pointMarker);
+                nearbyBlindwayMarkers.push(pointMarker);
+            });
+            
+            // 创建盲道连线
+            let points = blindway.points.map(p => new BMap.Point(p.lng, p.lat));
+            let polyline = new BMap.Polyline(points, {
+                strokeColor: "#1E90FF",
+                strokeWeight: 5,
+                strokeOpacity: 0.8
+            });
+            
+            map.addOverlay(polyline);
+            nearbyBlindwayPolylines.push(polyline);
+            
+            // 标记盲道名称
+            if (points.length > 0) {
+                let midPoint = points[Math.floor(points.length / 2)];
+                let label = new BMap.Label(blindway.name, {
+                    position: midPoint,
+                    offset: new BMap.Size(20, -10)
+                });
+                
+                label.setStyle({
+                    color: "#333",
+                    backgroundColor: "#fff",
+                    border: "1px solid #1E90FF",
+                    borderRadius: "3px",
+                    padding: "5px",
+                    fontSize: "12px"
+                });
+                
+                map.addOverlay(label);
+                nearbyBlindwayMarkers.push(label);
+            }
+        }
+        
+        // 清除地图上的盲道标记
+        function clearNearbyBlindways() {
+            // 清除标记
+            nearbyBlindwayMarkers.forEach(marker => {
+                map.removeOverlay(marker);
+            });
+            nearbyBlindwayMarkers = [];
+            
+            // 清除线条
+            nearbyBlindwayPolylines.forEach(line => {
+                map.removeOverlay(line);
+            });
+            nearbyBlindwayPolylines = [];
+        }
+        
+        // 显示特定盲道在地图上
+        function showBlindwayOnMap(blindway) {
+            // 将地图中心移动到盲道中点
+            if (blindway.points.length > 0) {
+                const midPointIndex = Math.floor(blindway.points.length / 2);
+                const midPoint = blindway.points[midPointIndex];
+                map.centerAndZoom(new BMap.Point(midPoint.lng, midPoint.lat), 18);
+            }
+        }
+        
+        // 页面加载完成后初始化地图
+        window.addEventListener('load', function() {
+            setTimeout(initMap, 500); // 延迟加载地图，确保DOM已完全加载
+            updateSystemStatus(); // 初始化系统状态
+        });
+
+        // 添加手动选择位置的功能
+        let manualStartLocationMode = false;
+        let manualDestinationMode = false;
+
+        // 手动选择当前位置功能
+        function enableManualStartLocation() {
+            // 如果已在当前位置选择模式，则关闭
+            if (manualStartLocationMode) {
+                disableManualStartLocation();
+                return;
+            }
+            
+            // 确保关闭其他模式
+            if (manualDestinationMode) {
+                disableManualDestination();
+            }
+            
+            console.log("启用手动选择当前位置模式");
+            manualStartLocationMode = true;
+            
+            // 更改按钮状态
+            updateModeButtonStatus("手动选择当前位置", true);
+            
+            // 更新状态信息
+            updateLocationStatus('请点击地图选择当前位置');
+            
+            // 添加点击事件
+            map.addEventListener('click', manualStartLocationHandler);
+            
+            // 更改鼠标样式
+            map.setDefaultCursor('crosshair');
+            
+            // 显示提示
+            showMessage("请在地图上点击选择您的当前位置");
+        }
+
+        function disableManualStartLocation() {
+            console.log("禁用手动选择当前位置模式");
+            manualStartLocationMode = false;
+            
+            // 恢复按钮状态
+            updateModeButtonStatus("手动选择当前位置", false);
+            
+            // 移除点击事件
+            map.removeEventListener('click', manualStartLocationHandler);
+            
+            // 恢复鼠标样式
+            map.setDefaultCursor('');
+            
+            // 更新状态
+            if (currentPosition) {
+                updateLocationStatus('已定位(手动)');
+            } else {
+                updateLocationStatus('未定位');
+            }
+        }
+
+        function manualStartLocationHandler(e) {
+            const point = e.point;
+            console.log("手动选择当前位置坐标:", point.lng, point.lat);
+            
+            // 清除旧标记
+            if (marker) {
+                map.removeOverlay(marker);
+            }
+            
+            // 添加新标记
+            marker = new BMap.Marker(point);
+            map.addOverlay(marker);
+            
+            // 保存当前位置
+            currentPosition = {
+                lat: point.lat,
+                lng: point.lng
+            };
+            
+            // 获取地址
+            getAddressFromPoint(point);
+            
+            // 发送位置到服务器
+            updateLocationOnServer(point.lat, point.lng);
+            
+            // 更新位置状态
+            updateLocationStatus('已定位(手动)');
+            
+            // 显示信息窗口
+            var infoWindow = new BMap.InfoWindow("您的当前位置", {
+                width: 150,
+                height: 50,
+                title: "您在这里"
+            });
+            marker.openInfoWindow(infoWindow);
+            
+            // 禁用手动选择模式
+            disableManualStartLocation();
+        }
+
+        // 手动选择目的地功能
+        function enableManualDestination() {
+            // 如果已在目的地选择模式，则关闭
+            if (manualDestinationMode) {
+                disableManualDestination();
+                return;
+            }
+            
+            // 确保关闭其他模式
+            if (manualStartLocationMode) {
+                disableManualStartLocation();
+            }
+            
+            console.log("启用手动选择目的地模式");
+            manualDestinationMode = true;
+            
+            // 更改按钮状态
+            updateModeButtonStatus("手动选择目的地", true);
+            
+            // 更新状态提示
+            showMessage("请在地图上点击选择您的目的地");
+            
+            // 添加点击事件
+            map.addEventListener('click', manualDestinationHandler);
+            
+            // 更改鼠标样式
+            map.setDefaultCursor('crosshair');
+        }
+
+        function disableManualDestination() {
+            console.log("禁用手动选择目的地模式");
+            manualDestinationMode = false;
+            
+            // 恢复按钮状态
+            updateModeButtonStatus("手动选择目的地", false);
+            
+            // 移除点击事件
+            map.removeEventListener('click', manualDestinationHandler);
+            
+            // 恢复鼠标样式
+            map.setDefaultCursor('');
+        }
+
+        function manualDestinationHandler(e) {
+            const point = e.point;
+            console.log("手动选择目的地坐标:", point.lng, point.lat);
+            
+            // 设置目的地
+            destinationPoint = point;
+            
+            // 清除旧的目的地标记
+            if (destinationMarker) {
+                map.removeOverlay(destinationMarker);
+            }
+            
+            // 创建新的目的地标记
+            destinationMarker = new BMap.Marker(destinationPoint, {
+                icon: new BMap.Icon(
+                    "https://api.map.baidu.com/images/markers.png",
+                    new BMap.Size(23, 25),
+                    {
+                        offset: new BMap.Size(10, 25),
+                        imageOffset: new BMap.Size(0, -250) // 使用红色图标
+                    }
+                )
+            });
+            map.addOverlay(destinationMarker);
+            
+            // 获取地址并添加信息窗口
+            let geoc = new BMap.Geocoder();
+            geoc.getLocation(point, function(rs) {
+                let address = rs.address;
+                
+                // 保存目的地地址
+                destinationAddress = address;
+                
+                // 更新搜索框
+                document.getElementById('destinationInput').value = address;
+                
+                // 添加信息窗口
+                let infoWindow = new BMap.InfoWindow(address, {
+                    width: 200,
+                    height: 60,
+                    title: "目的地"
+                });
+                destinationMarker.openInfoWindow(infoWindow);
+                
+                showMessage("已设置目的地: " + address);
+            });
+            
+            // 如果已有起点，调整视野
+            if (currentPosition) {
+                const bounds = new BMap.Bounds(
+                    new BMap.Point(Math.min(currentPosition.lng, destinationPoint.lng), 
+                                  Math.min(currentPosition.lat, destinationPoint.lat)),
+                    new BMap.Point(Math.max(currentPosition.lng, destinationPoint.lng), 
+                                  Math.max(currentPosition.lat, destinationPoint.lat))
+                );
+                map.setViewport(bounds);
+            }
+            
+            // 隐藏目的地信息面板（等待用户点击规划路线）
+            document.getElementById('destinationInfoPanel').style.display = 'none';
+            
+            // 禁用手动选择模式
+            disableManualDestination();
+        }
+
+        // 功能辅助函数
+        function updateModeButtonStatus(modeName, isActive) {
+            // 找出对应的模式按钮
+            const dropdown = document.getElementById('moreDropdown');
+            const buttons = dropdown.querySelectorAll('.dropdown-item');
+            
+            // 遍历所有按钮
+            buttons.forEach(button => {
+                if (button.textContent.trim().includes(modeName)) {
+                    if (isActive) {
+                        button.style.backgroundColor = '#e9ecef';
+                        button.style.fontWeight = 'bold';
+                    } else {
+                        button.style.backgroundColor = '';
+                        button.style.fontWeight = '';
+                    }
+                }
+            });
+        }
+
+        // 修改搜索目的地函数，保存目的地地址
+        function searchDestination() {
+            const input = document.getElementById('destinationInput').value;
+            if (!input) {
+                showMessage("请输入目的地");
+                return;
+            }
+            
+            // 使用百度地图的地址解析服务
+            const localSearch = new BMap.LocalSearch(map, {
+                renderOptions: {
+                    map: map,
+                    autoViewport: false
+                },
+                onSearchComplete: function(results) {
+                    if (results && results.getNumPois() > 0) {
+                        const poi = results.getPoi(0);
+                        destinationPoint = poi.point;
+                        
+                        // 保存目的地地址
+                        destinationAddress = poi.title;
+                        
+                        // 清除旧的目的地标记
+                        if (destinationMarker) {
+                            map.removeOverlay(destinationMarker);
+                        }
+                        
+                        // 创建新的目的地标记
+                        destinationMarker = new BMap.Marker(destinationPoint, {
+                            icon: new BMap.Icon(
+                                "https://api.map.baidu.com/images/markers.png",
+                                new BMap.Size(23, 25),
+                                {
+                                    offset: new BMap.Size(10, 25),
+                                    imageOffset: new BMap.Size(0, -250) // 使用红色图标
+                                }
+                            )
+                        });
+                        map.addOverlay(destinationMarker);
+                        
+                        // 添加信息窗口
+                        let infoWindow = new BMap.InfoWindow(poi.title, {
+                            width: 200,
+                            height: 60,
+                            title: "目的地"
+                        });
+                        destinationMarker.openInfoWindow(infoWindow);
+                        
+                        // 调整视野以同时显示当前位置和目的地
+                        if (currentPosition) {
+                            const bounds = new BMap.Bounds(
+                                new BMap.Point(Math.min(currentPosition.lng, destinationPoint.lng), 
+                                              Math.min(currentPosition.lat, destinationPoint.lat)),
+                                new BMap.Point(Math.max(currentPosition.lng, destinationPoint.lng), 
+                                              Math.max(currentPosition.lat, destinationPoint.lat))
+                            );
+                            map.setViewport(bounds);
+                        } else {
+                            map.centerAndZoom(destinationPoint, 15);
+                        }
+                        
+                        showMessage("已找到目的地: " + poi.title);
+                        
+                        // 隐藏目的地信息面板（等待用户点击规划路线）
+                        document.getElementById('destinationInfoPanel').style.display = 'none';
+                    } else {
+                        showMessage("未找到匹配的地点，请尝试更精确的地址或手动选择目的地");
+                    }
+                }
+            });
+            localSearch.search(input);
+        }
+
+        // 添加下拉菜单的控制函数
+        function toggleMoreMenu() {
+            document.getElementById('moreDropdown').classList.toggle('show-dropdown');
+        }
+
+        // 点击菜单外部关闭下拉菜单
+        window.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('moreDropdown');
+            const moreBtn = document.querySelector('.more-btn');
+            
+            if (!event.target.matches('.more-btn') && !event.target.closest('.more-btn') 
+                && !event.target.matches('.dropdown-item') && !event.target.closest('.dropdown-item')) {
+                if (dropdown.classList.contains('show-dropdown')) {
+                    dropdown.classList.remove('show-dropdown');
+                }
+            }
+        });
+
+        // 添加丢失的函数
+        // 添加消息提示函数
+        function showMessage(message) {
+            if (typeof alert !== 'undefined') {
+                alert(message);
+            } else {
+                console.log(message);
+            }
+        }
+
+        // 添加变量存储目的地和路线
+        let destinationPoint = null;
+        let routePolyline = null;
+        let destinationMarker = null;
+        let destinationAddress = null;
+
+        // 路线规划功能
+        function planRoute() {
+            if (!currentPosition) {
+                showMessage("请先定位或选择您的当前位置");
+                return;
+            }
+            
+            if (!destinationPoint) {
+                showMessage("请先搜索或选择目的地");
+                return;
+            }
+            
+            // 清除原有路线
+            if (routePolyline) {
+                map.removeOverlay(routePolyline);
+            }
+            
+            // 创建百度地图驾车路线规划对象
+            const routeSearch = new BMap.DrivingRoute(map, {
+                renderOptions: {
+                    map: map,
+                    autoViewport: true,
+                    enableDragging: true
+                },
+                onSearchComplete: function(results) {
+                    if (results.getNumPlans() > 0) {
+                        const plan = results.getPlan(0);
+                        const route = plan.getRoute(0);
+                        
+                        // 创建路线折线
+                        routePolyline = new BMap.Polyline(route.getPath(), {
+                            strokeColor: "#3388ff",
+                            strokeWeight: 6,
+                            strokeOpacity: 0.8
+                        });
+                        map.addOverlay(routePolyline);
+                        
+                        // 显示路线信息
+                        const distance = plan.getDistance(true);
+                        const duration = plan.getDuration(true);
+                        
+                        // 提取距离数值（去除单位）以便比较
+                        const distanceValue = parseFloat(distance.replace(/[^0-9.]/g, ''));
+                        const distanceUnit = distance.replace(/[0-9.]/g, '').trim();
+                        
+                        // 显示目的地信息面板
+                        const destinationInfoPanel = document.getElementById('destinationInfoPanel');
+                        destinationInfoPanel.style.display = 'block';
+                        
+                        // 更新目的地名称
+                        const destinationName = document.getElementById('destinationName');
+                        if (destinationAddress) {
+                            destinationName.innerText = destinationAddress;
+                        } else {
+                            // 如果没有地址信息，则显示坐标
+                            destinationName.innerText = `坐标(${destinationPoint.lng.toFixed(4)}, ${destinationPoint.lat.toFixed(4)})`;
+                        }
+                        
+                        // 检查距离并显示警告（如果距离单位是公里且大于6km）
+                        if ((distanceUnit === '公里' || distanceUnit === 'km') && distanceValue > 6) {
+                            // 显示安全警告消息
+                            showMessage("该行程距离过远，盲人行走安全风险较大，请谨慎规划！");
+                            
+                            // 添加视觉警告标记
+                            if (!destinationName.querySelector('.safety-warning')) {
+                                const warningLabel = document.createElement('span');
+                                warningLabel.className = 'safety-warning';
+                                warningLabel.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 距离过远';
+                                destinationName.appendChild(warningLabel);
+                            }
+                        } else {
+                            // 移除现有的警告标记（如果有）
+                            const existingWarning = destinationName.querySelector('.safety-warning');
+                            if (existingWarning) {
+                                existingWarning.remove();
+                            }
+                        }
+                        
+                        showMessage(`路线规划完成：距离${distance}，预计用时${duration}`);
+                    } else {
+                        showMessage("无法规划路线，请尝试更改当前位置或目的地");
+                    }
+                },
+                onError: function(error) {
+                    showMessage("路线规划失败: " + error);
+                }
+            });
+            
+            // 开始路线搜索
+            const start = new BMap.Point(currentPosition.lng, currentPosition.lat);
+            routeSearch.search(start, destinationPoint);
+        }
+
+        // 添加开始导航函数
+        function startNavigation() {
+            if (!currentPosition || !destinationPoint) {
+                showMessage("请确保已设置当前位置和目的地");
+                return;
+            }
+            
+            // 重新定位当前位置（如果可能）
+            locateMe();
+            
+            // 在实际应用中，这里可以启动实时导航功能
+            showMessage("导航已开始，系统将引导您前往目的地");
+            
+            // 这里可以添加更多导航相关的逻辑，如启动语音引导等
+        }
+
+        // 添加翻页功能相关的JavaScript代码
+        function switchHelpPage(pageId) {
+            // 隐藏所有页面
+            const pages = document.querySelectorAll('.help-page');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 显示选中的页面
+            document.getElementById(pageId).classList.add('active');
+            
+            // 更新按钮状态
+            const buttons = document.querySelectorAll('.pagination-btn');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // 找到对应的按钮并激活
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
