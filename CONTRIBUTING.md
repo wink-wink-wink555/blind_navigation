@@ -67,7 +67,6 @@ The Tactile Paving Navigation Assistant System is structured as follows:
 - **models/**: Directory containing the YOLO model and related files
   - **weights/**: Trained model weights
 - **templates/**: HTML templates for the web interface
-- **static/**: Static files (CSS, JavaScript, images)
 - **uploads/**: Directory for storing uploaded videos (created automatically)
 - **requirements.txt**: Python dependencies
 
@@ -339,3 +338,6 @@ A: Ask questions in the issue you're working on or reach out on our community ch
 ---
 
 Thank you again for your contribution! Your efforts help make this project better for everyone.
+
+Yours sincerely,
+wink-wink-wink555
