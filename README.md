@@ -145,7 +145,7 @@ The application will run at http://127.0.0.1:5000/.
 
 ## Contact Information
 
-- **Email**: yfsun.jeff@qq.com
+- **Email**: yfsun.jeff@gmail.com
 - **GitHub**: [wink-wink-wink555](https://github.com/wink-wink-wink555)
 - **LinkedIn**: [Yifei Sun](https://www.linkedin.com/in/yifei-sun-0bab66341/)
 - **Bilibili**: [NO_Desire](https://space.bilibili.com/623490717)
