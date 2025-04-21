@@ -1,0 +1,32 @@
+# 上传文件夹
+uploads/
+
+# 模型文件（可能很大）
+# models/*.pt 注意：如果要共享模型，请取消此注释
+
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 日志文件
+*.log
+
+# 数据库文件
+*.db
+*.sqlite3
+
+# 系统相关
+.DS_Store
+Thumbs.db
+
+# IDE相关
+.idea/
+.vscode/
+*.swp
+*.swo 
