@@ -148,11 +148,12 @@ The application will run at http://127.0.0.1:5000/.
 - **Email**: yfsun.jeff@qq.com
 - **GitHub**: [wink-wink-wink555](https://github.com/wink-wink-wink555)
 - **LinkedIn**: [Yifei Sun](https://www.linkedin.com/in/yifei-sun-0bab66341/)
+- **Bilibili**: [NO_Desire](https://space.bilibili.com/623490717)
 
 ## Special Thanks
 
 Special thanks to the following members for helping with the collection of tactile paving datasets and participating in annotation and training work:
-- Chen Xingyu
+- [Chen Xingyu](https://github.com/guangxiangdebizi)
 - Wang youyi
 - Liu Yiheng
 - Cai Yuxin
@@ -161,7 +162,7 @@ Special thanks to the following members for helping with the collection of tacti
 
 This project is licensed under the [MIT License](LICENSE).
 
-Copyright (c) 2023 Sun Yifei and contributors
+Copyright (c) 2025 wink-wink-wink555
 
 This means you are free to use, modify, and distribute this software, whether for personal or commercial purposes, provided that the above copyright notice and permission notice are included in all copies.
 
