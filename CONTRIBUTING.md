@@ -339,5 +339,5 @@ A: Ask questions in the issue you're working on or reach out on our community ch
 
 Thank you again for your contribution! Your efforts help make this project better for everyone.
 
-Yours sincerely,
+Yours sincerely,<br>
 wink-wink-wink555
