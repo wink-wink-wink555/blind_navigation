@@ -26,6 +26,7 @@ This system mainly solves the following problems:
 
 - Real-time Video Analysis: Uses YOLO model to identify tactile paving in real-time
 - Voice Feedback: Provides real-time voice prompts
+- Personalized Voice Generation: Uses ollama-qwen2.5:3b model to generate customized navigation prompts based on user's preferred name or nickname
 - User System: Includes registration, login, and password recovery functions
 - Location Sharing: Supports location sharing, making it convenient for family members to know the location of visually impaired people
 - User Settings: Customizable voice speed, volume, and other parameters
@@ -58,18 +59,25 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Download the YOLO model and place it in the models directory:
+4. Install Ollama and the qwen2.5:3b model:
+```bash
+# Follow instructions at https://ollama.com/ to install Ollama
+# Then pull the qwen2.5:3b model
+ollama run qwen2.5:3b
+```
+
+5. Download the YOLO model and place it in the models directory:
 ```bash
 # If you already have a trained model, please rename it to best.pt and place it in the models directory
 mkdir -p models
 # Copy your model file to models/best.pt
 ```
 
-5. Set up the database:
+6. Set up the database:
    - Create MySQL database: blind_navigation
    - The application will automatically create the required tables when it is first run
 
-6. Modify the configuration:
+7. Modify the configuration:
    - Update the database configuration (DB_CONFIG) in app.py
    - Update the email sending configuration (EMAIL_CONFIG)
 
@@ -133,8 +141,16 @@ The application will run at http://127.0.0.1:5000/.
 #### Voice Settings
 1. Click the "Settings" button on the main interface
 2. Adjust voice speed, volume, and other parameters
-3. Click the "Test Voice" button to preview the effect
-4. Click the "Save Settings" button to save the changes
+3. Set your preferred name or nickname for personalized voice prompts
+4. Click the "Test Voice" button to preview the effect
+5. Click the "Save Settings" button to save the changes
+
+#### Personalized Voice Prompts
+1. Navigate to the "Voice Personalization" section in Settings
+2. Enter your preferred name, nickname, or how you would like to be addressed
+3. Select voice tone and style preferences
+4. The system will use ollama-qwen2.5:3b model to generate customized navigation prompts that address you by your preferred name
+5. You can preview different prompt styles before saving your preferences
 
 ## Notes
 
@@ -142,6 +158,7 @@ The application will run at http://127.0.0.1:5000/.
 - The model recognition effect depends on the quality of the training data
 - Please ensure that camera permissions are enabled (when using the camera)
 - The location sharing function requires GPS permissions
+- Personalized voice generation requires Ollama with qwen2.5:3b model to be running locally or on an accessible server
 
 ## Contact Information
 
@@ -157,6 +174,7 @@ Special thanks to the following members for helping with the collection of tacti
 - Wang youyi
 - Liu Yiheng
 - Cai Yuxin
+- Zhang Chenshu
 
 ## License
 
