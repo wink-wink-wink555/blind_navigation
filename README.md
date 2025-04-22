@@ -40,8 +40,8 @@ This system mainly solves the following problems:
 
 1. Clone the repository to your local machine:
 ```bash
-git clone https://github.com/wink-wink-wink555/blind-navigation.git
-cd blind-navigation
+git clone https://github.com/wink-wink-wink555/blind_navigation.git
+cd blind_navigation
 ```
 
 2. Create and activate a virtual environment (optional but recommended):
