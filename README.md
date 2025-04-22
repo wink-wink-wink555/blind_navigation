@@ -35,6 +35,7 @@ This system mainly solves the following problems:
 
 - Python 3.8+
 - MySQL database
+- Ollama with qwen2.5:3b model installed
 - Necessary Python libraries (see requirements.txt)
 
 ## Installation Steps
@@ -62,7 +63,7 @@ pip install -r requirements.txt
 4. Install Ollama and the qwen2.5:3b model:
 ```bash
 # Follow instructions at https://ollama.com/ to install Ollama
-# Then download the qwen2.5:3b model
+# Then install the qwen2.5:3b model
 ollama run qwen2.5:3b
 ```
 
