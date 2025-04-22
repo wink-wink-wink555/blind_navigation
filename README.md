@@ -67,18 +67,11 @@ pip install -r requirements.txt
 ollama run qwen2.5:3b
 ```
 
-5. Download the YOLO model and place it in the models directory:
-```bash
-# If you already have a trained model, please rename it to best.pt and place it in the models directory
-mkdir -p models
-# Copy your model file to models/weights/best.pt
-```
-
-6. Set up the database:
+5. Set up the database:
    - Create MySQL database: blind_navigation
    - The application will automatically create the required tables when it is first run
 
-7. Modify the configuration:
+6. Modify the configuration:
    - Update the database configuration (DB_CONFIG) in app.py
    - Update the email sending configuration (EMAIL_CONFIG)
 
