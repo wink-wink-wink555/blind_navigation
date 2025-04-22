@@ -71,7 +71,7 @@ ollama run qwen2.5:3b
 ```bash
 # If you already have a trained model, please rename it to best.pt and place it in the models directory
 mkdir -p models
-# Copy your model file to models/best.pt
+# Copy your model file to models/weights/best.pt
 ```
 
 6. Set up the database:
