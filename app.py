@@ -1142,11 +1142,7 @@ def update_location():
 def get_location(user_id):
     """获取指定用户的位置"""
     # 检查权限（只允许查看自己或关联的家属/被照顾者的位置）
-    current_user_id = session.get('user_id')
-    
-    # 这里应该有更完善的权限检查逻辑，例如家属关系验证
-    # 暂时简化为允许查看所有用户位置
-    
+    current_user_id = session.get('user_id')    
     if user_id in user_locations:
         # 检查位置数据是否过期（例如5分钟）
         if time.time() - user_locations[user_id]['timestamp'] > 300:
