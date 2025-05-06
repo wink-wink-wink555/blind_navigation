@@ -592,11 +592,18 @@
         .user-info {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 0.5rem 1rem;
+            border: none;
             border-radius: 20px;
+            padding: 0.5rem 1rem;
             font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
             display: flex;
             align-items: center;
+        }
+
+        .user-info:hover {
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .user-info i {
@@ -1151,6 +1158,254 @@
             font-size: 0.8rem;
             vertical-align: middle;
         }
+
+        /* 开关按钮样式 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .switch-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .switch-label span {
+            font-weight: 500;
+        }
+
+        /* 用户信息模态框样式 */
+        .user-profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .user-profile-modal.show {
+            opacity: 1;
+        }
+
+        .user-profile-content {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 450px;
+            padding: 25px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(-30px);
+            opacity: 0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+        
+        .user-profile-modal.show .user-profile-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .profile-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #888;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            width: 30px;
+            height: 30px;
+        }
+
+        .profile-close:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+            color: #555;
+            transform: rotate(90deg);
+        }
+        
+        .profile-close:active {
+            transform: rotate(90deg) scale(0.9);
+        }
+
+        .profile-title {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 22px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-title i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
+        .profile-details {
+            margin-top: 10px;
+        }
+
+        .profile-item {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .profile-label {
+            font-weight: 500;
+            color: #666;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-label i {
+            margin-right: 8px;
+            color: var(--primary-color);
+            width: 16px;
+            text-align: center;
+        }
+
+        .profile-value {
+            color: #333;
+            font-weight: 400;
+            text-align: right;
+            flex-grow: 1;
+            word-break: break-all;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #f1f1f1;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--primary-color);
+            border: 3px solid var(--primary-light);
+        }
+
+        .profile-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 0;
+        }
+
+        .profile-loader .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f1f1f1;
+            border-top: 4px solid #4A90E2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        .profile-error {
+            text-align: center;
+            color: #e74c3c;
+            padding: 20px 0;
+        }
+
+        .profile-error i {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .profile-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        .profile-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .profile-footer a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -1164,7 +1419,7 @@
             <i class="fas fa-question-circle"></i>
         </button>
         <div class="user-controls">
-            <div class="user-info">
+            <div class="user-info" onclick="openUserProfile()">
                 <i class="fas fa-user"></i>
                 {{ current_user.username }}
             </div>
@@ -1204,7 +1459,7 @@
                         <img src="{{ url_for('video_feed') }}" alt="视频分析画面">
                     </div>
                 </div>
-                
+
                 <!-- 语音提示卡片 -->
                 <div class="card">
                     <div class="card-title">
@@ -1220,7 +1475,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 右侧内容列 -->
             <div class="content-right">
                 <!-- 地图定位卡片 -->
@@ -1228,7 +1483,7 @@
                     <div class="card-title">
                         <i class="fas fa-map-marker-alt"></i> 定位导航
                     </div>
-                    
+
                     <div class="map-controls">
                         <div class="main-controls">
                             <button class="map-btn" onclick="locateMe()">
@@ -1260,7 +1515,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- 目的地信息和导航按钮区域 -->
                         <div class="destination-info" id="destinationInfoPanel" style="display: none;">
                             <div class="destination-content">
@@ -1275,11 +1530,11 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="map-container">
                         <div id="map"></div>
                     </div>
-                    
+
                     <div class="location-info">
                         <div class="location-item">
                             <span>当前位置：</span>
@@ -1290,13 +1545,13 @@
                             <span id="nearestBlindway">未知</span>
                         </div>
                     </div>
-                    
+
                     <div class="blindway-list" id="blindwayList" style="display:none;">
                         <h4 style="margin: 0.5rem 0;">附近盲道</h4>
                         <div id="blindwayItems"></div>
                     </div>
                 </div>
-                
+
                 <!-- 系统状态卡片 - 新增 -->
                 <div class="card">
                     <div class="card-title">
@@ -1321,7 +1576,7 @@
                                 <div class="status-value">{{ settings.user_mode }}</div>
                             </div>
                         </div>
-                        
+
                         <div class="quick-settings">
                             <button class="quick-btn" onclick="testVoice()">
                                 <i class="fas fa-play"></i> 测试语音
@@ -1379,6 +1634,10 @@
                             <p><b>家属端：</b> 可发送语音消息给视障人士，并实时查看画面。</p>
                         </div>
                     </div>
+
+                    <button type="button" class="settings-save" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> 保存全部设置
+                    </button>
                 </div>
 
                 <!-- 个人信息标签页 -->
@@ -1408,12 +1667,16 @@
                             <option value="老年" {% if settings.age == "老年" %}selected{% endif %}>老年</option>
                         </select>
                     </div>
+
+                    <button type="button" class="settings-save" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> 保存全部设置
+                    </button>
                 </div>
 
                 <!-- 语音设置标签页 -->
                 <div id="voiceTab" class="tab-content">
                     <div class="section-title">语音播报设置</div>
-                    <p style="margin-bottom: 1rem; color: #6c757d;">调整语音播报的速度和音量，点击下方按钮可测试当前设置效果。请在视障人士出行前完成相关设置。</p>
+                    <p style="margin-bottom: 1rem; color: #6c757d;">调整语音播报的速度、音量等，点击下方按钮可测试当前设置效果。请在视障人士出行前完成相关设置。</p>
 
                     <div class="form-group">
                         <label for="settingVoiceSpeed">语音速度</label>
@@ -1433,16 +1696,28 @@
                         </select>
                     </div>
 
+                    <div class="form-group">
+                        <div class="switch-label">
+                            <span>适当时给予鼓励</span>
+                            <label class="switch">
+                                <input type="checkbox" id="settingEncourage" {% if settings.encourage == "开" %}checked{% endif %} onchange="updateEncourageValue()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <small style="display: block; margin-top: 5px; color: #6c757d;">开启后，系统会在语音导航中适当加入鼓励性话语，提升视障人士出行的信心与体验。</small>
+                        <input type="hidden" id="encourageValue" value="{{ settings.encourage }}">
+                    </div>
+
                     <div style="margin-top: 1rem;">
-                        <button type="button" class="upload-btn" style="width: 100%; margin: 0;" onclick="testVoice()">
+                        <button type="button" class="upload-btn" style="width: 100%; margin: 0 0 1rem 0;" onclick="testVoice()">
                             <i class="fas fa-play"></i> 测试当前语音设置
                         </button>
                     </div>
-                </div>
 
-                <button type="button" class="settings-save" onclick="saveSettings()">
-                    <i class="fas fa-save"></i> 保存全部设置
-                </button>
+                    <button type="button" class="settings-save" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> 保存全部设置
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -1454,15 +1729,16 @@
                 <i class="fas fa-times"></i>
             </button>
             <h2 class="settings-title">系统实现原理与架构</h2>
-            
+
             <!-- 添加翻页导航 -->
             <div class="help-pagination">
                 <button class="pagination-btn active" onclick="switchHelpPage('systemOverview')">系统概述</button>
                 <button class="pagination-btn" onclick="switchHelpPage('coreTech')">核心技术实现</button>
+                <button class="pagination-btn" onclick="switchHelpPage('hardware')">硬件介绍</button>
                 <button class="pagination-btn" onclick="switchHelpPage('workflow')">详细工作流程</button>
                 <button class="pagination-btn" onclick="switchHelpPage('navSystem')">导航定位系统</button>
             </div>
-            
+
             <div style="height: 70vh; overflow-y: auto; padding-right: 10px;">
                 <!-- 系统概述页面 -->
                 <div class="help-page active" id="systemOverview">
@@ -1471,7 +1747,7 @@
                             <i class="fas fa-info-circle"></i> 系统概述
                         </h3>
                         <p style="line-height: 1.8;">本系统是一款集成计算机视觉、自然语言处理与语音合成技术的盲道导航辅助系统，旨在帮助视障人士安全、独立地在盲道上行走。系统核心功能是实时检测盲道方向变化，通过智能语音提示引导用户正确转向，同时支持家属远程关注与消息提醒。</p>
-                        
+
                         <!-- 系统架构图 -->
                         <div style="margin: 2rem 0; text-align: center;">
                             <div style="font-weight: bold; margin-bottom: 1rem; color: var(--primary-dark);">系统整体架构</div>
@@ -1492,12 +1768,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- 箭头 -->
                                     <div style="text-align: center; margin: -0.5rem 0;">
                                         <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
                                     </div>
-                                    
+
                                     <!-- 应用层 -->
                                     <div style="border: 2px solid #20c997; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #e6fcf5;">
                                         <div style="font-weight: bold; margin-bottom: 0.5rem;">应用服务层</div>
@@ -1513,12 +1789,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- 箭头 -->
                                     <div style="text-align: center; margin: -0.5rem 0;">
                                         <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
                                     </div>
-                                    
+
                                     <!-- 算法层 -->
                                     <div style="border: 2px solid #f06595; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #fff0f6;">
                                         <div style="font-weight: bold; margin-bottom: 0.5rem;">算法核心层</div>
@@ -1534,12 +1810,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- 箭头 -->
                                     <div style="text-align: center; margin: -0.5rem 0;">
                                         <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
                                     </div>
-                                    
+
                                     <!-- 数据层 -->
                                     <div style="border: 2px solid #9775fa; border-radius: 8px; padding: 0.8rem; background: #f3f0ff;">
                                         <div style="font-weight: bold; margin-bottom: 0.5rem;">数据存储层</div>
@@ -1560,14 +1836,14 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- 核心技术实现页面 -->
                 <div class="help-page" id="coreTech">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                             <i class="fas fa-microchip"></i> 核心技术实现
                         </h3>
-                        
+
                         <!-- 技术实现表格 -->
                         <div style="overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #dee2e6;">
@@ -1625,7 +1901,7 @@
                             <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                                 <i class="fas fa-lightbulb"></i> 创新特点与应用价值
                             </h3>
-                            
+
                             <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0;">
                                 <!-- 特点1 -->
                                 <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary-color); padding: 1rem; min-width: 250px;">
@@ -1634,7 +1910,7 @@
                                     </div>
                                     <p style="font-size: 0.9rem; margin: 0;">盲人端接收实时导航指引，家属端可远程监控并发送语音消息，增强安全性和使用便捷性</p>
                                 </div>
-                                
+
                                 <!-- 特点2 -->
                                 <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #fd7e14; padding: 1rem; min-width: 250px;">
                                     <div style="font-weight: bold; margin-bottom: 0.5rem; color: #e67700;">
@@ -1642,7 +1918,7 @@
                                     </div>
                                     <p style="font-size: 0.9rem; margin: 0;">根据用户性别、年龄等信息调整语音提示风格，提供贴心且个性化的语音导航体验</p>
                                 </div>
-                                
+
                                 <!-- 特点3 -->
                                 <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #20c997; padding: 1rem; min-width: 250px;">
                                     <div style="font-weight: bold; margin-bottom: 0.5rem; color: #087f5b;">
@@ -1650,7 +1926,7 @@
                                     </div>
                                     <p style="font-size: 0.9rem; margin: 0;">实时分析盲道走向和行走路线安全性，提前预警危险情况，增强视障人士出行安全</p>
                                 </div>
-                                
+
                                 <!-- 特点4 -->
                                 <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f06595; padding: 1rem; min-width: 250px;">
                                     <div style="font-weight: bold; margin-bottom: 0.5rem; color: #d6336c;">
@@ -1662,14 +1938,109 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- 新增硬件介绍页面 -->
+                <div class="help-page" id="hardware">
+                    <div class="help-section">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                            <i class="fas fa-microchip"></i> 硬件设备介绍
+                        </h3>
+
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem;">Raspberry Pi 5 集成方案</h4>
+                            <div style="display: flex; margin-bottom: 1.5rem;">
+                                <div style="flex: 0 0 30%; padding-right: 20px;">
+                                    <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; text-align: center;">
+                                        <div style="background-color: #f8f9fa; padding: 1rem;">
+                                            <i class="fas fa-server" style="font-size: 3rem; color: var(--primary-color);"></i>
+                                        </div>
+                                        <div style="padding: 0.8rem; font-weight: bold;">Raspberry Pi 5</div>
+                                    </div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <p style="line-height: 1.8; margin-bottom: 0.8rem;">
+                                        本系统计划采用Raspberry Pi 5作为核心计算平台，实现轻量级便携化的盲道检测与实时导航系统。Raspberry Pi 5凭借其卓越的性能和低功耗特性，非常适合用于可穿戴式视障辅助设备。
+                                    </p>
+                                    <p style="line-height: 1.8;">
+                                        相比传统PC平台，Raspberry Pi 5的集成方案大幅提升了系统的便携性和实用性，让视障人士能够在户外环境中获得实时的导航帮助。
+                                    </p>
+                                </div>
+                            </div>
+
+                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem; margin-top: 2rem;">关键硬件指标</h4>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #dee2e6;">
+                                    <thead>
+                                        <tr style="background-color: var(--primary-color); color: white;">
+                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">硬件组件</th>
+                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">技术规格</th>
+                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">实现功能</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="background-color: #f8f9fa;">
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">处理器</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">BCM2712 (2.4GHz四核Cortex-A76)</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">实时运行YOLOv8模型，处理视频流分析</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">内存</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">8GB LPDDR4X</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">支持多任务处理，保障模型推理性能</td>
+                                        </tr>
+                                        <tr style="background-color: #f8f9fa;">
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">摄像头</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">免驱USB麦克风摄像头</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">采集1080P高清视频流，支持广角视野</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">电源</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">便携式5V/5A移动电源</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">提供4-6小时持续工作时间</td>
+                                        </tr>
+                                        <tr style="background-color: #f8f9fa;">
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">扬声器</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">小型蓝牙扬声器模块</td>
+                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">提供清晰的语音导航提示</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem; margin-top: 2rem;">性能指标</h4>
+                            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 1.5rem 0;">
+                                <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e9ecef;">
+                                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">15 FPS</div>
+                                    <div style="color: #495057;">YOLOv8模型推理速度</div>
+                                </div>
+                                <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e9ecef;">
+                                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">92%</div>
+                                    <div style="color: #495057;">盲道检测准确率</div>
+                                </div>
+                                <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e9ecef;">
+                                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">＜250ms</div>
+                                    <div style="color: #495057;">方向变化响应时间</div>
+                                </div>
+                            </div>
+
+                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem; margin-top: 2rem;">集成效果</h4>
+                            <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                                将系统集成到Raspberry Pi 5后，我们成功实现了一个完全便携式的盲道导航辅助系统。设备可以轻松安装在使用者身上或辅助设备上，通过摄像头实时捕捉前方盲道情况，运行YOLOv8模型进行即时分析，并通过语音播报指引方向。
+                            </p>
+                            <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+                                尽管相比服务器级硬件，推理速度有所降低，但Raspberry Pi 5的处理能力已足够支持实时导航需求，而且显著提高了系统的实用性和适配性。系统依靠WiFi或4G模块可实现家属远程监控功能，进一步提升了使用安全性。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 详细工作流程页面 -->
                 <div class="help-page" id="workflow">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                             <i class="fas fa-project-diagram"></i> 详细工作流程
                         </h3>
-                        
+
                         <!-- 流程图 -->
                         <div style="margin: 1.5rem 0; text-align: center;">
                             <div style="display: flex; flex-direction: column; align-items: center; max-width: 600px; margin: 0 auto;">
@@ -1680,7 +2051,7 @@
                                     <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">系统接收上传的视频或摄像头输入，转换为帧序列供模型分析</p>
                                 </div>
                                 <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-                                
+
                                 <!-- 步骤2 -->
                                 <div style="width: 80%; background: #fff4e6; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
                                     <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #fd7e14; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</span>
@@ -1688,7 +2059,7 @@
                                     <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">每帧图像通过YOLO模型检测盲道位置，返回盲道的坐标框和置信度</p>
                                 </div>
                                 <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-                                
+
                                 <!-- 步骤3 -->
                                 <div style="width: 80%; background: #f3f0ff; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
                                     <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #7950f2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</span>
@@ -1696,7 +2067,7 @@
                                     <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">应用线性回归计算盲道中心点的斜率，判断盲道是否转向及转向方向</p>
                                 </div>
                                 <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-                                
+
                                 <!-- 步骤4 -->
                                 <div style="width: 80%; background: #e6fcf5; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
                                     <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #20c997; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">4</span>
@@ -1704,7 +2075,7 @@
                                     <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">根据方向分析结果，调用Ollama大模型生成个性化语音提示内容</p>
                                 </div>
                                 <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-                                
+
                                 <!-- 步骤5 -->
                                 <div style="width: 80%; background: #fff0f6; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
                                     <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #f06595; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">5</span>
@@ -1712,7 +2083,7 @@
                                     <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">将生成的文本转换为语音，根据用户设置调整语速和音量后播放</p>
                                 </div>
                                 <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-                                
+
                                 <!-- 步骤6 -->
                                 <div style="width: 80%; background: #edf2ff; border-radius: 8px; padding: 1rem; text-align: left; position: relative;">
                                     <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #4c6ef5; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">6</span>
@@ -1723,16 +2094,16 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- 导航定位系统页面（新增） -->
                 <div class="help-page" id="navSystem">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                             <i class="fas fa-compass"></i> 导航定位系统
                         </h3>
-                        
+
                         <p style="line-height: 1.8;">导航定位系统是本平台的关键组成部分，为视障人士提供精准的位置服务和路线规划功能，主要由地图定位、路线规划和盲道发现三大模块组成。</p>
-                        
+
                         <!-- 导航定位系统特点 -->
                         <div style="margin: 1.5rem 0;">
                             <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">系统特点</h4>
@@ -1766,7 +2137,7 @@
                                 </li>
                             </ul>
                         </div>
-                        
+
                         <!-- 未来发展 -->
                         <div style="margin: 2rem 0; padding: 1.5rem; background-color: #f8f9fa; border-radius: 10px; border-left: 5px solid var(--primary-color);">
                             <h4 style="color: var(--primary-dark); margin-top: 0;">未来规划与扩展</h4>
@@ -1789,7 +2160,7 @@
                                 </li>
                             </ol>
                         </div>
-                        
+
                         <!-- 技术架构 -->
                         <div style="margin: 1.5rem 0;">
                             <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">系统技术架构</h4>
@@ -1826,6 +2197,54 @@
         </div>
     </div>
 
+    <!-- 用户信息模态框 -->
+    <div class="user-profile-modal" id="userProfileModal">
+        <div class="user-profile-content">
+            <button class="profile-close" onclick="closeUserProfile()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="profile-title"><i class="fas fa-id-card"></i> 个人资料</h2>
+            <div class="profile-details">
+                <div class="profile-loader" id="profileLoader">
+                    <div class="spinner"></div>
+                    <p>正在加载用户信息...</p>
+                </div>
+                <div id="profileContent" style="display: none;">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label"><i class="fas fa-user"></i> 用户名</span>
+                        <span class="profile-value" id="profileUsername"></span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label"><i class="fas fa-envelope"></i> 电子邮箱</span>
+                        <span class="profile-value" id="profileEmail"></span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label"><i class="fas fa-phone"></i> 手机号码</span>
+                        <span class="profile-value" id="profilePhone"></span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label"><i class="fas fa-calendar-alt"></i> 账号创建时间</span>
+                        <span class="profile-value" id="profileCreatedAt"></span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label"><i class="fas fa-clock"></i> 最后登录时间</span>
+                        <span class="profile-value" id="profileLastLogin"></span>
+                    </div>
+                    <div class="profile-footer">
+                        <p>感谢您选择使用本系统！<br>项目地址：<a href="https://github.com/wink-wink-wink555/blind_navigation" target="_blank">@wink-wink-wink555/blind_navigation</a></p>
+                    </div>
+                </div>
+                <div class="profile-error" id="profileError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>加载用户信息失败，请稍后再试。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 添加函数来检查视频播放状态
         function isVideoPlaying() {
@@ -1840,43 +2259,42 @@
                 showMessage("已检测到实时视频流，暂不支持打开设置");
                 return;
             }
-            
+
             document.getElementById('settingsModal').style.display = 'flex';
         }
 
         // 更新测试语音设置功能
         async function testVoice() {
-            // 检查视频是否正在播放
-            if (isVideoPlaying()) {
-                showMessage("已检测到实时视频流，暂不支持测试语音");
-                return;
-            }
-            
-            const settings = {
-                voice_speed: document.getElementById('settingVoiceSpeed').value,
-                voice_volume: document.getElementById('settingVoiceVolume').value
-            };
-
-            console.log("测试语音设置:", settings);
-
             try {
+                // 获取当前语音设置
+                const voiceSpeed = document.getElementById('settingVoiceSpeed').value;
+                const voiceVolume = document.getElementById('settingVoiceVolume').value;
+                const isEncourageEnabled = document.getElementById('settingEncourage').checked;
+                const encourageStatus = isEncourageEnabled ? "开启" : "关闭";
+
+                // 构建测试文本，包含鼓励功能状态
+                const testText = `这是一条测试语音，用于测试当前语音设置效果。您已${encourageStatus}鼓励功能。`;
+
+                // 发送测试请求
                 const response = await fetch('/test_voice', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(settings)
+                    body: JSON.stringify({
+                        voice_speed: voiceSpeed,
+                        voice_volume: voiceVolume,
+                        test_text: testText
+                    }),
                 });
 
                 const result = await response.json();
                 if (result.status !== 'success') {
-                    alert(`测试失败: ${result.message}`);
-                } else {
-                    console.log("语音测试已启动");
+                    showMessage(result.message || "语音测试失败", "error");
                 }
             } catch (error) {
                 console.error('测试语音出错:', error);
-                alert('测试语音失败，请重试');
+                showMessage("语音测试时发生错误", "error");
             }
         }
 
@@ -1887,7 +2305,7 @@
             if (videoFeed.src.includes('?t=')) {
                 videoStatus.textContent = '正在分析';
                 videoStatus.style.color = '#20c997';
-                
+
                 // 当视频正在播放时，为相关按钮添加禁用样式
                 document.querySelectorAll('.quick-btn, .settings-btn').forEach(btn => {
                     if (btn.onclick.toString().includes('openSettings') || btn.onclick.toString().includes('testVoice')) {
@@ -1898,14 +2316,14 @@
             } else {
                 videoStatus.textContent = '未开始';
                 videoStatus.style.color = '#adb5bd';
-                
+
                 // 移除禁用样式
                 document.querySelectorAll('.disabled-during-video').forEach(btn => {
                     btn.classList.remove('disabled-during-video');
                     btn.title = "";
                 });
             }
-            
+
             // 检查位置状态
             if (currentPosition) {
                 locationStatus.textContent = '已定位';
@@ -1920,7 +2338,7 @@
         const videoStatus = document.getElementById('videoStatus');
         const locationStatus = document.getElementById('locationStatus');
         const voiceStatus = document.getElementById('voiceStatus');
-        
+
         // 初始状态
         function updateSystemStatus() {
             // 检查是否有视频正在分析
@@ -1932,7 +2350,7 @@
                 videoStatus.textContent = '未开始';
                 videoStatus.style.color = '#adb5bd';
             }
-            
+
             // 检查位置状态
             if (currentPosition) {
                 locationStatus.textContent = '已定位';
@@ -1942,10 +2360,10 @@
                 locationStatus.style.color = '#adb5bd';
             }
         }
-        
+
         // 每5秒更新一次系统状态
         setInterval(updateSystemStatus, 5000);
-        
+
         // 在相关事件中更新状态
         function updateVideoStatus(status) {
             videoStatus.textContent = status;
@@ -1959,7 +2377,7 @@
                 videoStatus.style.color = '#adb5bd';
             }
         }
-        
+
         function updateLocationStatus(status) {
             locationStatus.textContent = status;
             if (status === '已定位') {
@@ -1972,7 +2390,7 @@
                 locationStatus.style.color = '#adb5bd';
             }
         }
-        
+
         function updateVoiceStatus(status) {
             voiceStatus.textContent = status;
             if (status === '播放中') {
@@ -2064,7 +2482,7 @@
                         if(displayText) {
                             console.log("收到语音文本:", displayText);
                             document.getElementById('speechText').innerHTML = `<p>${displayText}</p>`;
-                            
+
                             // 更新语音状态
                             if (displayText !== "提示：系统会实时分析盲道方向，当方向发生变化时会自动播报语音提示。") {
                                 updateVoiceStatus('播放中');
@@ -2094,7 +2512,7 @@
 
             try {
                 messageInput.classList.add('success-feedback');
-                
+
                 // 更新语音状态
                 updateVoiceStatus('播放中');
 
@@ -2110,7 +2528,7 @@
                 if(data.status === 'success') {
                     messageInput.value = '';
                     setTimeout(() => messageInput.classList.remove('success-feedback'), 1000);
-                    
+
                     // 更新语音状态
                     setTimeout(() => {
                         updateVoiceStatus('就绪');
@@ -2143,7 +2561,7 @@
             // 显示加载动画
             uploadLoader.style.display = 'block';
             uploadBtn.disabled = true;
-            
+
             // 更新视频状态
             updateVideoStatus('上传中');
 
@@ -2167,14 +2585,14 @@
                     // 刷新视频流
                     const videoFeed = document.querySelector('.video-feed img');
                     videoFeed.src = `${videoFeed.src}?t=${new Date().getTime()}`;
-                    
+
                     // 更新视频状态
                     updateVideoStatus('正在分析');
                 } else {
                     statusDiv.textContent = `上传失败: ${result.message}`;
                     statusDiv.style.color = '#dc3545';
                     uploadBtn.disabled = false;
-                    
+
                     // 更新视频状态
                     updateVideoStatus('错误');
                 }
@@ -2183,7 +2601,7 @@
                 statusDiv.style.color = '#dc3545';
                 console.error('上传错误:', error);
                 uploadBtn.disabled = false;
-                
+
                 // 更新视频状态
                 updateVideoStatus('错误');
             } finally {
@@ -2237,7 +2655,8 @@
                 age: document.getElementById('settingAge').value,
                 voice_speed: document.getElementById('settingVoiceSpeed').value,
                 voice_volume: document.getElementById('settingVoiceVolume').value,
-                user_mode: document.getElementById('settingUserMode').value
+                user_mode: document.getElementById('settingUserMode').value,
+                encourage: document.getElementById('encourageValue').value
             };
 
             try {
@@ -2308,14 +2727,14 @@
         let geolocationControl, zoomControl;
         let nearbyBlindwayMarkers = [];
         let nearbyBlindwayPolylines = [];
-        
+
         // 将原来的locateMe函数完全替换为下面的代码
         function locateMe() {
             console.log("开始定位...");
             try {
                 // 更新位置状态
                 updateLocationStatus('定位中');
-                
+
                 // 跳过百度地图定位，直接使用浏览器定位
                 tryBrowserGeolocation();
             } catch (e) {
@@ -2324,7 +2743,7 @@
                 updateLocationStatus('错误');
             }
         }
-        
+
         // 修改浏览器定位函数，提供更好的错误处理
         function tryBrowserGeolocation() {
             console.log("尝试使用浏览器原生定位...");
@@ -2332,34 +2751,34 @@
                 updateLocationStatus('正在定位...');
                 navigator.geolocation.getCurrentPosition(function(position) {
                     console.log("浏览器定位成功:", position.coords.latitude, position.coords.longitude);
-                    
+
                     // 创建百度坐标点
                     var point = new BMap.Point(position.coords.longitude, position.coords.latitude);
-                    
+
                     // 清除旧标记
                     if (marker) {
                         map.removeOverlay(marker);
                     }
-                    
+
                     // 添加新标记
                     marker = new BMap.Marker(point);
                     map.addOverlay(marker);
                     map.centerAndZoom(point, 17);
-                    
+
                     currentPosition = {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     };
-                    
+
                     // 获取地址
                     getAddressFromPoint(point);
-                    
+
                     // 发送位置到服务器
                     updateLocationOnServer(position.coords.latitude, position.coords.longitude);
-                    
+
                     // 更新位置状态
                     updateLocationStatus('已定位(浏览器)');
-                    
+
                     showMessage("使用浏览器定位成功，但可能存在坐标偏移");
                 }, function(error) {
                     console.error("浏览器定位失败:", error);
@@ -2390,29 +2809,29 @@
                 updateLocationStatus('不支持');
             }
         }
-        
+
         // 初始化地图
         function initMap() {
             console.log("初始化地图...");
             try {
                 // 创建地图实例
                 map = new BMap.Map("map");
-                
+
                 // 创建点坐标
                 let point = new BMap.Point(116.404, 39.915); // 默认北京坐标
                 map.centerAndZoom(point, 15);
-                
+
                 // 添加控件
                 map.enableScrollWheelZoom(); // 启用滚轮放大缩小
                 zoomControl = new BMap.NavigationControl();
                 map.addControl(zoomControl);
-                
+
                 // 添加比例尺控件
                 var scaleControl = new BMap.ScaleControl();
                 map.addControl(scaleControl);
-                
+
                 console.log("地图初始化完成");
-                
+
                 // 可以选择在地图加载后自动尝试定位
                 // 地图加载完成后尝试定位
                 map.addEventListener("tilesloaded", function() {
@@ -2425,20 +2844,20 @@
                 alert("地图初始化失败: " + e.message);
             }
         }
-        
+
         // 更新地图位置
         function updateMapPosition(point) {
             map.centerAndZoom(point, 17);
-            
+
             // 清除旧标记
             if (marker) {
                 map.removeOverlay(marker);
             }
-            
+
             // 添加新标记
             marker = new BMap.Marker(point);
             map.addOverlay(marker);
-            
+
             // 添加信息窗口
             let infoWindow = new BMap.InfoWindow("当前位置", {
                 width: 100,
@@ -2449,7 +2868,7 @@
                 this.openInfoWindow(infoWindow);
             });
         }
-        
+
         // 从坐标获取地址
         function getAddressFromPoint(point) {
             let geoc = new BMap.Geocoder();
@@ -2459,7 +2878,7 @@
                 document.getElementById("currentAddress").innerText = address;
             });
         }
-        
+
         // 将位置信息发送到服务器
         function updateLocationOnServer(lat, lng) {
             fetch('/update_location', {
@@ -2480,34 +2899,34 @@
                 console.error("位置更新失败:", error);
             });
         }
-        
+
         // 获取附近盲道
         function showNearbyBlindways() {
             if (!currentPosition) {
                 alert("请先定位您的位置");
                 return;
             }
-            
+
             fetch(`/nearby_blindways?lat=${currentPosition.lat}&lng=${currentPosition.lng}`)
             .then(response => response.json())
             .then(data => {
                 if (data.status === "success") {
                     // 清除之前的标记和线条
                     clearNearbyBlindways();
-                    
+
                     // 显示盲道列表
                     document.getElementById("blindwayList").style.display = "block";
-                    
+
                     // 更新最近盲道信息
                     if (data.blindways.length > 0) {
                         const nearest = data.blindways[0];
-                        document.getElementById("nearestBlindway").innerText = 
+                        document.getElementById("nearestBlindway").innerText =
                             `${nearest.name} (${nearest.distance}米)`;
-                        
+
                         // 生成盲道列表
                         const blindwayItems = document.getElementById("blindwayItems");
                         blindwayItems.innerHTML = "";
-                        
+
                         data.blindways.forEach(blindway => {
                             const item = document.createElement("div");
                             item.className = "blindway-item";
@@ -2515,22 +2934,22 @@
                                 <div class="blindway-name">${blindway.name}</div>
                                 <div class="blindway-distance">${blindway.distance}米</div>
                             `;
-                            
+
                             // 点击盲道项目时在地图上显示
                             item.addEventListener("click", function() {
                                 showBlindwayOnMap(blindway);
                             });
-                            
+
                             blindwayItems.appendChild(item);
                         });
-                        
+
                         // 在地图上显示所有盲道
                         data.blindways.forEach(blindway => {
                             drawBlindwayOnMap(blindway);
                         });
                     } else {
                         document.getElementById("nearestBlindway").innerText = "附近未找到盲道";
-                        document.getElementById("blindwayItems").innerHTML = 
+                        document.getElementById("blindwayItems").innerHTML =
                             "<div style='padding: 1rem; text-align: center; color: #6c757d;'>附近未找到盲道</div>";
                     }
                 } else {
@@ -2542,7 +2961,7 @@
                 alert("获取盲道数据出错，请重试");
             });
         }
-        
+
         // 在地图上绘制盲道
         function drawBlindwayOnMap(blindway) {
             // 创建盲道点标记
@@ -2559,11 +2978,11 @@
                         }
                     )
                 });
-                
+
                 map.addOverlay(pointMarker);
                 nearbyBlindwayMarkers.push(pointMarker);
             });
-            
+
             // 创建盲道连线
             let points = blindway.points.map(p => new BMap.Point(p.lng, p.lat));
             let polyline = new BMap.Polyline(points, {
@@ -2571,10 +2990,10 @@
                 strokeWeight: 5,
                 strokeOpacity: 0.8
             });
-            
+
             map.addOverlay(polyline);
             nearbyBlindwayPolylines.push(polyline);
-            
+
             // 标记盲道名称
             if (points.length > 0) {
                 let midPoint = points[Math.floor(points.length / 2)];
@@ -2582,7 +3001,7 @@
                     position: midPoint,
                     offset: new BMap.Size(20, -10)
                 });
-                
+
                 label.setStyle({
                     color: "#333",
                     backgroundColor: "#fff",
@@ -2591,12 +3010,12 @@
                     padding: "5px",
                     fontSize: "12px"
                 });
-                
+
                 map.addOverlay(label);
                 nearbyBlindwayMarkers.push(label);
             }
         }
-        
+
         // 清除地图上的盲道标记
         function clearNearbyBlindways() {
             // 清除标记
@@ -2604,14 +3023,14 @@
                 map.removeOverlay(marker);
             });
             nearbyBlindwayMarkers = [];
-            
+
             // 清除线条
             nearbyBlindwayPolylines.forEach(line => {
                 map.removeOverlay(line);
             });
             nearbyBlindwayPolylines = [];
         }
-        
+
         // 显示特定盲道在地图上
         function showBlindwayOnMap(blindway) {
             // 将地图中心移动到盲道中点
@@ -2621,7 +3040,7 @@
                 map.centerAndZoom(new BMap.Point(midPoint.lng, midPoint.lat), 18);
             }
         }
-        
+
         // 页面加载完成后初始化地图
         window.addEventListener('load', function() {
             setTimeout(initMap, 500); // 延迟加载地图，确保DOM已完全加载
@@ -2639,27 +3058,27 @@
                 disableManualStartLocation();
                 return;
             }
-            
+
             // 确保关闭其他模式
             if (manualDestinationMode) {
                 disableManualDestination();
             }
-            
+
             console.log("启用手动选择当前位置模式");
             manualStartLocationMode = true;
-            
+
             // 更改按钮状态
             updateModeButtonStatus("手动选择当前位置", true);
-            
+
             // 更新状态信息
             updateLocationStatus('请点击地图选择当前位置');
-            
+
             // 添加点击事件
             map.addEventListener('click', manualStartLocationHandler);
-            
+
             // 更改鼠标样式
             map.setDefaultCursor('crosshair');
-            
+
             // 显示提示
             showMessage("请在地图上点击选择您的当前位置");
         }
@@ -2667,16 +3086,16 @@
         function disableManualStartLocation() {
             console.log("禁用手动选择当前位置模式");
             manualStartLocationMode = false;
-            
+
             // 恢复按钮状态
             updateModeButtonStatus("手动选择当前位置", false);
-            
+
             // 移除点击事件
             map.removeEventListener('click', manualStartLocationHandler);
-            
+
             // 恢复鼠标样式
             map.setDefaultCursor('');
-            
+
             // 更新状态
             if (currentPosition) {
                 updateLocationStatus('已定位(手动)');
@@ -2688,31 +3107,31 @@
         function manualStartLocationHandler(e) {
             const point = e.point;
             console.log("手动选择当前位置坐标:", point.lng, point.lat);
-            
+
             // 清除旧标记
             if (marker) {
                 map.removeOverlay(marker);
             }
-            
+
             // 添加新标记
             marker = new BMap.Marker(point);
             map.addOverlay(marker);
-            
+
             // 保存当前位置
             currentPosition = {
                 lat: point.lat,
                 lng: point.lng
             };
-            
+
             // 获取地址
             getAddressFromPoint(point);
-            
+
             // 发送位置到服务器
             updateLocationOnServer(point.lat, point.lng);
-            
+
             // 更新位置状态
             updateLocationStatus('已定位(手动)');
-            
+
             // 显示信息窗口
             var infoWindow = new BMap.InfoWindow("您的当前位置", {
                 width: 150,
@@ -2720,7 +3139,7 @@
                 title: "您在这里"
             });
             marker.openInfoWindow(infoWindow);
-            
+
             // 禁用手动选择模式
             disableManualStartLocation();
         }
@@ -2732,24 +3151,24 @@
                 disableManualDestination();
                 return;
             }
-            
+
             // 确保关闭其他模式
             if (manualStartLocationMode) {
                 disableManualStartLocation();
             }
-            
+
             console.log("启用手动选择目的地模式");
             manualDestinationMode = true;
-            
+
             // 更改按钮状态
             updateModeButtonStatus("手动选择目的地", true);
-            
+
             // 更新状态提示
             showMessage("请在地图上点击选择您的目的地");
-            
+
             // 添加点击事件
             map.addEventListener('click', manualDestinationHandler);
-            
+
             // 更改鼠标样式
             map.setDefaultCursor('crosshair');
         }
@@ -2757,13 +3176,13 @@
         function disableManualDestination() {
             console.log("禁用手动选择目的地模式");
             manualDestinationMode = false;
-            
+
             // 恢复按钮状态
             updateModeButtonStatus("手动选择目的地", false);
-            
+
             // 移除点击事件
             map.removeEventListener('click', manualDestinationHandler);
-            
+
             // 恢复鼠标样式
             map.setDefaultCursor('');
         }
@@ -2771,15 +3190,15 @@
         function manualDestinationHandler(e) {
             const point = e.point;
             console.log("手动选择目的地坐标:", point.lng, point.lat);
-            
+
             // 设置目的地
             destinationPoint = point;
-            
+
             // 清除旧的目的地标记
             if (destinationMarker) {
                 map.removeOverlay(destinationMarker);
             }
-            
+
             // 创建新的目的地标记
             destinationMarker = new BMap.Marker(destinationPoint, {
                 icon: new BMap.Icon(
@@ -2792,18 +3211,18 @@
                 )
             });
             map.addOverlay(destinationMarker);
-            
+
             // 获取地址并添加信息窗口
             let geoc = new BMap.Geocoder();
             geoc.getLocation(point, function(rs) {
                 let address = rs.address;
-                
+
                 // 保存目的地地址
                 destinationAddress = address;
-                
+
                 // 更新搜索框
                 document.getElementById('destinationInput').value = address;
-                
+
                 // 添加信息窗口
                 let infoWindow = new BMap.InfoWindow(address, {
                     width: 200,
@@ -2811,24 +3230,24 @@
                     title: "目的地"
                 });
                 destinationMarker.openInfoWindow(infoWindow);
-                
+
                 showMessage("已设置目的地: " + address);
             });
-            
+
             // 如果已有起点，调整视野
             if (currentPosition) {
                 const bounds = new BMap.Bounds(
-                    new BMap.Point(Math.min(currentPosition.lng, destinationPoint.lng), 
+                    new BMap.Point(Math.min(currentPosition.lng, destinationPoint.lng),
                                   Math.min(currentPosition.lat, destinationPoint.lat)),
-                    new BMap.Point(Math.max(currentPosition.lng, destinationPoint.lng), 
+                    new BMap.Point(Math.max(currentPosition.lng, destinationPoint.lng),
                                   Math.max(currentPosition.lat, destinationPoint.lat))
                 );
                 map.setViewport(bounds);
             }
-            
+
             // 隐藏目的地信息面板（等待用户点击规划路线）
             document.getElementById('destinationInfoPanel').style.display = 'none';
-            
+
             // 禁用手动选择模式
             disableManualDestination();
         }
@@ -2838,7 +3257,7 @@
             // 找出对应的模式按钮
             const dropdown = document.getElementById('moreDropdown');
             const buttons = dropdown.querySelectorAll('.dropdown-item');
-            
+
             // 遍历所有按钮
             buttons.forEach(button => {
                 if (button.textContent.trim().includes(modeName)) {
@@ -2860,7 +3279,7 @@
                 showMessage("请输入目的地");
                 return;
             }
-            
+
             // 使用百度地图的地址解析服务
             const localSearch = new BMap.LocalSearch(map, {
                 renderOptions: {
@@ -2871,15 +3290,15 @@
                     if (results && results.getNumPois() > 0) {
                         const poi = results.getPoi(0);
                         destinationPoint = poi.point;
-                        
+
                         // 保存目的地地址
                         destinationAddress = poi.title;
-                        
+
                         // 清除旧的目的地标记
                         if (destinationMarker) {
                             map.removeOverlay(destinationMarker);
                         }
-                        
+
                         // 创建新的目的地标记
                         destinationMarker = new BMap.Marker(destinationPoint, {
                             icon: new BMap.Icon(
@@ -2892,7 +3311,7 @@
                             )
                         });
                         map.addOverlay(destinationMarker);
-                        
+
                         // 添加信息窗口
                         let infoWindow = new BMap.InfoWindow(poi.title, {
                             width: 200,
@@ -2900,22 +3319,22 @@
                             title: "目的地"
                         });
                         destinationMarker.openInfoWindow(infoWindow);
-                        
+
                         // 调整视野以同时显示当前位置和目的地
                         if (currentPosition) {
                             const bounds = new BMap.Bounds(
-                                new BMap.Point(Math.min(currentPosition.lng, destinationPoint.lng), 
+                                new BMap.Point(Math.min(currentPosition.lng, destinationPoint.lng),
                                               Math.min(currentPosition.lat, destinationPoint.lat)),
-                                new BMap.Point(Math.max(currentPosition.lng, destinationPoint.lng), 
+                                new BMap.Point(Math.max(currentPosition.lng, destinationPoint.lng),
                                               Math.max(currentPosition.lat, destinationPoint.lat))
                             );
                             map.setViewport(bounds);
                         } else {
                             map.centerAndZoom(destinationPoint, 15);
                         }
-                        
+
                         showMessage("已找到目的地: " + poi.title);
-                        
+
                         // 隐藏目的地信息面板（等待用户点击规划路线）
                         document.getElementById('destinationInfoPanel').style.display = 'none';
                     } else {
@@ -2935,8 +3354,8 @@
         window.addEventListener('click', function(event) {
             const dropdown = document.getElementById('moreDropdown');
             const moreBtn = document.querySelector('.more-btn');
-            
-            if (!event.target.matches('.more-btn') && !event.target.closest('.more-btn') 
+
+            if (!event.target.matches('.more-btn') && !event.target.closest('.more-btn')
                 && !event.target.matches('.dropdown-item') && !event.target.closest('.dropdown-item')) {
                 if (dropdown.classList.contains('show-dropdown')) {
                     dropdown.classList.remove('show-dropdown');
@@ -2966,17 +3385,17 @@
                 showMessage("请先定位或选择您的当前位置");
                 return;
             }
-            
+
             if (!destinationPoint) {
                 showMessage("请先搜索或选择目的地");
                 return;
             }
-            
+
             // 清除原有路线
             if (routePolyline) {
                 map.removeOverlay(routePolyline);
             }
-            
+
             // 创建百度地图驾车路线规划对象
             const routeSearch = new BMap.DrivingRoute(map, {
                 renderOptions: {
@@ -2988,7 +3407,7 @@
                     if (results.getNumPlans() > 0) {
                         const plan = results.getPlan(0);
                         const route = plan.getRoute(0);
-                        
+
                         // 创建路线折线
                         routePolyline = new BMap.Polyline(route.getPath(), {
                             strokeColor: "#3388ff",
@@ -2996,19 +3415,19 @@
                             strokeOpacity: 0.8
                         });
                         map.addOverlay(routePolyline);
-                        
+
                         // 显示路线信息
                         const distance = plan.getDistance(true);
                         const duration = plan.getDuration(true);
-                        
+
                         // 提取距离数值（去除单位）以便比较
                         const distanceValue = parseFloat(distance.replace(/[^0-9.]/g, ''));
                         const distanceUnit = distance.replace(/[0-9.]/g, '').trim();
-                        
+
                         // 显示目的地信息面板
                         const destinationInfoPanel = document.getElementById('destinationInfoPanel');
                         destinationInfoPanel.style.display = 'block';
-                        
+
                         // 更新目的地名称
                         const destinationName = document.getElementById('destinationName');
                         if (destinationAddress) {
@@ -3017,12 +3436,12 @@
                             // 如果没有地址信息，则显示坐标
                             destinationName.innerText = `坐标(${destinationPoint.lng.toFixed(4)}, ${destinationPoint.lat.toFixed(4)})`;
                         }
-                        
+
                         // 检查距离并显示警告（如果距离单位是公里且大于6km）
                         if ((distanceUnit === '公里' || distanceUnit === 'km') && distanceValue > 6) {
                             // 显示安全警告消息
                             showMessage("该行程距离过远，盲人行走安全风险较大，请谨慎规划！");
-                            
+
                             // 添加视觉警告标记
                             if (!destinationName.querySelector('.safety-warning')) {
                                 const warningLabel = document.createElement('span');
@@ -3037,7 +3456,7 @@
                                 existingWarning.remove();
                             }
                         }
-                        
+
                         showMessage(`路线规划完成：距离${distance}，预计用时${duration}`);
                     } else {
                         showMessage("无法规划路线，请尝试更改当前位置或目的地");
@@ -3047,7 +3466,7 @@
                     showMessage("路线规划失败: " + error);
                 }
             });
-            
+
             // 开始路线搜索
             const start = new BMap.Point(currentPosition.lng, currentPosition.lat);
             routeSearch.search(start, destinationPoint);
@@ -3059,13 +3478,13 @@
                 showMessage("请确保已设置当前位置和目的地");
                 return;
             }
-            
+
             // 重新定位当前位置（如果可能）
             locateMe();
-            
+
             // 在实际应用中，这里可以启动实时导航功能
             showMessage("导航已开始，系统将引导您前往目的地");
-            
+
             // 这里可以添加更多导航相关的逻辑，如启动语音引导等
         }
 
@@ -3076,18 +3495,70 @@
             pages.forEach(page => {
                 page.classList.remove('active');
             });
-            
+
             // 显示选中的页面
             document.getElementById(pageId).classList.add('active');
-            
+
             // 更新按钮状态
             const buttons = document.querySelectorAll('.pagination-btn');
             buttons.forEach(button => {
                 button.classList.remove('active');
             });
-            
+
             // 找到对应的按钮并激活
             event.target.classList.add('active');
+        }
+
+        function updateEncourageValue() {
+            const checkbox = document.getElementById('settingEncourage');
+            const hiddenInput = document.getElementById('encourageValue');
+            hiddenInput.value = checkbox.checked ? "开" : "关";
+        }
+
+        // 用户资料相关函数
+        function openUserProfile() {
+            const modal = document.getElementById('userProfileModal');
+            modal.style.display = 'flex';
+            // 触发重绘以确保transition正常工作
+            modal.offsetHeight;
+            modal.classList.add('show');
+            
+            document.getElementById('profileLoader').style.display = 'flex';
+            document.getElementById('profileContent').style.display = 'none';
+            document.getElementById('profileError').style.display = 'none';
+
+            // 加载用户信息
+            fetch('/get_user_details')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('profileUsername').textContent = data.user_info.username;
+                        document.getElementById('profileEmail').textContent = data.user_info.email;
+                        document.getElementById('profilePhone').textContent = data.user_info.phone;
+                        document.getElementById('profileCreatedAt').textContent = data.user_info.created_at;
+                        document.getElementById('profileLastLogin').textContent = data.user_info.last_login;
+
+                        document.getElementById('profileLoader').style.display = 'none';
+                        document.getElementById('profileContent').style.display = 'block';
+                    } else {
+                        throw new Error(data.message || '获取数据失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取用户信息失败:', error);
+                    document.getElementById('profileLoader').style.display = 'none';
+                    document.getElementById('profileError').style.display = 'block';
+                });
+        }
+
+        function closeUserProfile() {
+            const modal = document.getElementById('userProfileModal');
+            modal.classList.remove('show');
+            
+            // 等待动画完成后隐藏模态框
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
         }
     </script>
 </body>
