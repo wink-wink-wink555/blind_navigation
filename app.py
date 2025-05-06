@@ -16,9 +16,8 @@ from email.header import Header
 from werkzeug.utils import secure_filename
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-import json
 import functools
-import geopy.distance  # 添加地理距离计算库
+import geopy.distance
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_for_blind_navigation_app'  # 用于session加密
@@ -74,7 +73,8 @@ user_settings = {
     "age": "未指定",  # 年龄段：青年/中年/老年/未指定
     "voice_speed": "中等",  # 语音速度：慢/中等/快
     "voice_volume": "中等",  # 语音音量：低/中等/高
-    "user_mode": "盲人端"  # 用户模式：盲人端/家属端
+    "user_mode": "盲人端",  # 用户模式：盲人端/家属端
+    "encourage": "开"  # 适当时给予鼓励：开/关
 }
 
 # 位置数据存储
@@ -103,6 +103,7 @@ def is_valid_email(email):
     import re
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
+
 
 def send_verification_email(to_email, verification_code):
     """发送验证码邮件"""
@@ -157,6 +158,7 @@ def send_verification_email(to_email, verification_code):
     except Exception as e:
         print(f"发送邮件失败: {e}")
         return False, f"发送验证码失败: {str(e)}"
+
 
 def verify_code(email, code):
     """验证邮箱验证码"""
@@ -214,6 +216,7 @@ def init_database():
                     voice_speed VARCHAR(10) DEFAULT '中等',
                     voice_volume VARCHAR(10) DEFAULT '中等',
                     user_mode VARCHAR(10) DEFAULT '盲人端',
+                    encourage VARCHAR(10) DEFAULT '开',
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             ''')
@@ -323,7 +326,8 @@ def verify_user(username, password):
             "age": settings['age'],
             "voice_speed": settings['voice_speed'],
             "voice_volume": settings['voice_volume'],
-            "user_mode": settings['user_mode']
+            "user_mode": settings['user_mode'],
+            "encourage": settings['encourage']
         }
 
         return True, "登录成功", user_config
@@ -346,11 +350,12 @@ def update_user_settings_in_db(user_id, settings):
             cursor.execute("""
                 UPDATE user_settings 
                 SET gender = %s, name = %s, age = %s, 
-                    voice_speed = %s, voice_volume = %s, user_mode = %s
+                    voice_speed = %s, voice_volume = %s, user_mode = %s, encourage = %s
                 WHERE user_id = %s
                 """,
                            (settings["gender"], settings["name"], settings["age"],
                             settings["voice_speed"], settings["voice_volume"], settings["user_mode"],
+                            settings["encourage"],
                             user_id)
                            )
 
@@ -402,7 +407,8 @@ def login():
                     "age": user_data['age'],
                     "voice_speed": user_data['voice_speed'],
                     "voice_volume": user_data['voice_volume'],
-                    "user_mode": user_data['user_mode']
+                    "user_mode": user_data['user_mode'],
+                    "encourage": user_data['encourage']
                 }
 
                 return redirect(url_for('index'))
@@ -514,6 +520,13 @@ def get_prompt_template():
 注意，盲人因为看不见路面情况，所以才需要你的语音行走提示。
 你的语气要温柔且元气。
 '''
+
+    # 如果开启了鼓励功能，在提示词中添加相关要求
+    if user_settings["encourage"] == "开":
+        prompt += '''
+请在引导方向的同时，适当给予用户温暖的鼓励和正面的肯定，例如称赞他们走得好、进步明显，或者鼓励他们继续保持自信等。
+'''
+
     return prompt
 
 
@@ -1004,8 +1017,17 @@ def voice_test():
         # 应用测试设置
         user_settings.update(test_settings)
 
-        # 启动新线程来播放测试语音 - 使用和旧版本一样的方式
-        test_text = "这是一条测试语音，用于测试当前语音设置效果。"
+        # 获取自定义测试文本，确保包含鼓励功能状态
+        test_text = data.get("test_text")
+
+        if not test_text:
+            # 如果前端没有发送测试文本，生成默认文本
+            encourage_status = "开启" if user_settings.get("encourage") == "开" else "关闭"
+            test_text = f"这是一条测试语音，用于测试当前语音设置效果。您已{encourage_status}鼓励功能。"
+
+        print(f"[测试语音] 将播放文本: {test_text}")
+
+        # 启动新线程来播放测试语音
         threading.Thread(target=speak, args=(test_text,)).start()
 
         # 恢复原始设置 - 等待一小段时间后恢复，确保语音播放使用测试设置
@@ -1121,28 +1143,33 @@ def update_location():
     """更新用户位置"""
     user_id = session.get('user_id')
     data = request.get_json()
-    
+
     if not data or 'lat' not in data or 'lng' not in data:
         return jsonify({"status": "error", "message": "位置数据不完整"}), 400
-    
+
     # 更新用户位置
     user_locations[user_id] = {
         'lat': data['lat'],
         'lng': data['lng'],
         'timestamp': time.time()
     }
-    
+
     return jsonify({
         "status": "success",
         "message": "位置已更新"
     })
+
 
 @app.route('/get_location/<int:user_id>', methods=['GET'])
 @login_required
 def get_location(user_id):
     """获取指定用户的位置"""
     # 检查权限（只允许查看自己或关联的家属/被照顾者的位置）
-    current_user_id = session.get('user_id')    
+    current_user_id = session.get('user_id')
+
+    # 这里应该有更完善的权限检查逻辑，例如家属关系验证
+    # 暂时简化为允许查看所有用户位置
+
     if user_id in user_locations:
         # 检查位置数据是否过期（例如5分钟）
         if time.time() - user_locations[user_id]['timestamp'] > 300:
@@ -1151,16 +1178,17 @@ def get_location(user_id):
                 "message": "位置数据已过期",
                 "location": user_locations[user_id]
             })
-        
+
         return jsonify({
             "status": "success",
             "location": user_locations[user_id]
         })
     else:
         return jsonify({
-            "status": "error", 
+            "status": "error",
             "message": "未找到用户位置数据"
         }), 404
+
 
 @app.route('/nearby_blindways', methods=['GET'])
 @login_required
@@ -1168,13 +1196,13 @@ def nearby_blindways():
     """获取附近的盲道数据（示例数据）"""
     # 在实际应用中，这里应该连接到盲道数据库或API
     # 现在返回示例数据用于演示
-    
+
     lat = request.args.get('lat', type=float)
     lng = request.args.get('lng', type=float)
-    
+
     if not lat or not lng:
         return jsonify({"status": "error", "message": "请提供位置参数"}), 400
-    
+
     # 示例盲道数据（在实际应用中应从数据库获取）
     sample_blindways = [
         {
@@ -1196,7 +1224,7 @@ def nearby_blindways():
             ]
         }
     ]
-    
+
     # 计算每条盲道到用户的距离
     user_coord = (lat, lng)
     for blindway in sample_blindways:
@@ -1205,16 +1233,62 @@ def nearby_blindways():
             point_coord = (point['lat'], point['lng'])
             distance = geopy.distance.distance(user_coord, point_coord).meters
             min_distance = min(min_distance, distance)
-        
+
         blindway['distance'] = round(min_distance, 1)  # 四舍五入到小数点后1位
-    
+
     # 按距离排序
     sample_blindways.sort(key=lambda x: x['distance'])
-    
+
     return jsonify({
         "status": "success",
         "blindways": sample_blindways
     })
+
+
+@app.route('/get_user_details', methods=['GET'])
+@login_required
+def get_user_details():
+    """获取当前用户的详细信息"""
+    user_id = session.get('user_id')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "数据库连接失败"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            # 查询用户详细信息
+            cursor.execute("""
+                SELECT username, email, phone, created_at, last_login
+                FROM users
+                WHERE id = %s
+            """, (user_id,))
+
+            user_info = cursor.fetchone()
+
+            if not user_info:
+                return jsonify({"status": "error", "message": "找不到用户信息"}), 404
+
+            # 格式化日期时间
+            created_at = user_info['created_at'].strftime('%Y-%m-%d %H:%M:%S') if user_info['created_at'] else "未知"
+            last_login = user_info['last_login'].strftime('%Y-%m-%d %H:%M:%S') if user_info['last_login'] else "未知"
+
+            return jsonify({
+                "status": "success",
+                "user_info": {
+                    "username": user_info['username'],
+                    "email": user_info['email'],
+                    "phone": user_info['phone'] or "未设置",
+                    "created_at": created_at,
+                    "last_login": last_login
+                }
+            })
+
+    except Exception as e:
+        print(f"获取用户信息失败: {e}")
+        return jsonify({"status": "error", "message": f"获取用户信息失败: {str(e)}"}), 500
+    finally:
+        conn.close()
 
 
 if __name__ == '__main__':
