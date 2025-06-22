@@ -22,7 +22,7 @@ Thank you for your interest in the Tactile Paving Navigation Assistant System pr
 
 1. Clone the repository to your local machine:
 ```bash
-git clone https://github.com/wink-wink-wink555/blind_navigation.git
+git clone https://github.com/your_username/blind_navigation.git
 cd blind_navigation
 ```
 
