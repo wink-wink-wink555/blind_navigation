@@ -2,7 +2,7 @@
 
 This is a Flask and YOLO model-based tactile paving navigation assistant system designed to help visually impaired people identify tactile paving and provide voice guidance.
 
-You can see the demonstration video at this link: https://www.bilibili.com/video/BV1kD57zGE68.
+You can see the demonstration video at https://www.bilibili.com/video/BV1kD57zGE68.
 
 ## Project Introduction
 
