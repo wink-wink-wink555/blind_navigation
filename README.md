@@ -279,6 +279,9 @@ Special thanks to the following members for their help with tactile paving datas
 - Liu Yiheng
 - Cai Yuxin
 - Zhang Chenshu
+- Zhang Kai
+- Shen Qian
+- Sheng sheng
 
 ## 📁 Project Structure
 
@@ -331,6 +334,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
