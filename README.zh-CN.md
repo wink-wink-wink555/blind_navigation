@@ -273,7 +273,7 @@ python app.py
 
 ## 🙏 特别感谢
 
-特别感谢以下成员在盲道数据集收集、标注和训练工作中提供的帮助：
+特别感谢以下成员在盲道数据集收集、标注与项目书撰写等工作中提供的帮助：
 - [Chen Xingyu](https://github.com/guangxiangdebizi)
 - Wang Youyi
 - Liu Yiheng
@@ -334,6 +334,7 @@ Copyright (c) 2025 wink-wink-wink555
 ---
 
 ⭐ 如果这个项目对您有帮助，欢迎给个Star！
+
 
 
 
