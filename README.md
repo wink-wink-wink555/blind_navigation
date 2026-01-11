@@ -13,6 +13,14 @@
 
 > 📹 Demo Video: https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
 
+## 🏆 Honors & Awards
+
+This project has received the following recognitions and awards:
+
+- **Aug. 2025** – National Third Prize, **China Collegiate Computing Competition (CCCC)**  
+- **May 2025** – First Prize (Provincial Level), **Shanghai Collegiate Contest on Computer Applications**  
+- **Dec. 2025** – Top 20 Finalist (Global), **Intel Platform Enterprise AI Solution Innovation Challenge**
+
 ## 🌟 Introduction
 
 Blind Navigation is an innovative AI-powered navigation system designed for visually impaired individuals. It combines computer vision and artificial intelligence to identify tactile paving (guide paths) through real-time video analysis and provides intelligent voice guidance. The system also includes location sharing, AI map assistant, and other features to enhance travel safety and independence.
@@ -323,5 +331,6 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
