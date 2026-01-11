@@ -273,7 +273,7 @@ The application will run at http://127.0.0.1:5000/
 
 ## 🙏 Acknowledgments
 
-Special thanks to the following members for their help with tactile paving dataset collection, annotation, and training:
+Special thanks to the following members for their contributions to the collection and annotation of the tactile paving dataset, as well as the preparation of the project proposal.
 - [Chen Xingyu](https://github.com/guangxiangdebizi)
 - Wang Youyi
 - Liu Yiheng
@@ -334,6 +334,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
