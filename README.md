@@ -15,11 +15,11 @@
 
 ## 🏆 Honors & Awards
 
-This project has received the following recognitions and awards:
+This project has received the following recognitions in national and international competitions:
 
-- **Aug. 2025** – National Third Prize, **China Collegiate Computing Competition (CCCC)**  
+- **August 2025** – National Third Prize, **China Collegiate Computing Competition (CCCC)**  
 - **May 2025** – First Prize (Provincial Level), **Shanghai Collegiate Contest on Computer Applications**  
-- **Dec. 2025** – Top 20 Finalist (Global), **Intel Platform Enterprise AI Solution Innovation Challenge**
+- **December 2025** – Top 20 Finalist, **Intel Enterprise AI Solution Innovation Challenge**
 
 ## 🌟 Introduction
 
@@ -331,6 +331,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
