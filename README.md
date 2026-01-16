@@ -13,8 +13,6 @@
 
 > 📹 Demo Video: https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
 
----
-
 ## 🏆 Honors & Awards
 
 This project has received the following awards and accolades:
@@ -23,6 +21,8 @@ This project has received the following awards and accolades:
 * **May 2025** | **First Prize (Provincial Level)**, Shanghai Computer Application Competence Competition for College Students
 * **Dec 2025** | **Global Top 20**, Intel Platform Corporate AI Solution Innovation Practice Competition (Preliminary Round) — *Successfully advanced to the Global Finals*
 * **Jan 2026** | **Global Top 10**, Intel Platform Corporate AI Solution Innovation Practice Competition (Global Finals)
+
+---
 
 ## 🌟 Introduction
 
@@ -337,6 +337,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
