@@ -1,4 +1,4 @@
-# Blind Navigation - Tactile Paving Navigation Assistant System
+# Blind Navigation - Assistive Navigation System for Visually Impaired Individuals
 
 <div align="center">
 
@@ -337,6 +337,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
