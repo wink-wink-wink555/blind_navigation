@@ -1,7 +1,9 @@
-# Blind Navigation - A System to Help Visually Impaired People Get Around
+# Blind Navigation (Ariadne) - A System to Help Visually Impaired People Get Around
 
 <div align="center">
-
+  
+  <img src="PPT/LOGO.png" alt=" Logo" width="290"/>
+  
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -337,6 +339,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
