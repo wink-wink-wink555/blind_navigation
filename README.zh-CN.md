@@ -1,6 +1,8 @@
-# Blind Navigation - 视障人士出行辅助系统
+# Blind Navigation (ARIADNE) - 引君出迷津
 
 <div align="center">
+
+<img src="PPT/LOGO.png" alt=" Logo" width="290"/>
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -337,6 +339,7 @@ Copyright (c) 2025 wink-wink-wink555
 ---
 
 ⭐ 如果这个项目对您有帮助，欢迎给个Star！
+
 
 
 
