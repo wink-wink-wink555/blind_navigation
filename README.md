@@ -28,7 +28,7 @@ This project has received the following awards and accolades:
 
 ## 🌟 Introduction
 
-Travel Assistance System for the Visually Impaired (Blind Navigation) is an innovative AI-powered navigation system designed for visually impaired individuals. It combines computer vision and artificial intelligence to identify tactile paving (guide paths) through real-time video analysis and provides intelligent voice guidance. The system also includes location sharing, AI map assistant, and other features to enhance travel safety and independence.
+Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI-powered navigation system designed for visually impaired individuals. It combines computer vision and artificial intelligence to identify tactile paving (guide paths) through real-time video analysis and provides intelligent voice guidance. The system also includes location sharing, AI map assistant, and other features to enhance travel safety and independence.
 
 ### Tech Stack
 
@@ -339,6 +339,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
