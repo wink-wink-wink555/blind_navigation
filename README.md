@@ -1,4 +1,4 @@
-# Blind Navigation (Ariadne) - A System to Help Visually Impaired People Get Around
+# Blind Navigation (Ariadne) - Your Way Out of the Labyrinth
 
 <div align="center">
   
@@ -339,6 +339,7 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
+
 
 
 
