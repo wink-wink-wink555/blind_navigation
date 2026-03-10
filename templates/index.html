@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>盲道导航助手</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>视障人士出行辅助系统</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Markdown 渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- 百度地图API - 异步加载避免document.write警告 -->
     <script>
         // 异步加载百度地图API
@@ -65,7 +66,7 @@
         }
 
         body {
-            font-family: 'Noto Sans SC', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             padding: 0;
@@ -1018,125 +1019,261 @@
             margin-right: 0.5rem;
         }
 
-        /* AI助手信息提示 */
-        .ai-info {
-            margin-top: 1rem;
-            padding: 0.75rem 1rem;
-            background-color: #e7f3ff;
-            border-left: 3px solid #2196F3;
-            border-radius: 4px;
-            color: #1565C0;
-            font-size: 0.9rem;
+        /* ========== AI智能助手聊天界面 ========== */
+        .chat-container {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .ai-info i {
-            font-size: 1.1rem;
-        }
-
-        /* AI助手模式样式 */
-        .ai-chat-container {
-            padding: 1rem;
-            background-color: #fff;
-            border-radius: var(--border-radius);
+            flex-direction: column;
+            height: 480px;
             border: 1px solid #e9ecef;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background-color: #f7f8fa;
         }
 
-        .ai-input-area {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .ai-input {
+        .chat-messages {
             flex: 1;
-            padding: 0.75rem;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            transition: var(--transition);
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            scroll-behavior: smooth;
         }
 
-        .ai-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
+        .chat-messages::-webkit-scrollbar { width: 5px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+        .chat-bubble {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 85%;
+            animation: bubbleIn 0.3s ease-out;
         }
 
-        .ai-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.25rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: var(--transition);
+        @keyframes bubbleIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-bubble.ai { align-self: flex-start; }
+        .chat-bubble.user { align-self: flex-end; flex-direction: row-reverse; }
+
+        .bubble-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-
-        .ai-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        /* 确保.ai-btn的样式优先于.map-btn */
-        .map-btn.ai-btn {
-            background-color: var(--primary-color) !important;
-            color: white !important;
-        }
-
-        .map-btn.ai-btn:hover {
-            background-color: var(--primary-dark) !important;
-        }
-
-        .ai-suggestions {
-            padding-top: 1rem;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .suggestion-title {
+            justify-content: center;
+            flex-shrink: 0;
             font-size: 0.85rem;
-            color: #6c757d;
-            margin-bottom: 0.5rem;
+        }
+
+        .chat-bubble.ai .bubble-avatar { background: linear-gradient(135deg, #4dabf7, #339af0); color: #fff; }
+        .chat-bubble.user .bubble-avatar { background: linear-gradient(135deg, #748ffc, #5c7cfa); color: #fff; }
+
+        .bubble-body {
+            padding: 0.7rem 1rem;
+            border-radius: 14px;
+            line-height: 1.65;
+            font-size: 0.92rem;
+            word-break: break-word;
+        }
+
+        .chat-bubble.ai .bubble-body {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-top-left-radius: 4px;
+            color: #212529;
+        }
+
+        .chat-bubble.user .bubble-body {
+            background: linear-gradient(135deg, #4dabf7, #339af0);
+            color: #fff;
+            border-top-right-radius: 4px;
+        }
+
+        .bubble-body .md-content p { margin: 0.3em 0; }
+        .bubble-body .md-content p:first-child { margin-top: 0; }
+        .bubble-body .md-content p:last-child { margin-bottom: 0; }
+        .bubble-body .md-content ul, .bubble-body .md-content ol { margin: 0.3em 0; padding-left: 1.4em; }
+        .bubble-body .md-content li { margin: 0.15em 0; }
+        .bubble-body .md-content strong { font-weight: 600; }
+        .bubble-body .md-content em { font-style: italic; }
+        .bubble-body .md-content code {
+            background: #f1f3f5; padding: 0.1em 0.35em; border-radius: 4px;
+            font-size: 0.85em; font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .bubble-body .md-content pre {
+            background: #f1f3f5; padding: 0.6em 0.8em; border-radius: 6px;
+            overflow-x: auto; margin: 0.4em 0; font-size: 0.85em;
+        }
+        .bubble-body .md-content pre code { background: none; padding: 0; }
+        .bubble-body .md-content blockquote {
+            border-left: 3px solid #4dabf7; margin: 0.4em 0; padding: 0.2em 0.8em;
+            color: #495057; background: #f8f9fa; border-radius: 0 6px 6px 0;
+        }
+        .bubble-body .md-content h1, .bubble-body .md-content h2,
+        .bubble-body .md-content h3, .bubble-body .md-content h4 {
+            margin: 0.4em 0 0.2em; font-weight: 600; line-height: 1.3;
+        }
+        .bubble-body .md-content h1 { font-size: 1.15em; }
+        .bubble-body .md-content h2 { font-size: 1.08em; }
+        .bubble-body .md-content h3 { font-size: 1em; }
+        .bubble-body .md-content table {
+            border-collapse: collapse; width: 100%; margin: 0.4em 0; font-size: 0.88em;
+        }
+        .bubble-body .md-content th, .bubble-body .md-content td {
+            border: 1px solid #dee2e6; padding: 0.3em 0.5em; text-align: left;
+        }
+        .bubble-body .md-content th { background: #f1f3f5; font-weight: 600; }
+        .bubble-body .md-content hr { border: none; border-top: 1px solid #dee2e6; margin: 0.5em 0; }
+        .bubble-body .md-content a { color: #4dabf7; text-decoration: underline; }
+
+        .bubble-intent {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            margin-bottom: 0.4rem;
             font-weight: 500;
         }
 
-        .suggestion-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+        .bubble-intent.settings { background: #fff3cd; color: #856404; }
+        .bubble-intent.map { background: #d1ecf1; color: #0c5460; }
+        .bubble-intent.message { background: #d4edda; color: #155724; }
+        .bubble-intent.chat { background: #e2e3e5; color: #383d41; }
+
+        .bubble-tool-history {
+            margin-top: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.82rem;
         }
 
-        .suggestion-item {
-            padding: 0.4rem 0.8rem;
-            background-color: #f8f9fa;
+        .bubble-tool-history .tool-step {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.15rem 0;
+        }
+
+        .bubble-tool-history .tool-step .status-ok { color: #28a745; }
+        .bubble-tool-history .tool-step .status-fail { color: #dc3545; }
+
+        .bubble-settings-change {
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 0.82rem;
+        }
+
+        .bubble-settings-change .change-item {
+            padding: 0.1rem 0;
+        }
+
+        .bubble-thinking {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        .bubble-thinking .dot {
+            width: 6px; height: 6px;
+            background: #6c757d;
+            border-radius: 50%;
+            animation: dotPulse 1.4s infinite ease-in-out;
+        }
+        .bubble-thinking .dot:nth-child(2) { animation-delay: 0.2s; }
+        .bubble-thinking .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotPulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .chat-suggestions {
+            padding: 0.5rem 1rem;
+            border-top: 1px solid #e9ecef;
+            background: #fff;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .chat-suggestion-pill {
+            padding: 0.3rem 0.7rem;
+            background: #f1f3f5;
             border: 1px solid #dee2e6;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            border-radius: 16px;
+            font-size: 0.78rem;
             cursor: pointer;
             transition: var(--transition);
             color: var(--text-color);
+            white-space: nowrap;
         }
 
-        .suggestion-item:hover {
-            background-color: var(--primary-color);
-            color: white;
+        .chat-suggestion-pill:hover {
+            background: var(--primary-color);
+            color: #fff;
             border-color: var(--primary-color);
         }
 
-        .ai-explanation {
-            margin-top: 1rem;
-            padding: 1rem;
-            background-color: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        .chat-input-area {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0.75rem 1rem;
+            background: #fff;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.65rem 0.9rem;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
             font-size: 0.9rem;
-            color: #1565c0;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.12);
+        }
+
+        .chat-send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .chat-send-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
+        .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .chat-send-btn.speaking {
+            background: #dc3545;
+            animation: pulse-red 1.5s infinite;
+        }
+        .chat-send-btn.speaking:hover { background: #c82333; }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
         }
         
         .blindway-item {
@@ -1871,7 +2008,7 @@
 </head>
 <body>
     <header>
-        <h1>智能盲道识别与反馈系统·展示平台</h1>
+        <h1>视障人士出行辅助系统·展示平台</h1>
         <div class="subtitle">视障人士的贴心导航伙伴</div>
         <button class="settings-btn" onclick="openSettings()">
             <i class="fas fa-cog"></i>
@@ -2013,49 +2150,44 @@
                     </div>
                 </div>
 
-                <!-- 百度地图AI助手卡片 -->
+                <!-- AI智能助手卡片 -->
                 <div class="card">
                     <div class="card-title">
-                        <i class="fas fa-robot"></i> 智能地图AI助手
-                        <span style="font-size: 0.75rem; color: #6c757d; margin-left: 0.5rem;">ReAct模式</span>
-                    </div>
-                    
-                    <!-- AI助手界面 -->
-                    <div class="ai-chat-container">
-                        <div class="ai-input-area">
-                            <input type="text" id="aiQuestion" placeholder="请输入您的问题，例如：我附近有什么便利店？" class="ai-input">
-                            <button class="map-btn ai-btn" onclick="askAiAssistant()">
-                                <i class="fas fa-paper-plane"></i> 提问
-                            </button>
-                        </div>
-                        
-                        <div class="ai-suggestions">
-                            <div class="suggestion-title">💡 示例问题：</div>
-                            <div class="suggestion-items">
-                                <span class="suggestion-item" onclick="setAiQuestion('天安门广场的坐标')">查询坐标</span>
-                                <span class="suggestion-item" onclick="setAiQuestion('我附近有什么便利店？')">附近搜索</span>
-                                <span class="suggestion-item" onclick="setAiQuestion('从北京站到天安门广场怎么走？')">路线规划</span>
-                                <span class="suggestion-item" onclick="setAiQuestion('坐标39.9,116.4是什么地方？')">坐标解析</span>
-                            </div>
-                        </div>
-                        
-                        <div class="ai-info">
-                            <i class="fas fa-info-circle"></i>
-                            AI助手会自动分析您的问题，调用必要的地图工具，并给出自然语言回答
-                        </div>
+                        <i class="fas fa-robot"></i> AI智能助手
+                        <span style="font-size: 0.75rem; color: #6c757d; margin-left: 0.5rem;">多Agent模式</span>
                     </div>
 
-                    
-                    <!-- 结果显示区域 -->
-                    <div class="mcp-result" id="mcpResult" style="display: none;">
-                        <div class="result-header">
-                            <h4 id="resultTitle">执行结果</h4>
-                            <button class="result-close" onclick="clearMcpResult()">
-                                <i class="fas fa-times"></i>
+                    <div class="chat-container">
+                        <!-- 聊天消息区域 -->
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="chat-bubble ai">
+                                <div class="bubble-avatar"><i class="fas fa-robot"></i></div>
+                                <div class="bubble-body">
+                                    你好！我是你的AI助手，可以帮你：<br>
+                                    🗺️ <strong>查地图</strong> — 路线规划、附近搜索<br>
+                                    ⚙️ <strong>改设置</strong> — 语音速度、音量、鼓励功能<br>
+                                    💬 <strong>发消息</strong> — 给家属发送消息<br>
+                                    直接说就好！
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 快捷建议 -->
+                        <div class="chat-suggestions" id="chatSuggestions">
+                            <span class="chat-suggestion-pill" onclick="fillChatInput('从北京站到天安门怎么走？')">🗺️ 路线规划</span>
+                            <span class="chat-suggestion-pill" onclick="fillChatInput('我附近有什么便利店？')">🔍 附近搜索</span>
+                            <span class="chat-suggestion-pill" onclick="fillChatInput('帮我把语音速度调成慢')">⚙️ 调语音速度</span>
+                            <span class="chat-suggestion-pill" onclick="fillChatInput('开启鼓励功能')">⚙️ 开启鼓励</span>
+                            <span class="chat-suggestion-pill" onclick="fillChatInput('帮我发给家属消息：我已经到了')">💬 发消息</span>
+                        </div>
+
+                        <!-- 输入区域 -->
+                        <div class="chat-input-area">
+                            <input type="text" id="chatInput" class="chat-input" placeholder="输入消息，例如：帮我把音量调大...">
+                            <button id="chatSendBtn" class="chat-send-btn" onclick="handleChatSend()">
+                                <i class="fas fa-paper-plane" id="chatSendIcon"></i>
                             </button>
                         </div>
-                        <div class="result-content" id="mcpResultContent"></div>
-                        <div class="ai-explanation" id="aiExplanation" style="display: none;"></div>
                     </div>
                 </div>
 
@@ -2759,16 +2891,7 @@
             return videoStatus.textContent === '正在分析';
         }
 
-        // 更新设置模态框功能
-        function openSettings() {
-            // 检查视频是否正在播放
-            if (isVideoPlaying()) {
-                showMessage("已检测到实时视频流，暂不支持打开设置");
-                return;
-            }
-
-            document.getElementById('settingsModal').style.display = 'flex';
-        }
+        // 更新设置模态框功能（已合并到下方统一的openSettings函数）
 
         // 更新测试语音设置功能
         async function testVoice() {
@@ -3117,8 +3240,39 @@
             }
         }
 
-        // 设置模态框功能
-        function openSettings() {
+        // 设置模态框功能 - 每次打开都先从服务器获取最新设置
+        async function openSettings() {
+            if (typeof isVideoPlaying === 'function' && isVideoPlaying()) {
+                showMessage("已检测到实时视频流，暂不支持打开设置");
+                return;
+            }
+
+            try {
+                const resp = await fetch('/get_settings');
+                const result = await resp.json();
+                if (result.status === 'success' && result.settings) {
+                    const s = result.settings;
+                    document.getElementById('settingName').value = s.name || '';
+                    document.getElementById('settingGender').value = s.gender || '未指定';
+                    document.getElementById('settingAge').value = s.age || '未指定';
+                    document.getElementById('settingVoiceSpeed').value = s.voice_speed || '中等';
+                    document.getElementById('settingVoiceVolume').value = s.voice_volume || '中等';
+                    document.getElementById('settingUserMode').value = s.user_mode || '盲人端';
+                    document.getElementById('encourageValue').value = s.encourage || '开';
+                    document.getElementById('settingEncourage').checked = (s.encourage === '开');
+                    // 同步用户模式按钮高亮
+                    if (s.user_mode === '盲人端') {
+                        document.getElementById('blindModeBtn').classList.add('active');
+                        document.getElementById('familyModeBtn').classList.remove('active');
+                    } else {
+                        document.getElementById('blindModeBtn').classList.remove('active');
+                        document.getElementById('familyModeBtn').classList.add('active');
+                    }
+                }
+            } catch (e) {
+                console.warn('获取最新设置失败，使用缓存:', e);
+            }
+
             document.getElementById('settingsModal').style.display = 'flex';
         }
 
@@ -4071,148 +4225,420 @@
             }, 300);
         }
 
-        // ========== 智能地图AI助手功能 ==========
-        
-        // 设置AI问题
-        function setAiQuestion(question) {
-            document.getElementById('aiQuestion').value = question;
+        // ========== AI智能助手聊天功能（多Agent模式） ==========
+
+        let isAiSpeaking = false;
+        let aiSpeakCheckInterval = null;
+        let isChatBusy = false;
+
+        // 维护完整对话历史，发送给后端让AI获取上下文
+        let chatHistory = [];
+
+        // 填充输入框
+        function fillChatInput(text) {
+            document.getElementById('chatInput').value = text;
+            document.getElementById('chatInput').focus();
         }
 
-        // AI助手提问（支持ReAct迭代式工作流）
-        async function askAiAssistant() {
-            const questionInput = document.getElementById('aiQuestion');
-            const question = questionInput.value.trim();
-            
-            if (!question) {
-                alert('请输入您的问题');
-                return;
+        // 处理发送按钮点击
+        function handleChatSend() {
+            if (isAiSpeaking || isChatBusy) {
+                stopAiSpeech();
+            } else {
+                sendChatMessage();
             }
-            
-            try {
-                // 显示处理中状态
-                showMcpResult('🤖 AI正在思考并调用必要的地图工具...', false, 'AI助手工作中', '');
-                
-                // 获取用户当前位置（如果可用）
-                let userLocation = null;
-                if (currentPosition) {
-                    userLocation = {
-                        lat: currentPosition.lat,
-                        lng: currentPosition.lng
-                    };
+        }
+
+        let isPlayingHintVoice = false;
+
+        // 更新发送按钮状态
+        function updateSendBtnState(speaking) {
+            const btn = document.getElementById('chatSendBtn');
+            const icon = document.getElementById('chatSendIcon');
+            isAiSpeaking = speaking;
+            if (speaking || isChatBusy) {
+                btn.classList.add('speaking');
+                icon.className = 'fas fa-stop';
+                btn.disabled = false;
+            } else {
+                btn.classList.remove('speaking');
+                icon.className = 'fas fa-paper-plane';
+                btn.disabled = false;
+            }
+        }
+
+        // 添加用户气泡
+        function addUserBubble(text) {
+            const container = document.getElementById('chatMessages');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.innerHTML = `
+                <div class="bubble-avatar"><i class="fas fa-user"></i></div>
+                <div class="bubble-body">${escapeHtml(text)}</div>
+            `;
+            container.appendChild(bubble);
+            scrollChatToBottom();
+        }
+
+        // 添加AI思考中气泡（返回元素引用以便后续替换）
+        function addThinkingBubble() {
+            const container = document.getElementById('chatMessages');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ai';
+            bubble.id = 'thinkingBubble';
+            bubble.innerHTML = `
+                <div class="bubble-avatar"><i class="fas fa-robot"></i></div>
+                <div class="bubble-body">
+                    <div class="bubble-thinking">
+                        <span>AI正在思考</span>
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(bubble);
+            scrollChatToBottom();
+            return bubble;
+        }
+
+        // 移除思考中气泡
+        function removeThinkingBubble() {
+            const el = document.getElementById('thinkingBubble');
+            if (el) el.remove();
+        }
+
+        // 将 Markdown 文本渲染为 HTML（带 XSS 基础防护）
+        function renderMarkdown(text) {
+            if (!text) return '';
+            if (typeof marked !== 'undefined') {
+                try {
+                    marked.setOptions({ breaks: true, gfm: true });
+                    return marked.parse(text);
+                } catch (e) {
+                    console.warn('[Markdown] 渲染失败，回退纯文本:', e);
                 }
-                
-                const response = await fetch('/ai_map_assistant', {
+            }
+            return escapeHtml(text).replace(/\n/g, '<br>');
+        }
+
+        // 添加AI回复气泡
+        function addAiBubble(content, intent, extra) {
+            removeThinkingBubble();
+            const container = document.getElementById('chatMessages');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ai';
+
+            const intentLabels = {
+                settings: '⚙️ 设置修改',
+                map: '🗺️ 地图查询',
+                message: '💬 消息发送',
+                chat: '🤖 对话'
+            };
+
+            let intentBadge = '';
+            if (intent && intentLabels[intent]) {
+                intentBadge = `<div class="bubble-intent ${intent}">${intentLabels[intent]}</div>`;
+            }
+
+            let extraHtml = '';
+
+            // 工具调用历史（地图Agent）
+            if (extra && extra.tool_history && extra.tool_history.length > 0) {
+                extraHtml += '<div class="bubble-tool-history">';
+                extraHtml += `<div style="font-weight:600;margin-bottom:0.3rem;">🔧 执行了 ${extra.tool_history.length} 个工具调用：</div>`;
+                extra.tool_history.forEach(item => {
+                    const icon = item.action === 'geocoding' ? '📍' :
+                                 item.action === 'route_planning' ? '🗺️' :
+                                 item.action === 'search_places' ? '🔍' : '🛠️';
+                    const ok = item.result && item.result.success;
+                    extraHtml += `<div class="tool-step"><span class="${ok ? 'status-ok' : 'status-fail'}">${ok ? '✓' : '✗'}</span> ${icon} ${item.action}</div>`;
+                });
+                if (extra.iterations) {
+                    extraHtml += `<div style="color:#6c757d;font-size:0.8rem;margin-top:0.2rem;">共迭代 ${extra.iterations} 轮</div>`;
+                }
+                extraHtml += '</div>';
+            }
+
+            // 设置变更详情
+            if (extra && extra.changes && extra.changes.length > 0) {
+                extraHtml += '<div class="bubble-settings-change">';
+                extra.changes.forEach(c => {
+                    extraHtml += `<div class="change-item">✅ ${c.field_name}：<strong>${c.value}</strong></div>`;
+                });
+                extraHtml += '</div>';
+            }
+
+            const renderedContent = renderMarkdown(content);
+
+            bubble.innerHTML = `
+                <div class="bubble-avatar"><i class="fas fa-robot"></i></div>
+                <div class="bubble-body">
+                    ${intentBadge}
+                    <div class="md-content">${renderedContent}</div>
+                    ${extraHtml}
+                </div>
+            `;
+            container.appendChild(bubble);
+            scrollChatToBottom();
+        }
+
+        // 添加错误气泡
+        function addErrorBubble(message) {
+            removeThinkingBubble();
+            const container = document.getElementById('chatMessages');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ai';
+            bubble.innerHTML = `
+                <div class="bubble-avatar"><i class="fas fa-robot"></i></div>
+                <div class="bubble-body" style="border-color:#f5c6cb; background:#fff5f5;">
+                    <span style="color:#dc3545;">❌ ${escapeHtml(message)}</span>
+                </div>
+            `;
+            container.appendChild(bubble);
+            scrollChatToBottom();
+        }
+
+        // 滚动到底部
+        function scrollChatToBottom() {
+            const container = document.getElementById('chatMessages');
+            setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===== 发送消息主流程 =====
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            const btn = document.getElementById('chatSendBtn');
+
+            if (!message || isChatBusy) return;
+
+            isChatBusy = true;
+            input.value = '';
+
+            // 立即显示暂停按钮（isChatBusy 为 true 时 updateSendBtnState 会保持暂停状态）
+            updateSendBtnState(false);
+
+            // 添加用户气泡
+            addUserBubble(message);
+
+            // 记录到对话历史
+            chatHistory.push({ role: 'user', content: message });
+
+            // 添加思考中气泡
+            addThinkingBubble();
+
+            // 获取位置
+            let userLocation = null;
+            if (typeof currentPosition !== 'undefined' && currentPosition) {
+                userLocation = { lat: currentPosition.lat, lng: currentPosition.lng };
+            }
+
+            // 播放提示语音
+            playHintVoice('正在为您处理，请稍候');
+
+            try {
+                const response = await fetch('/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: question,
-                        user_location: userLocation
+                        message: message,
+                        user_location: userLocation,
+                        chat_history: chatHistory.slice(0, -1)  // 不包含当前这条，后端会自己加
                     })
                 });
-                
+
+                if (!response.ok) throw new Error(`服务器响应错误: ${response.status}`);
+
                 const result = await response.json();
-                console.log('AI助手返回结果:', result);
-                
-                if (result.status === 'success' && result.type === 'answer') {
-                    // AI给出最终答案
-                    const title = `💬 AI助手回复`;
-                    let displayHtml = `<div style="font-size: 1.1rem; line-height: 1.6; color: #212529;">${result.content}</div>`;
-                    
-                    // 显示工具调用历史
-                    if (result.tool_history && result.tool_history.length > 0) {
-                        displayHtml += '<br><div style="margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 8px;">';
-                        displayHtml += `<div style="font-weight: bold; margin-bottom: 0.5rem; color: #495057;">🔧 执行了 ${result.tool_history.length} 个工具调用：</div>`;
-                        result.tool_history.forEach((item, index) => {
-                            const icon = item.action === 'geocoding' ? '📍' : 
-                                        item.action === 'route_planning' ? '🗺️' : 
-                                        item.action === 'search_places' ? '🔍' : '🛠️';
-                            const status = item.result.success ? '<span style="color: #28a745;">✓</span>' : '<span style="color: #dc3545;">✗</span>';
-                            displayHtml += `<div style="margin: 0.3rem 0; font-size: 0.9rem;">${status} ${icon} ${item.action}</div>`;
-                        });
-                        displayHtml += `</div>`;
-                        
-                        displayHtml += `<div style="margin-top: 0.5rem; color: #6c757d; font-size: 0.85rem;">共迭代 ${result.iterations} 轮</div>`;
+                console.log('[Chat] 返回结果:', result);
+
+                if (result.status === 'success') {
+                    addAiBubble(result.content, result.intent, {
+                        tool_history: result.tool_history,
+                        iterations: result.iterations,
+                        changes: result.changes
+                    });
+
+                    // 记录AI回复到对话历史
+                    chatHistory.push({ role: 'assistant', content: result.content, intent: result.intent });
+
+                    // 如果设置被修改，同步前端
+                    if (result.intent === 'settings' && result.updated_settings) {
+                        syncSettingsUI(result.updated_settings);
                     }
-                    
-                    showMcpResult(displayHtml, true, title, result.reasoning || '');
-                    
-                } else if (result.status === 'error') {
-                    // 错误处理
-                    let errorHtml = `<strong>❌ ${result.message}</strong>`;
-                    if (result.tool_history && result.tool_history.length > 0) {
-                        errorHtml += `<br><br><em>在处理过程中执行了 ${result.tool_history.length} 个工具调用</em>`;
+
+                    // 播放AI回复语音（await 确保按钮状态在 finally 之前正确设置）
+                    if (result.content) {
+                        await playAiSpeech(result.content);
                     }
-                    showMcpResult(errorHtml, false, 'AI助手遇到问题', result.details || '');
                 } else {
-                    showMcpResult(result.message || '未知响应', false, 'AI助手回复', '');
+                    const errMsg = result.content || result.message || '未知错误';
+                    addErrorBubble(errMsg);
+                    chatHistory.push({ role: 'assistant', content: errMsg });
+                    await playAiSpeech('抱歉，处理您的请求时遇到了问题');
                 }
-                
-                // 清空输入框
-                questionInput.value = '';
-                
+
             } catch (error) {
-                showMcpResult(`请求失败: ${error.message}`, false, 'AI助手错误', '');
-                console.error('AI助手请求失败:', error);
+                console.error('[Chat] 请求失败:', error);
+                addErrorBubble(`请求失败: ${error.message}`);
+                chatHistory.push({ role: 'assistant', content: `请求失败: ${error.message}` });
+                await playAiSpeech('抱歉，请求发送失败，请检查网络连接');
+            } finally {
+                isChatBusy = false;
+                if (!isAiSpeaking) {
+                    updateSendBtnState(false);
+                }
             }
         }
 
-        // 支持回车键提问
+        // 同步设置UI（设置被AI修改后，更新前端显示）
+        function syncSettingsUI(settings) {
+            if (!settings) return;
+            try {
+                const fields = {
+                    'voice_speed': 'voiceSpeed',
+                    'voice_volume': 'voiceVolume',
+                    'encourage': 'encourageToggle',
+                    'user_mode': 'userMode',
+                    'gender': 'gender',
+                    'name': 'name',
+                    'age': 'age'
+                };
+                for (const [key, elId] of Object.entries(fields)) {
+                    if (settings[key] !== undefined) {
+                        const el = document.getElementById(elId);
+                        if (el) el.value = settings[key];
+                    }
+                }
+            } catch (e) {
+                console.warn('[Chat] 同步设置UI失败:', e);
+            }
+        }
+
+        // ===== 语音播放功能（含线程安全处理） =====
+
+        // 播放提示语音（可被AI回复打断）
+        async function playHintVoice(text) {
+            try {
+                console.log('[提示语音] 播放:', text);
+                if (isAiSpeaking) {
+                    console.log('[提示语音] 先停止之前的语音');
+                    await stopAiSpeechQuiet();
+                    await new Promise(r => setTimeout(r, 200));
+                }
+                isPlayingHintVoice = true;
+                const resp = await fetch('/ai_speak', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    updateSendBtnState(true);
+                    startSpeechStatusCheck();
+                } else {
+                    isPlayingHintVoice = false;
+                }
+            } catch (e) {
+                console.error('[提示语音] 播放失败:', e);
+                isPlayingHintVoice = false;
+            }
+        }
+
+        // 播放AI回复语音（如果正在播放提示语音，先打断）
+        async function playAiSpeech(text) {
+            try {
+                console.log('[AI语音] 播放:', text.substring(0, 50) + '...');
+                if (isPlayingHintVoice || isAiSpeaking) {
+                    console.log('[AI语音] 打断当前语音，播放AI回复');
+                    await stopAiSpeechQuiet();
+                    await new Promise(r => setTimeout(r, 300));
+                }
+                isPlayingHintVoice = false;
+                const resp = await fetch('/ai_speak', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    updateSendBtnState(true);
+                    startSpeechStatusCheck();
+                }
+            } catch (e) {
+                console.error('[AI语音] 播放失败:', e);
+            }
+        }
+
+        // 静默停止语音（不更新按钮状态，用于打断提示语音）
+        async function stopAiSpeechQuiet() {
+            try {
+                await fetch('/ai_speak_stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                stopSpeechStatusCheck();
+            } catch (e) { /* ignore */ }
+        }
+
+        // 停止AI语音（用户主动点击中止）
+        async function stopAiSpeech() {
+            try {
+                console.log('[AI语音] 用户中止播放');
+                await fetch('/ai_speak_stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                updateSendBtnState(false);
+                stopSpeechStatusCheck();
+                isPlayingHintVoice = false;
+            } catch (e) {
+                updateSendBtnState(false);
+                stopSpeechStatusCheck();
+                isPlayingHintVoice = false;
+            }
+        }
+
+        // 轮询检查语音播放状态
+        function startSpeechStatusCheck() {
+            stopSpeechStatusCheck();
+            aiSpeakCheckInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch('/ai_speak_status');
+                    const result = await resp.json();
+                    if (result.status === 'success' && !result.is_playing) {
+                        isPlayingHintVoice = false;
+                        updateSendBtnState(false);
+                        stopSpeechStatusCheck();
+                    }
+                } catch (e) { /* ignore */ }
+            }, 500);
+        }
+
+        function stopSpeechStatusCheck() {
+            if (aiSpeakCheckInterval) {
+                clearInterval(aiSpeakCheckInterval);
+                aiSpeakCheckInterval = null;
+            }
+        }
+
+        // 回车键发送
         document.addEventListener('DOMContentLoaded', function() {
-            const aiInput = document.getElementById('aiQuestion');
-            if (aiInput) {
-                aiInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        askAiAssistant();
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !isAiSpeaking && !isChatBusy) {
+                        sendChatMessage();
                     }
                 });
             }
         });
-
-
-        // 显示MCP结果
-        function showMcpResult(data, isSuccess = true, title = '执行结果', explanation = '') {
-            const resultDiv = document.getElementById('mcpResult');
-            const contentDiv = document.getElementById('mcpResultContent');
-            const titleDiv = document.getElementById('resultTitle');
-            const explanationDiv = document.getElementById('aiExplanation');
-            
-            // 设置标题
-            titleDiv.textContent = title;
-            
-            // 格式化显示数据
-            let displayText = '';
-            if (typeof data === 'object') {
-                displayText = JSON.stringify(data, null, 2);
-            } else {
-                displayText = String(data);
-            }
-            
-            contentDiv.innerHTML = displayText;
-            contentDiv.className = 'result-content ' + (isSuccess ? 'result-success' : 'result-error');
-            
-            // 显示AI解释（如果有）
-            if (explanation) {
-                explanationDiv.innerHTML = `<strong>AI解释：</strong>${explanation}`;
-                explanationDiv.style.display = 'block';
-            } else {
-                explanationDiv.style.display = 'none';
-            }
-            
-            resultDiv.style.display = 'block';
-            
-            // 滚动到结果区域
-            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // 清除MCP结果
-        function clearMcpResult() {
-            document.getElementById('mcpResult').style.display = 'none';
-        }
-
-        // 页面加载时初始化MCP模块
-        // API密钥现在直接配置在后端，无需前端处理
     </script>
 </body>
 </html>

@@ -11,6 +11,9 @@ import time
 
 main_bp = Blueprint('main', __name__)
 
+# 默认提示文字
+DEFAULT_SPEECH_TEXT = "提示：系统会实时分析盲道方向，当方向发生变化时会自动播报语音提示。"
+
 # 全局用户设置
 user_settings = DEFAULT_USER_SETTINGS.copy()
 
@@ -130,23 +133,17 @@ def voice_test():
         data = request.get_json()
         print(f"[测试语音] 收到请求数据: {data}")
 
-        test_settings = {
-            "voice_speed": data.get("voice_speed", get_current_user_settings()["voice_speed"]),
-            "voice_volume": data.get("voice_volume", get_current_user_settings()["voice_volume"])
-        }
-
-        # 临时保存当前设置
+        # 获取当前设置
         current_settings = get_current_user_settings()
-        temp_settings = {
-            "voice_speed": current_settings["voice_speed"],
-            "voice_volume": current_settings["voice_volume"]
+        
+        # 构建测试用的设置（不修改全局设置）
+        test_settings = {
+            "voice_speed": data.get("voice_speed", current_settings["voice_speed"]),
+            "voice_volume": data.get("voice_volume", current_settings["voice_volume"])
         }
 
-        print(f"[测试语音] 当前设置: {temp_settings}")
-        print(f"[测试语音] 测试设置: {test_settings}")
-
-        # 应用测试设置
-        update_current_user_settings(test_settings)
+        print(f"[测试语音] 当前设置: voice_speed={current_settings['voice_speed']}, voice_volume={current_settings['voice_volume']}")
+        print(f"[测试语音] 测试设置: voice_speed={test_settings['voice_speed']}, voice_volume={test_settings['voice_volume']}")
 
         # 获取自定义测试文本
         test_text = data.get("test_text")
@@ -158,19 +155,11 @@ def voice_test():
 
         print(f"[测试语音] 将播放文本: {test_text}")
 
-        # 启动新线程来播放测试语音
-        threading.Thread(target=speak, args=(test_text, get_current_user_settings())).start()
+        # 直接使用 speak 函数，它内部已经有队列机制
+        # 不需要额外的线程包装
+        speak(test_text, test_settings)
 
-        # 恢复原始设置 - 等待一小段时间后恢复，确保语音播放使用测试设置
-        def restore_settings():
-            time.sleep(2)  # 等待2秒，确保语音播放已经开始
-            update_current_user_settings(temp_settings)
-            print("[测试语音] 已恢复原始设置")
-
-        # 在单独线程中恢复设置，确保响应可以立即返回
-        threading.Thread(target=restore_settings).start()
-
-        print("[测试语音] 已启动语音测试")
+        print("[测试语音] 已添加到语音队列")
         return jsonify({"status": "success", "message": "语音测试已开始"})
     except Exception as e:
         print(f"[测试语音] 错误: {e}")
@@ -198,9 +187,37 @@ def send_message():
         full_text = f"您有一条来自家属的消息：{message}"
         print(f"[消息] 收到家属消息: {message}")
 
-        # 使用和旧版本一样的方式启动语音线程
-        threading.Thread(target=speak, args=(full_text, current_settings)).start()
-        print(f"[消息] 启动语音播报")
+        # 更新页面显示的文字为家属消息
+        from routes.video import current_speech_text
+        import routes.video as video_module
+        video_module.current_speech_text = full_text
+        print(f"[消息] 已更新页面显示文字")
+
+        # 直接调用 speak 函数，它内部已经有队列机制
+        speak(full_text, current_settings)
+        print(f"[消息] 已添加到语音队列")
+
+        # 根据文字长度估算播放时间（每个字约0.3秒，加上前缀）
+        # 考虑语速设置
+        speed_multiplier = {
+            "慢": 1.5,
+            "中等": 1.0,
+            "快": 0.7
+        }
+        base_duration = len(full_text) * 0.3
+        duration = base_duration * speed_multiplier.get(current_settings.get("voice_speed", "中等"), 1.0)
+        # 增加2秒的缓冲时间
+        duration += 2.0
+        
+        print(f"[消息] 预计播放时长: {duration:.1f}秒")
+
+        # 定时恢复默认文字
+        def restore_default_text():
+            time.sleep(duration)
+            video_module.current_speech_text = DEFAULT_SPEECH_TEXT
+            print(f"[消息] 已恢复默认提示文字")
+        
+        threading.Thread(target=restore_default_text, daemon=True).start()
 
         return jsonify({"status": "success", "message": "消息发送成功"})
     except Exception as e:

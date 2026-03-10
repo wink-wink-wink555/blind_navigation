@@ -28,7 +28,7 @@ This project has received the following awards and accolades:
 
 ## 🌟 Introduction
 
-Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI-powered navigation system designed for visually impaired individuals. It combines computer vision and artificial intelligence to identify tactile paving (guide paths) through real-time video analysis and provides intelligent voice guidance. The system also includes location sharing, AI map assistant, and other features to enhance travel safety and independence.
+Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI-powered navigation system designed for visually impaired individuals. It combines computer vision and artificial intelligence to identify tactile paving (guide paths) through real-time video analysis and provides intelligent voice guidance. The system also features a built-in **Multi-Agent AI Assistant** — users can simply speak naturally to complete map navigation, adjust system settings, send messages to family members, and more. Additional features include real-time location sharing to enhance travel safety and independence.
 
 ### Tech Stack
 
@@ -37,7 +37,12 @@ Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI
 - **AI Models**:
   - YOLO (You Only Look Once) - Tactile paving detection
   - Ollama (Qwen2.5:3b) - Personalized voice prompt generation
-  - DeepSeek AI - Intelligent dialogue and route planning
+  - DeepSeek AI - Multi-Agent assistant (intent routing, map navigation, settings management, companion chat)
+- **Multi-Agent Architecture**:
+  - RouterAgent - Intent classification & routing
+  - MapAgent (DeepSeekAI + ReAct) - Map navigation agent
+  - SettingsAgent - Settings query & modification agent
+  - ChatAgent - Companion chat agent
 - **Database**: MySQL
 - **Third-party Services**:
   - Baidu Map API - Location services and route planning
@@ -51,7 +56,7 @@ This system addresses the following challenges:
 
 2. **Real-time Voice Feedback**: Automatically provides personalized AI voice prompts when tactile paving direction changes are detected
 
-3. **Intelligent Map Assistant**: Integrates DeepSeek AI and Baidu Map API for intelligent Q&A, location queries, route planning, and more
+3. **Multi-Agent AI Assistant**: A unified intent routing + multi-agent dispatch architecture that enables natural language interaction for map navigation, system settings modification, family messaging, and companion conversation
 
 4. **Safety Monitoring**: Location sharing allows family members to remotely view the location of visually impaired individuals
 
@@ -63,7 +68,11 @@ This system addresses the following challenges:
 
 - 🎥 **Real-time Video Analysis**: Uses YOLO model for real-time tactile paving detection
 - 🔊 **Intelligent Voice Feedback**: Uses Ollama (qwen2.5:3b) to generate personalized, context-aware voice prompts based on user profile (age, gender, name, preferences)
-- 🤖 **AI Map Assistant**: Natural language interaction using DeepSeek AI, supports location queries, route planning, nearby searches, etc.
+- 🤖 **Multi-Agent AI Assistant**: A DeepSeek AI-powered multi-agent system — users simply speak naturally to:
+  - 🗺️ **Map Navigation**: Location queries, walking route planning (optimized for the visually impaired), and nearby place search
+  - ⚙️ **Voice Settings**: Query or modify voice speed, volume, encouragement mode, and all other system settings via natural language
+  - 📨 **Family Messaging**: Send location or status messages to family members in one sentence
+  - 💬 **Companion Chat**: Warm conversational companion to ease the loneliness of travel
 - 👤 **User System**: Complete registration, login, and password recovery functionality
 - 📍 **Location Sharing**: Real-time location sharing for family members
 - ⚙️ **Personalized Settings**: Customizable voice speed, volume, gender, age group, address preferences, etc.
@@ -79,6 +88,42 @@ When the system detects a change in tactile paving direction (left or right turn
 - Previous context to avoid repetitive messages
 
 This creates a more human-like and engaging experience compared to static, pre-recorded messages.
+
+### 🤖 Multi-Agent Architecture
+
+The system features a unified multi-agent dispatch center (`/chat` endpoint). Users send a single message and the system automatically identifies the intent and routes it to the appropriate agent.
+
+```
+User Input
+    │
+    ▼
+RouterAgent (Intent Classifier)
+    │
+    ├─ map      ──► MapAgent (DeepSeekAI + ReAct loop + Baidu Map MCP)
+    │                  └─ Geocoding → Nearby search → Walking route → Natural language reply
+    │
+    ├─ settings ──► SettingsAgent (Query & Modify settings)
+    │                  └─ Parse intent → Validate values → Write to DB → Sync Session
+    │
+    ├─ message  ──► Message Handler (Send message to family)
+    │
+    └─ chat     ──► ChatAgent (Warm companion chat with full context)
+```
+
+**Agent Responsibilities:**
+
+| Agent | File | Responsibility |
+|---|---|---|
+| RouterAgent | `services/router_agent.py` | Classify intent and route to the correct agent |
+| MapAgent | `services/deepseek_ai.py` | ReAct-loop map tools, walking navigation optimized for the visually impaired |
+| SettingsAgent | `services/settings_agent.py` | Natural language settings query and modification, synced to DB and Session in real time |
+| ChatAgent | `routes/chat.py` | Warm companion chat with full conversation context and user profile |
+
+**Example Interactions:**
+- `"Set my voice speed to slow"` → SettingsAgent adjusts voice speed
+- `"How do I walk from Tiananmen Square to the National Museum?"` → MapAgent plans a walking route
+- `"Send my family a message: I've arrived"` → Message handler notifies family
+- `"What a nice day today"` → ChatAgent responds warmly
 
 ## 🎯 Pre-trained YOLO Model
 
@@ -220,16 +265,35 @@ The application will run at http://127.0.0.1:5000/
 2. Click "Start Navigation"
 3. System analyzes camera feed in real-time and provides voice navigation guidance
 
-### 3. AI Map Assistant
+### 3. Multi-Agent AI Assistant
 
-#### Using AI Assistant
-1. Click "Map" tab on main interface
-2. Enter your question in the input box, for example:
-   - "Coordinates of Tiananmen Square"
-   - "What convenience stores are near me?"
-   - "How to get from Beijing Railway Station to Tiananmen Square?"
-3. Click "Ask" button - AI assistant analyzes question and calls map services
-4. System responds in natural language
+The system has a unified AI chat interface that automatically identifies your intent and routes it to the appropriate agent — no need to switch screens.
+
+#### Map Navigation
+Simply ask in natural language:
+- "What are the coordinates of Tiananmen Square?"
+- "What convenience stores are near me?"
+- "How do I walk from Beijing Railway Station to Tiananmen Square?"
+
+The system calls map services and responds in a voice-friendly format. Route descriptions use relative directions (turn left / turn right / walk straight), specifically optimized for visually impaired users.
+
+#### Voice Settings Control
+Query or modify system settings naturally:
+- "Set my voice speed to slow"
+- "Turn the volume up a bit"
+- "Turn off encouragement mode"
+- "What is my current voice speed?"
+- "What's my name in the system?"
+
+The SettingsAgent automatically parses the intent, validates values, and updates settings in real time.
+
+#### Send Message to Family
+Just say what you want to send:
+- "Send my family a message: I've arrived at school"
+- "Let my family know I'm on the way"
+
+#### Companion Chat
+The built-in warm ChatAgent supports everyday conversation with full conversation memory, so you never feel alone on the road.
 
 ### 4. Location Sharing
 
@@ -262,12 +326,13 @@ The application will run at http://127.0.0.1:5000/
 ## ⚠️ Notes
 
 - **Ollama service must be running** for personalized voice prompt generation
+- **Multi-Agent AI Assistant** (map navigation, settings modification, companion chat, etc.) requires a valid DeepSeek AI API key
 - Email configuration required for verification code functionality
 - Model recognition quality depends on training data quality
 - Ensure camera permissions are enabled when using camera
 - Location sharing requires GPS permissions
 - DeepSeek AI functionality requires valid API key
-- Baidu Map functionality requires valid API key
+- Baidu Map functionality requires valid API key (used by the Map Navigation Agent)
 
 ## 📧 Contact
 
@@ -300,13 +365,16 @@ blind_navigation/
 ├── routes/                # Route blueprints
 │   ├── __init__.py
 │   ├── auth.py           # Authentication routes
+│   ├── chat.py           # Multi-Agent dispatch center (unified chat endpoint) ★New
 │   ├── main.py           # Main page routes
 │   ├── video.py          # Video processing routes
 │   └── map.py            # Map-related routes
 ├── services/              # Business services
 │   ├── __init__.py
-│   ├── baidu_map_mcp.py  # Baidu Map services
-│   └── deepseek_ai.py    # DeepSeek AI services
+│   ├── baidu_map_mcp.py  # Baidu Map MCP tool set
+│   ├── deepseek_ai.py    # MapAgent (ReAct-mode map navigation)
+│   ├── router_agent.py   # RouterAgent (intent classifier & router) ★New
+│   └── settings_agent.py # SettingsAgent (settings query & modification) ★New
 ├── utils/                 # Utility functions
 │   ├── __init__.py
 │   ├── decorators.py     # Decorators
@@ -339,22 +407,3 @@ For detailed terms, please refer to the [LICENSE](LICENSE) file.
 ---
 
 ⭐ If this project helps you, please give it a star!
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

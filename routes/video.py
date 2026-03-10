@@ -4,7 +4,7 @@
 from flask import Blueprint, Response, request, jsonify
 import cv2
 import numpy as np
-import ollama
+import requests
 import threading
 import time
 import os
@@ -14,42 +14,12 @@ from ultralytics import YOLO
 from utils.decorators import login_required
 from utils.video_utils import allowed_file, create_error_frame, create_info_frame
 from utils.voice_utils import speak, get_prompt_template
-from config import MODEL_WEIGHTS, UPLOAD_FOLDER, THRESHOLD_SLOPE, CALL_INTERVAL
+from config import MODEL_WEIGHTS, UPLOAD_FOLDER, THRESHOLD_SLOPE, CALL_INTERVAL, DEEPSEEK_CONFIG
 
 video_bp = Blueprint('video', __name__)
 
 # 加载YOLO模型
 model = YOLO(MODEL_WEIGHTS)
-
-# 禁用代理环境变量，避免代理干扰本地 Ollama 连接
-# 保存原有代理设置
-_original_http_proxy = os.environ.get('HTTP_PROXY', None)
-_original_https_proxy = os.environ.get('HTTPS_PROXY', None)
-_original_http_proxy_lower = os.environ.get('http_proxy', None)
-_original_https_proxy_lower = os.environ.get('https_proxy', None)
-
-# 临时移除代理设置（仅对 Ollama 连接）
-if 'HTTP_PROXY' in os.environ:
-    del os.environ['HTTP_PROXY']
-if 'HTTPS_PROXY' in os.environ:
-    del os.environ['HTTPS_PROXY']
-if 'http_proxy' in os.environ:
-    del os.environ['http_proxy']
-if 'https_proxy' in os.environ:
-    del os.environ['https_proxy']
-
-# 创建 Ollama 客户端（此时已无代理干扰）
-ollama_client = ollama.Client(host='http://localhost:11434')
-
-# 恢复原有代理设置（不影响其他HTTP请求，如DeepSeek API）
-if _original_http_proxy is not None:
-    os.environ['HTTP_PROXY'] = _original_http_proxy
-if _original_https_proxy is not None:
-    os.environ['HTTPS_PROXY'] = _original_https_proxy
-if _original_http_proxy_lower is not None:
-    os.environ['http_proxy'] = _original_http_proxy_lower
-if _original_https_proxy_lower is not None:
-    os.environ['https_proxy'] = _original_https_proxy_lower
 
 # 全局变量
 current_video_path = None
@@ -60,6 +30,53 @@ current_speech_text = ""
 # 转向提示问题
 right_turn_question = "请用亲切且简短的话语告知要往右拐，因为盲道是往右拐的"
 left_turn_question = "请用亲切且简短的话语告知要往左拐，因为盲道是往左拐的"
+
+
+def call_deepseek_api(system_prompt, user_message):
+    """
+    调用 DeepSeek API 生成导航语音内容
+    
+    Args:
+        system_prompt: 系统提示词
+        user_message: 用户消息
+        
+    Returns:
+        tuple: (success, content) - 成功标志和生成的内容
+    """
+    try:
+        headers = {
+            'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
+            'Content-Type': 'application/json'
+        }
+        
+        data = {
+            'model': DEEPSEEK_CONFIG['model'],
+            'messages': [
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': user_message}
+            ],
+            'temperature': 0.7,
+            'max_tokens': 150
+        }
+        
+        response = requests.post(DEEPSEEK_CONFIG['base_url'], headers=headers, json=data, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            content = result['choices'][0]['message']['content'].strip()
+            if content:
+                return True, content
+            else:
+                return False, ""
+        else:
+            print(f"[DeepSeek API] 请求失败，状态码: {response.status_code}")
+            return False, ""
+            
+    except Exception as e:
+        print(f"[DeepSeek API] 调用异常: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, ""
 
 
 def get_user_settings_for_video():
@@ -169,43 +186,22 @@ def generate_frames():
                     # 斜率显著为负，提示左转
                     print("[盲道检测] 检测到左转")
                     answer_content = None
-                    ollama_success = False
+                    api_success = False
                     
-                    try:
-                        print(f"[Ollama] 尝试连接 Ollama 服务，模型: qwen2.5:3b")
-                        print(f"[Ollama] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
-                        print(f"[Ollama] 用户问题: {left_turn_question}")
-                        
-                        response = ollama_client.chat(model="qwen2.5:3b", messages=[
-                            {"role": "system", "content": get_prompt_template(user_settings)},
-                            {"role": "user", "content": left_turn_question}
-                        ], stream=True)
-
-                        answer_content = ""
-                        chunk_count = 0
-                        for chunk in response:
-                            chunk_count += 1
-                            content = chunk.get('message', {}).get('content', '')
-                            if content:
-                                answer_content += content
-
-                        print(f"[Ollama] ✓ 成功获取 AI 响应，共 {chunk_count} 个块")
-                        print(f"[Ollama] AI 生成内容: {answer_content}")
-                        
-                        if answer_content.strip():
-                            ollama_success = True
-                        else:
-                            print(f"[Ollama] ✗ AI 返回内容为空")
-                            
-                    except ConnectionError as conn_error:
-                        print(f"[Ollama] ✗ 连接错误 - Ollama 服务可能未启动: {conn_error}")
-                    except Exception as ollama_error:
-                        print(f"[Ollama] ✗ 其他错误: {type(ollama_error).__name__}: {ollama_error}")
-                        import traceback
-                        traceback.print_exc()
+                    print(f"[DeepSeek API] 调用 DeepSeek API 生成左转提示")
+                    print(f"[DeepSeek API] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
+                    print(f"[DeepSeek API] 用户问题: {left_turn_question}")
                     
-                    # 如果 Ollama 失败或返回空内容，使用默认提示
-                    if not ollama_success or not answer_content:
+                    api_success, answer_content = call_deepseek_api(
+                        get_prompt_template(user_settings),
+                        left_turn_question
+                    )
+                    
+                    if api_success and answer_content:
+                        print(f"[DeepSeek API] ✓ 成功获取 AI 响应")
+                        print(f"[DeepSeek API] AI 生成内容: {answer_content}")
+                    else:
+                        print(f"[DeepSeek API] ✗ API 调用失败或返回内容为空")
                         print(f"[盲道检测] 使用默认左转提示")
                         answer_content = f"请注意，盲道向左转了，请往左走。"
 
@@ -219,43 +215,22 @@ def generate_frames():
                     # 斜率显著为正，提示右转
                     print("[盲道检测] 检测到右转")
                     answer_content = None
-                    ollama_success = False
+                    api_success = False
                     
-                    try:
-                        print(f"[Ollama] 尝试连接 Ollama 服务，模型: qwen2.5:3b")
-                        print(f"[Ollama] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
-                        print(f"[Ollama] 用户问题: {right_turn_question}")
-                        
-                        response = ollama_client.chat(model="qwen2.5:3b", messages=[
-                            {"role": "system", "content": get_prompt_template(user_settings)},
-                            {"role": "user", "content": right_turn_question}
-                        ], stream=True)
-
-                        answer_content = ""
-                        chunk_count = 0
-                        for chunk in response:
-                            chunk_count += 1
-                            content = chunk.get('message', {}).get('content', '')
-                            if content:
-                                answer_content += content
-
-                        print(f"[Ollama] ✓ 成功获取 AI 响应，共 {chunk_count} 个块")
-                        print(f"[Ollama] AI 生成内容: {answer_content}")
-                        
-                        if answer_content.strip():
-                            ollama_success = True
-                        else:
-                            print(f"[Ollama] ✗ AI 返回内容为空")
-                            
-                    except ConnectionError as conn_error:
-                        print(f"[Ollama] ✗ 连接错误 - Ollama 服务可能未启动: {conn_error}")
-                    except Exception as ollama_error:
-                        print(f"[Ollama] ✗ 其他错误: {type(ollama_error).__name__}: {ollama_error}")
-                        import traceback
-                        traceback.print_exc()
+                    print(f"[DeepSeek API] 调用 DeepSeek API 生成右转提示")
+                    print(f"[DeepSeek API] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
+                    print(f"[DeepSeek API] 用户问题: {right_turn_question}")
                     
-                    # 如果 Ollama 失败或返回空内容，使用默认提示
-                    if not ollama_success or not answer_content:
+                    api_success, answer_content = call_deepseek_api(
+                        get_prompt_template(user_settings),
+                        right_turn_question
+                    )
+                    
+                    if api_success and answer_content:
+                        print(f"[DeepSeek API] ✓ 成功获取 AI 响应")
+                        print(f"[DeepSeek API] AI 生成内容: {answer_content}")
+                    else:
+                        print(f"[DeepSeek API] ✗ API 调用失败或返回内容为空")
                         print(f"[盲道检测] 使用默认右转提示")
                         answer_content = f"请注意，盲道向右转了，请往右走。"
 

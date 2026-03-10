@@ -289,28 +289,24 @@ class BaiduMapMCP:
     
     def calculate_route(self, origin_lat, origin_lng, dest_lat, dest_lng, mode='walking', coordtype='bd09ll'):
         """
-        路线规划
+        路线规划（仅支持步行模式 - 视障人士出行辅助系统）
         
         Args:
             origin_lat: 起点纬度
             origin_lng: 起点经度
             dest_lat: 终点纬度
             dest_lng: 终点经度
-            mode: 出行方式，支持：walking(步行)、driving(驾车)、transit(公交)、riding(骑行)
+            mode: 出行方式，本系统仅支持 walking(步行)，其他参数将被忽略
             coordtype: 坐标类型，默认bd09ll（百度坐标系）
+        
+        Note:
+            本系统专为视障人士设计，仅提供步行路线规划。
+            即使传入其他mode参数（driving/transit/riding），也会强制使用walking模式。
         """
         try:
-            # 根据不同的mode使用不同的URL
-            if mode == 'walking':
-                url = BAIDU_MAP_CONFIG['direction_url'] + 'walking'
-            elif mode == 'driving':
-                url = BAIDU_MAP_CONFIG['direction_url'] + 'driving'
-            elif mode == 'transit':
-                url = BAIDU_MAP_CONFIG['direction_url'] + 'transit'
-            elif mode == 'riding':
-                url = BAIDU_MAP_CONFIG['direction_url'] + 'riding'
-            else:
-                url = BAIDU_MAP_CONFIG['direction_url'] + 'walking'
+            # 强制使用步行模式（视障人士专用）
+            mode = 'walking'
+            url = BAIDU_MAP_CONFIG['direction_url'] + 'walking'
             
             params = {
                 'origin': f"{origin_lat},{origin_lng}",

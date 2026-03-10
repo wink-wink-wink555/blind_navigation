@@ -13,6 +13,7 @@ from routes.auth import auth_bp
 from routes.main import main_bp
 from routes.video import video_bp
 from routes.map import map_bp
+from routes.chat import chat_bp
 
 # 导入数据库初始化函数
 from models.database import init_database
@@ -35,6 +36,7 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(video_bp)
     app.register_blueprint(map_bp)
+    app.register_blueprint(chat_bp)
     
     return app
 
@@ -46,7 +48,6 @@ if __name__ == '__main__':
     
     # 创建应用
     app = create_app()
-    
     # 运行应用
     print("启动Flask应用...")
     app.run(debug=True)

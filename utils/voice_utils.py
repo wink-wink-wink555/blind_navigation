@@ -1,16 +1,33 @@
 """
 语音相关工具模块
+
+重要：整个应用只使用一个 pyttsx3 引擎实例和一个工作线程，
+避免多引擎/多线程导致的 "run loop already started" 冲突。
 """
 import pyttsx3
 import queue
 import threading
+import time
+from enum import Enum
 
-# 全局变量
+# ========== 全局变量 ==========
 voices_cache = None
-# 语音播放队列和锁，用于避免多线程冲突
-speech_queue = queue.Queue()
-speech_thread_started = False
-speech_lock = threading.Lock()
+
+# 统一的语音系统 - 只有一个引擎和一个工作线程
+_speech_queue = queue.Queue()
+_speech_lock = threading.Lock()
+_speech_worker_started = False
+_speech_engine = None  # 全局唯一引擎实例
+_speech_stop_flag = threading.Event()  # 停止当前播放的标志
+_speech_playing = threading.Event()  # 当前是否正在播放
+
+
+class SpeechPriority(Enum):
+    """语音优先级"""
+    LOW = 0       # 低优先级（如背景提示）
+    NORMAL = 1    # 普通优先级（如盲道提示）
+    HIGH = 2      # 高优先级（如家属消息）
+    URGENT = 3    # 紧急优先级（可打断当前播放）
 
 
 def get_available_voices():
@@ -19,141 +36,343 @@ def get_available_voices():
     if voices_cache is not None:
         return voices_cache
 
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
-    available_voices = []
+    try:
+        engine = pyttsx3.init()
+        voices = engine.getProperty('voices')
+        available_voices = []
 
-    for voice in voices:
-        voice_info = {
-            'id': voice.id,
-            'name': voice.name,
-            'gender': '女声' if 'female' in voice.id.lower() or 'Microsoft Huihui' in voice.name else '男声'
-        }
-        available_voices.append(voice_info)
+        for voice in voices:
+            voice_info = {
+                'id': voice.id,
+                'name': voice.name,
+                'gender': '女声' if 'female' in voice.id.lower() or 'Microsoft Huihui' in voice.name else '男声'
+            }
+            available_voices.append(voice_info)
 
-    voices_cache = available_voices
-    return available_voices
-
-
-def speech_worker():
-    """
-    语音播放工作线程，从队列中取出语音任务并播放
-    这样可以避免多线程同时调用 pyttsx3 导致的冲突
-    """
-    print("[语音工作线程] 已启动")
-    while True:
+        voices_cache = available_voices
+        
+        # 清理临时引擎
         try:
-            # 从队列中获取任务
-            text, user_settings = speech_queue.get()
+            engine.stop()
+            del engine
+        except:
+            pass
             
-            if text is None:  # None 用于停止线程
-                print("[语音工作线程] 收到停止信号")
-                break
-            
-            print(f"[语音工作线程] 开始处理: '{text}'")
-            _do_speak(text, user_settings)
-            speech_queue.task_done()
-        except Exception as e:
-            print(f"[语音工作线程] 错误: {e}")
-            import traceback
-            traceback.print_exc()
+        return available_voices
+    except Exception as e:
+        print(f"[语音] 获取语音列表失败: {e}")
+        return []
 
 
-def _do_speak(text, user_settings):
+def _init_engine():
     """
-    实际的语音合成和播放函数
+    初始化 pyttsx3 引擎并设置中文语音
     
-    Args:
-        text: 要播放的文本
-        user_settings: 用户设置字典，包含 voice_speed 和 voice_volume
+    Returns:
+        tuple: (engine, selected_voice_id) 或 (None, None) 如果失败
     """
     try:
-        print(f"[语音] 开始合成语音: '{text}'")
-        local_engine = pyttsx3.init()
-
-        # 获取可用语音列表
-        voices = local_engine.getProperty('voices')
-
-        # 优先查找中文语音
-        found_chinese_voice = False
+        engine = pyttsx3.init()
+        
+        # 设置中文语音
+        voices = engine.getProperty('voices')
         selected_voice = None
-
-        # 首先尝试找中文语音
         for voice in voices:
             voice_name = voice.name.lower()
-            # 检查是否包含中文相关关键词
-            if "chinese" in voice_name or "huihui" in voice_name or "china" in voice_name or "中文" in voice_name or "zhongwen" in voice_name:
+            if "chinese" in voice_name or "huihui" in voice_name or "china" in voice_name or "中文" in voice_name:
                 selected_voice = voice.id
-                found_chinese_voice = True
-                print(f"[语音] 找到中文语音: {voice.name}")
+                print(f"[语音系统] 找到中文语音: {voice.name}")
                 break
-
-        # 如果找不到中文语音，使用第一个可用的声音
-        if not found_chinese_voice and len(voices) > 0:
+        
+        if not selected_voice and len(voices) > 0:
             selected_voice = voices[0].id
-            print(f"[语音] 未找到中文语音，使用第一个可用语音: {voices[0].name}")
-
-        # 设置选定的声音
+            print(f"[语音系统] 使用默认语音: {voices[0].name}")
+        
         if selected_voice:
-            print(f"[语音] 最终使用语音ID: {selected_voice}")
-            local_engine.setProperty('voice', selected_voice)
-        else:
-            print("[语音] 警告: 未找到可用语音")
-
-        # 根据用户设置调整语音速度
-        if user_settings["voice_speed"] == "慢":
-            local_engine.setProperty('rate', 150)
-        elif user_settings["voice_speed"] == "快":
-            local_engine.setProperty('rate', 250)
-        else:  # 中等
-            local_engine.setProperty('rate', 200)
-
-        # 设置音量
-        volume_mapping = {
-            "低": 0.5,
-            "中等": 0.8,
-            "高": 1.0
-        }
-        volume = volume_mapping.get(user_settings["voice_volume"], 0.8)
-        local_engine.setProperty('volume', volume)
-
-        # 实际播放语音
-        print(f"[语音] 播放文本: {text}")
-        local_engine.say(text)
-
-        print("[语音] 开始runAndWait()...")
-        local_engine.runAndWait()
-        print("[语音] 播放完成")
-        return True
+            engine.setProperty('voice', selected_voice)
+        
+        return engine, selected_voice
+        
     except Exception as e:
-        print(f"[语音] 错误: {e}")
+        print(f"[语音系统] 引擎初始化失败: {e}")
         import traceback
         traceback.print_exc()
-        return False
+        return None, None
 
 
-def speak(text, user_settings):
+def _unified_speech_worker():
     """
-    将语音任务添加到队列中，由工作线程处理
+    统一的语音播放工作线程
+    整个应用只有这一个线程处理所有语音任务
+    """
+    global _speech_engine, _speech_stop_flag, _speech_playing
+    
+    print("[语音系统] ========== 工作线程启动 ==========")
+    
+    # 创建引擎实例
+    engine, selected_voice = _init_engine()
+    if engine is None:
+        print("[语音系统] 无法启动，引擎初始化失败")
+        return
+    
+    _speech_engine = engine
+    print("[语音系统] 引擎初始化成功")
+    
+    # 标记引擎是否需要重新初始化（在被 stop() 后需要）
+    need_reinit = False
+    
+    while True:
+        try:
+            # 从队列获取任务
+            try:
+                task = _speech_queue.get(timeout=1.0)
+            except queue.Empty:
+                continue
+            
+            if task is None:
+                print("[语音系统] 收到退出信号")
+                break
+            
+            text, user_settings, priority, task_id = task
+            print(f"[语音系统] 收到任务 [{task_id}]: '{text[:40]}...' (优先级: {priority.name})")
+            
+            # 如果引擎需要重新初始化（上次被 stop() 中断后）
+            if need_reinit:
+                print(f"[语音系统] 🔄 重新初始化引擎...")
+                try:
+                    # 清理旧引擎
+                    if engine:
+                        try:
+                            del engine
+                        except:
+                            pass
+                    
+                    # 创建新引擎
+                    engine, selected_voice = _init_engine()
+                    if engine is None:
+                        print(f"[语音系统] ✗ 重新初始化失败，跳过任务 [{task_id}]")
+                        _speech_playing.clear()
+                        _speech_queue.task_done()
+                        continue
+                    
+                    _speech_engine = engine
+                    need_reinit = False
+                    print(f"[语音系统] ✓ 引擎重新初始化成功")
+                    
+                except Exception as reinit_error:
+                    print(f"[语音系统] ✗ 重新初始化异常: {reinit_error}")
+                    _speech_playing.clear()
+                    _speech_queue.task_done()
+                    continue
+            
+            # 重置标志
+            _speech_stop_flag.clear()
+            _speech_playing.set()
+            
+            # 标记本次播放是否被中断
+            was_interrupted = False
+            
+            try:
+                # 设置语音速度
+                speed_map = {"慢": 150, "中等": 200, "快": 250}
+                engine.setProperty('rate', speed_map.get(user_settings.get("voice_speed", "中等"), 200))
+                
+                # 设置音量
+                volume_map = {"低": 0.5, "中等": 0.8, "高": 1.0}
+                engine.setProperty('volume', volume_map.get(user_settings.get("voice_volume", "中等"), 0.8))
+                
+                # 检查是否在播放前就被取消
+                if _speech_stop_flag.is_set():
+                    print(f"[语音系统] 任务 [{task_id}] 播放前被取消")
+                    was_interrupted = True
+                    continue
+                
+                # 播放语音
+                print(f"[语音系统] 开始播放 [{task_id}]...")
+                engine.say(text)
+                engine.runAndWait()
+                
+                if _speech_stop_flag.is_set():
+                    print(f"[语音系统] ✗ 任务 [{task_id}] 被中断")
+                    was_interrupted = True
+                else:
+                    print(f"[语音系统] ✓ 任务 [{task_id}] 播放完成")
+                    
+            except RuntimeError as e:
+                error_msg = str(e)
+                print(f"[语音系统] 运行时错误 [{task_id}]: {error_msg}")
+                was_interrupted = True
+                        
+            except Exception as e:
+                print(f"[语音系统] 播放错误 [{task_id}]: {e}")
+                import traceback
+                traceback.print_exc()
+                was_interrupted = True
+                
+            finally:
+                _speech_playing.clear()
+                
+                # 关键：如果播放被中断，标记需要重新初始化引擎
+                # 因为 engine.stop() 会导致引擎进入异常状态
+                if was_interrupted:
+                    need_reinit = True
+                    print(f"[语音系统] ⚠️ 引擎已标记为需要重新初始化")
+                
+                try:
+                    _speech_queue.task_done()
+                except ValueError:
+                    pass
+                    
+        except Exception as e:
+            print(f"[语音系统] 工作线程异常: {e}")
+            import traceback
+            traceback.print_exc()
+            _speech_playing.clear()
+            need_reinit = True  # 出现异常也标记重新初始化
+    
+    # 清理
+    print("[语音系统] ========== 工作线程退出 ==========")
+    _speech_engine = None
+    if engine:
+        try:
+            engine.stop()
+            del engine
+        except:
+            pass
+
+
+def _ensure_worker_started():
+    """确保语音工作线程已启动"""
+    global _speech_worker_started
+    
+    with _speech_lock:
+        if not _speech_worker_started:
+            worker = threading.Thread(target=_unified_speech_worker, daemon=True)
+            worker.start()
+            _speech_worker_started = True
+            # 等待引擎初始化
+            time.sleep(0.5)
+            print("[语音系统] 工作线程已启动")
+
+
+def _generate_task_id():
+    """生成唯一任务ID"""
+    return f"{int(time.time() * 1000) % 100000}"
+
+
+# ========== 统一的对外接口 ==========
+
+def speak(text, user_settings, priority=SpeechPriority.NORMAL):
+    """
+    播放语音（统一接口）
+    
+    用于：盲道提示、家属消息等
     
     Args:
         text: 要播放的文本
         user_settings: 用户设置字典，包含 voice_speed 和 voice_volume
+        priority: 语音优先级
+    
+    Returns:
+        str: 任务ID
     """
-    global speech_thread_started
+    _ensure_worker_started()
     
-    # 启动语音工作线程（只启动一次）
-    with speech_lock:
-        if not speech_thread_started:
-            worker_thread = threading.Thread(target=speech_worker, daemon=True)
-            worker_thread.start()
-            speech_thread_started = True
-            print("[语音] 语音工作线程已启动")
+    task_id = _generate_task_id()
+    print(f"[语音] 添加任务 [{task_id}]: '{text[:30]}...'")
     
-    # 将任务添加到队列
-    print(f"[语音] 将任务添加到队列: '{text}'")
-    speech_queue.put((text, user_settings))
+    _speech_queue.put((text, user_settings, priority, task_id))
+    return task_id
+
+
+def ai_speak(text, user_settings):
+    """
+    AI助手语音播放（可中止）
+    
+    用于：AI地图助手回复
+    
+    Args:
+        text: 要播放的文本
+        user_settings: 用户设置字典
+    
+    Returns:
+        bool: 是否成功添加到队列
+    """
+    _ensure_worker_started()
+    
+    # 如果正在播放，先停止
+    if _speech_playing.is_set():
+        print("[AI语音] 当前有语音在播放，先停止")
+        stop_ai_speak()
+        time.sleep(0.3)
+    
+    # 清空队列中的旧任务
+    cleared = 0
+    while not _speech_queue.empty():
+        try:
+            _speech_queue.get_nowait()
+            _speech_queue.task_done()
+            cleared += 1
+        except queue.Empty:
+            break
+    
+    if cleared > 0:
+        print(f"[AI语音] 已清空 {cleared} 个待处理任务")
+    
+    task_id = _generate_task_id()
+    print(f"[AI语音] 添加任务 [{task_id}]: '{text[:50]}...'")
+    
+    _speech_queue.put((text, user_settings, SpeechPriority.URGENT, task_id))
+    _speech_playing.set()
     return True
+
+
+def stop_ai_speak():
+    """
+    停止当前语音播放
+    
+    Returns:
+        bool: 是否成功停止
+    """
+    global _speech_stop_flag, _speech_engine, _speech_playing
+    
+    print("[语音] 收到停止请求")
+    
+    # 设置停止标志
+    _speech_stop_flag.set()
+    
+    # 尝试停止引擎
+    if _speech_engine:
+        try:
+            _speech_engine.stop()
+            print("[语音] 引擎已停止")
+        except Exception as e:
+            print(f"[语音] 停止引擎时出错: {e}")
+    
+    # 清除播放状态
+    _speech_playing.clear()
+    
+    return True
+
+
+def stop_speech():
+    """停止语音播放（别名，兼容旧代码）"""
+    return stop_ai_speak()
+
+
+def is_ai_speaking():
+    """
+    检查是否正在播放语音
+    
+    Returns:
+        bool: 是否正在播放
+    """
+    return _speech_playing.is_set()
+
+
+def is_speaking():
+    """检查是否正在播放（别名）"""
+    return is_ai_speaking()
 
 
 def get_prompt_template(user_settings):
@@ -198,4 +417,3 @@ def get_prompt_template(user_settings):
 '''
 
     return prompt
-

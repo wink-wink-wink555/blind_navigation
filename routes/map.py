@@ -8,6 +8,7 @@ from utils.decorators import login_required
 from services.baidu_map_mcp import BaiduMapMCP
 from services.deepseek_ai import DeepSeekAI
 from config import BAIDU_MAP_CONFIG, DEEPSEEK_CONFIG
+from utils.voice_utils import ai_speak, stop_ai_speak, is_ai_speaking
 
 map_bp = Blueprint('map', __name__)
 
@@ -263,12 +264,13 @@ def _execute_tool(baidu_mcp, action, params):
             )
         
         elif action == 'route_planning':
+            # 视障人士出行辅助系统 - 仅支持步行模式
             return baidu_mcp.calculate_route(
                 params.get('origin_lat'), 
                 params.get('origin_lng'),
                 params.get('dest_lat'), 
                 params.get('dest_lng'),
-                params.get('mode', 'walking')
+                mode='walking'  # 强制使用步行模式
             )
         
         else:
@@ -305,4 +307,96 @@ def deepseek_api_test():
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": f"测试异常: {str(e)}"}), 500
+
+
+# ========== AI助手语音播报功能 ==========
+
+@map_bp.route('/ai_speak', methods=['POST'])
+@login_required
+def ai_speak_api():
+    """
+    AI助手语音播报接口
+    播放AI回复的语音
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "请求数据为空"}), 400
+        
+        text = data.get('text', '').strip()
+        if not text:
+            return jsonify({"status": "error", "message": "播报文本为空"}), 400
+        
+        # 从 session['user_settings'] 中获取语音设置
+        stored_settings = session.get('user_settings', {})
+        user_settings = {
+            "voice_speed": stored_settings.get('voice_speed', '中等'),
+            "voice_volume": stored_settings.get('voice_volume', '中等')
+        }
+        
+        print(f"[AI语音API] 开始播报: '{text[:50]}...'")
+        
+        # 调用语音播放函数
+        result = ai_speak(text, user_settings)
+        
+        if result:
+            return jsonify({
+                "status": "success",
+                "message": "开始播放语音",
+                "is_playing": True
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "语音播放启动失败"
+            }), 500
+            
+    except Exception as e:
+        print(f"AI语音播报错误: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": f"语音播报异常: {str(e)}"}), 500
+
+
+@map_bp.route('/ai_speak_stop', methods=['POST'])
+@login_required
+def ai_speak_stop_api():
+    """
+    停止AI助手语音播报
+    """
+    try:
+        print("[AI语音API] 收到停止请求")
+        
+        result = stop_ai_speak()
+        
+        return jsonify({
+            "status": "success",
+            "message": "语音已停止",
+            "is_playing": False
+        })
+        
+    except Exception as e:
+        print(f"停止AI语音错误: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": f"停止语音异常: {str(e)}"}), 500
+
+
+@map_bp.route('/ai_speak_status', methods=['GET'])
+@login_required
+def ai_speak_status_api():
+    """
+    获取AI助手语音播放状态
+    """
+    try:
+        is_playing = is_ai_speaking()
+        
+        return jsonify({
+            "status": "success",
+            "is_playing": is_playing
+        })
+        
+    except Exception as e:
+        print(f"获取AI语音状态错误: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
