@@ -259,18 +259,59 @@ def _handle_message(user_message, extracted_info):
     if not message_content:
         message_content = _extract_message_via_llm(user_message)
 
+    user_profile, _ = _get_user_profile_context()
+    reply = _generate_message_reply(user_profile, message_content)
+
+    return jsonify({
+        "status": "success",
+        "intent": "message",
+        "content": reply
+    })
+
+
+def _generate_message_reply(user_profile, message_content):
+    """使用LLM为消息发送结果生成自然回复，避免硬编码千篇一律"""
+    try:
+        headers = {
+            'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
+            'Content-Type': 'application/json'
+        }
+        if message_content:
+            prompt = (
+                f'{user_profile}\n'
+                f'你是视障导航系统的AI助手，用户刚让你帮忙发了一条消息给家属，内容是：「{message_content}」。\n'
+                '请用1句温暖自然的话确认消息已发送。要求：\n'
+                '- 提及消息内容的关键词，让用户确认发对了\n'
+                '- 语气亲切，不要机械化\n'
+                '- 不超过30个字\n'
+                '- 每次措辞要有变化，不要总说"请放心"'
+            )
+        else:
+            prompt = (
+                f'{user_profile}\n'
+                '你是视障导航系统的AI助手，用户想给家属发消息但没说清楚内容。\n'
+                '请用1句话温和地询问要发什么。要求：\n'
+                '- 语气自然亲切\n'
+                '- 不超过20个字'
+            )
+        data = {
+            'model': DEEPSEEK_CONFIG['model'],
+            'messages': [
+                {'role': 'system', 'content': prompt}
+            ],
+            'temperature': 0.8,
+            'max_tokens': 100
+        }
+        response = requests.post(
+            DEEPSEEK_CONFIG['base_url'], headers=headers, json=data
+        )
+        if response.status_code == 200:
+            return response.json()['choices'][0]['message']['content'].strip()
+    except Exception:
+        pass
     if message_content:
-        return jsonify({
-            "status": "success",
-            "intent": "message",
-            "content": f"好的，已经帮您把消息发送给家属了，内容是：「{message_content}」。家属收到后会了解您的情况，请放心。"
-        })
-    else:
-        return jsonify({
-            "status": "success",
-            "intent": "message",
-            "content": "您想给家属发什么消息呢？您可以直接说，比如「帮我发给家属消息：我已经到了」，我来帮您发送。"
-        })
+        return f'消息已发给家属了：「{message_content}」'
+    return '您想给家属说什么呢？'
 
 
 def _extract_message_via_llm(user_message):
@@ -312,21 +353,17 @@ def _handle_chat(user_message, chat_history=None):
         system_msg = {
             'role': 'system',
             'content': (
-                '你是一个温暖、耐心的AI助手，是一款专为视障人士设计的导航辅助系统的一部分。\n'
-                '你的用户是视障人士（盲人或低视力），请始终牢记以下原则：\n'
-                '- 用温暖、亲切、鼓励的语气与用户交流，让他们感受到陪伴和关怀\n'
-                '- 回复要简洁清晰，因为内容会被语音播报给用户，避免过长或复杂的句式\n'
-                '- 适时给予鼓励和肯定，比如"您做得很好"、"没问题，我来帮您"\n'
-                '- 当用户遇到困难时，主动安抚并给出明确的引导\n'
-                '- 不要使用"看一下"、"看看"等视觉相关的表述，改用"了解一下"、"听听"等\n'
-                '- 对用户的每一个请求都认真对待，体现尊重和耐心\n\n'
-                f'{user_profile}\n'
-                '你可以帮助用户：\n'
-                '1. 查询或修改系统设置（语音速度、音量、鼓励功能等）\n'
-                '2. 查询地图信息（路线规划、附近搜索等）\n'
-                '3. 给家属发送消息\n'
-                '4. 日常聊天陪伴，缓解用户的孤独感\n'
-                '请在对话中使用用户的称呼，让他们感到被重视。'
+                '你是一款视障导航系统的AI助手，用户是盲人或低视力人士，你的回复会被语音播报。\n\n'
+                '⚠️ 回复规则：\n'
+                '- 控制在1~3句话，不超过60个字\n'
+                '- 禁止列举、排比、长篇大论，直接回答\n'
+                '- 每次回复的措辞和句式要自然多样，不要反复使用同一种开头或结尾\n\n'
+                '语言规则：\n'
+                '- 语气温暖亲切，像朋友聊天一样自然\n'
+                '- 禁止"看一下/看看/看到"等视觉表述，用"了解/听听/感受"代替\n'
+                '- 不要建议用户乘坐公交、地铁、打车等，用户只能步行出行\n'
+                f'- {user_profile}\n'
+                '- 用用户的称呼来称呼他们，但不要每句话都以称呼开头'
             )
         }
 
@@ -339,7 +376,7 @@ def _handle_chat(user_message, chat_history=None):
             'model': DEEPSEEK_CONFIG['model'],
             'messages': messages,
             'temperature': 0.7,
-            'max_tokens': 500
+            'max_tokens': 200
         }
         response = requests.post(
             DEEPSEEK_CONFIG['base_url'], headers=headers, json=data

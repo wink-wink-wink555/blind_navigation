@@ -10,29 +10,37 @@ from config import DEEPSEEK_CONFIG
 class RouterAgent:
     """意图路由器，负责将用户消息分类到对应的处理Agent"""
 
-    ROUTER_PROMPT = """你是一个意图分类器。根据用户的输入，判断属于以下哪个类别：
+    ROUTER_PROMPT = """你是一个意图分类器，服务于视障导航系统。
 
-1. "settings" - 用户想查询或修改系统设置，包括：语音速度（慢/中等/快）、语音音量（低/中等/高）、鼓励功能（开/关）、用户模式（盲人端/家属端）、个人信息（姓名、性别、年龄）
-   修改例如："帮我把语音速度调成慢"、"关闭鼓励功能"、"把音量调大"、"切换到家属端"
-   查询例如："现在语音速度怎么样"、"鼓励功能是开的还是关的"、"怎么称呼我"、"我的设置是什么"
+⚠️ 核心原则：你只需要对【最新一条用户消息】进行分类。对话历史仅用于辅助理解指代和上下文（如"那里"指哪里、"也帮我查查"接续什么话题），绝不能因为之前聊了闲天就把当前消息也归为闲聊。
 
-2. "map" - 用户想查询地图信息，包括：地点搜索、路线规划、坐标查询、附近搜索
-   例如："从天安门到北京大学怎么走"、"附近有什么便利店"、"天安门的坐标是多少"
+意图类别：
 
-3. "message" - 用户想给家属发送消息
-   例如："帮我发给家属消息：我到了"、"给家属说一声我在路上"、"发消息告诉家属我快到了"
+1. "settings" - 查询或修改系统设置
+   涵盖：语音速度、语音音量、鼓励功能、用户模式、姓名、性别、年龄
+   例："帮我把语音调快"、"关闭鼓励"、"音量调大"、"切换家属端"、"现在什么设置"、"怎么称呼我"
 
-4. "chat" - 普通闲聊或其他不属于上述类别的内容
-   例如："你好"、"今天天气怎么样"、"谢谢你"
+2. "map" - 地图/导航/地点/路线相关
+   涵盖：问路、找地点、附近搜索、距离查询、怎么走、去哪里
+   例："从这里到学校怎么走"、"附近有便利店吗"、"离地铁站多远"、"帮我导航到医院"、"我想去公园"
 
-请严格返回如下JSON格式（无markdown标记）：
-{"intent": "分类名称", "confidence": 0.0到1.0的数值, "extracted_info": {提取的关键信息}}
+3. "message" - 给家属发消息
+   例："帮我给家属发消息说我到了"、"告诉家人我在路上"
 
-extracted_info说明：
-- settings类型：{"field": "要修改的字段", "value": "目标值"}
-- map类型：{"query": "地图相关的查询内容"}
-- message类型：{"message_content": "要发送的消息内容"}
-- chat类型：{"topic": "话题简述"}"""
+4. "chat" - 纯粹的闲聊、情感交流、与上述三类无关的话题
+   例："你好"、"谢谢你"、"我心情不好"、"给我讲个笑话"
+
+分类优先级：settings > map > message > chat
+当消息同时可能属于多个类别时，优先选择功能性更强的类别。只有确实与前三类完全无关时才归为chat。
+
+返回纯JSON（无markdown标记）：
+{"intent": "分类名称", "confidence": 0.0到1.0, "extracted_info": {关键信息}}
+
+extracted_info：
+- settings: {"field": "字段", "value": "目标值"}
+- map: {"query": "地图查询内容"}
+- message: {"message_content": "消息内容"}
+- chat: {"topic": "话题"}"""
 
     def __init__(self, api_key):
         self.api_key = api_key
@@ -51,14 +59,26 @@ extracted_info说明：
             messages = [{'role': 'system', 'content': self.ROUTER_PROMPT}]
 
             if chat_history:
-                recent = chat_history[-10:]
+                context_lines = []
+                recent = chat_history[-8:]
                 for item in recent:
                     role = item.get('role', 'user')
                     content = item.get('content', '')
-                    if role in ('user', 'assistant') and content:
-                        messages.append({'role': role, 'content': content})
+                    if content:
+                        label = "用户" if role == 'user' else "助手"
+                        context_lines.append(f"{label}: {content[:80]}")
+                if context_lines:
+                    context_block = "\n".join(context_lines)
+                    messages.append({
+                        'role': 'user',
+                        'content': f"[以下是近期对话摘要，仅供理解上下文指代，不影响分类]\n{context_block}"
+                    })
+                    messages.append({
+                        'role': 'assistant',
+                        'content': '好的，我会根据最新一条用户消息独立判断意图。'
+                    })
 
-            messages.append({'role': 'user', 'content': user_message})
+            messages.append({'role': 'user', 'content': f"请对以下【最新消息】进行意图分类：\n{user_message}"})
 
             data = {
                 'model': DEEPSEEK_CONFIG['model'],

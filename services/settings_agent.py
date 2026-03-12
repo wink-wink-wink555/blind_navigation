@@ -19,55 +19,61 @@ FIELD_MAP = {
     'age': {'name': '年龄段', 'values': ['青年', '中年', '老年', '未指定']},
 }
 
+VALUE_NORMALIZE_MAP = {
+    'voice_speed': {
+        '慢速': '慢', '很慢': '慢', '缓慢': '慢', '低速': '慢', '最慢': '慢',
+        '中速': '中等', '正常': '中等', '默认': '中等', '适中': '中等',
+        '快速': '快', '很快': '快', '高速': '快', '最快': '快', '加速': '快',
+    },
+    'voice_volume': {
+        '小': '低', '小声': '低', '很低': '低', '最低': '低', '低音': '低', '轻声': '低', '安静': '低',
+        '正常': '中等', '默认': '中等', '适中': '中等', '中间': '中等',
+        '大': '高', '大声': '高', '很高': '高', '最高': '高', '高音': '高', '响': '高', '最大': '高',
+    },
+    'encourage': {
+        '开启': '开', '打开': '开', '启用': '开', '是': '开', '要': '开',
+        '关闭': '关', '关掉': '关', '禁用': '关', '否': '关', '不要': '关',
+    },
+}
+
 
 class SettingsAgent:
     """设置修改Agent，从用户自然语言中提取设置修改意图并执行"""
 
-    SETTINGS_PROMPT = """你是一个温暖、耐心的设置助手，既能帮用户查询当前设置，也能帮用户修改设置。
+    SETTINGS_PROMPT = """你是视障导航系统的设置助手，回复会被语音播报。
 
-重要背景：你的用户是视障人士（盲人或低视力），你的回复会通过语音播报给他们。
-请遵循以下原则：
-- 用温暖亲切的语气回复，让用户感到被关心
-- 修改成功后给予肯定和鼓励，如"已经帮您调好了"、"设置好了，希望用起来更舒服"
-- 回复要简洁明了，方便语音播报时用户能快速理解
-- 不要使用"看一下"等视觉相关表述
+⚠️ 最重要的规则：
+1. response字段必须在1~2句话以内，不超过30个字
+2. value字段必须严格使用下方列出的精确值，不能用任何近义词或变体
 
-可操作的设置项及其允许值：
-- voice_speed（语音速度）: 慢、中等、快
-- voice_volume（语音音量）: 低、中等、高
-- encourage（鼓励功能）: 开、关
-- user_mode（用户模式）: 盲人端、家属端
-- gender（性别）: 男、女、未指定
+设置项及【唯一允许的值】：
+- voice_speed（语音速度）: 只能是 "慢" 或 "中等" 或 "快"
+- voice_volume（语音音量）: 只能是 "低" 或 "中等" 或 "高"
+- encourage（鼓励功能）: 只能是 "开" 或 "关"
+- user_mode（用户模式）: 只能是 "盲人端" 或 "家属端"
+- gender（性别）: 只能是 "男" 或 "女" 或 "未指定"
 - name（姓名）: 任意文本
-- age（年龄段）: 青年、中年、老年、未指定
+- age（年龄段）: 只能是 "青年" 或 "中年" 或 "老年" 或 "未指定"
 
-判断逻辑：
-1. 如果用户是在**查询**当前设置（如"现在语音速度怎么样"、"鼓励功能是开的还是关的"、"怎么称呼我"、"我的设置是什么"），请根据提供的当前用户设置回答，changes为空数组。
-2. 如果用户是在**修改**设置，请提取要修改的字段和值。
-
-修改时的映射规则：
-- "把音量调大/调高" → voice_volume: "高"
-- "把音量调小/调低" → voice_volume: "低"
-- "音量中等/适中" → voice_volume: "中等"
-- "把速度调快" → voice_speed: "快"
-- "把速度调慢" → voice_speed: "慢"
-- "速度中等/适中" → voice_speed: "中等"
-- "开启/打开鼓励" → encourage: "开"
+映射规则（用户口语 → 精确值）：
+- "调大/调高音量" → voice_volume: "高"
+- "调小/调低音量" → voice_volume: "低"
+- "调快速度" → voice_speed: "快"
+- "调慢速度" → voice_speed: "慢"
+- "打开/开启鼓励" → encourage: "开"
 - "关闭/关掉鼓励" → encourage: "关"
 
-如果用户一次要修改多个设置，返回数组。
+判断逻辑：
+1. 查询设置 → changes为空数组，response简短告知当前值
+2. 修改设置 → changes填入字段和精确值
 
-返回JSON格式（无markdown标记）：
-{"changes": [{"field": "字段名", "value": "新值"}], "response": "给用户的友好回复"}
+返回JSON（无markdown）：
+{"changes": [{"field": "字段名", "value": "精确值"}], "response": "简短回复"}
 
 示例：
-- 用户查询"现在语音速度怎么样"，当前设置voice_speed为"中等" → {"changes": [], "response": "您当前的语音速度是「中等」。如果觉得不合适，随时告诉我帮您调整哦。"}
-- 用户查询"鼓励功能开了吗" → {"changes": [], "response": "您的鼓励功能目前是「开」的状态，会在导航时给您加油打气。"}
-- 用户查询"怎么称呼我" → {"changes": [], "response": "目前称呼您为「用户」。如果您告诉我您的名字，我就能更亲切地称呼您了。"}
-- 用户修改"帮我把语音速度调成慢" → {"changes": [{"field": "voice_speed", "value": "慢"}], "response": "好的，已经帮您把语音速度调成「慢」了，希望听起来更舒服。"}
-
-如果无法识别用户想查询或修改什么，返回：
-{"changes": [], "response": "不好意思，我没有完全理解您的意思。您可以问我当前设置是什么，或者说"帮我把语音速度调成慢"、"关闭鼓励功能"这样的话来修改设置，我随时为您服务。"}"""
+- 查询速度 → {"changes": [], "response": "当前语音速度是「中等」。"}
+- 调慢速度 → {"changes": [{"field": "voice_speed", "value": "慢"}], "response": "已帮您调成慢速了。"}
+- 关鼓励 → {"changes": [{"field": "encourage", "value": "关"}], "response": "鼓励功能已关闭。"}"""
 
     def __init__(self, api_key):
         self.api_key = api_key
@@ -106,7 +112,7 @@ class SettingsAgent:
                 'model': DEEPSEEK_CONFIG['model'],
                 'messages': messages,
                 'temperature': 0.1,
-                'max_tokens': 400
+                'max_tokens': 250
             }
 
             response = self.session.post(
@@ -137,12 +143,24 @@ class SettingsAgent:
                 field = change.get('field')
                 value = change.get('value')
 
-                if field not in FIELD_MAP:
+                if not field or not isinstance(field, str) or field not in FIELD_MAP:
                     continue
+
+                if value is None:
+                    continue
+
+                value = str(value).strip()
 
                 allowed = FIELD_MAP[field]['values']
                 if allowed is not None and value not in allowed:
-                    continue
+                    value = self._normalize_value(field, value)
+                    if value is None:
+                        print(f"[SettingsAgent] 拒绝非法值: {field}={change.get('value')}")
+                        continue
+
+                if field == 'name':
+                    if len(value) > 20 or not value:
+                        continue
 
                 current_settings[field] = value
                 applied_changes.append({
@@ -170,6 +188,24 @@ class SettingsAgent:
         except Exception as e:
             print(f"[SettingsAgent] 异常: {e}")
             return {'success': False, 'response': f'设置修改异常：{str(e)}'}
+
+    @staticmethod
+    def _normalize_value(field, value):
+        """尝试将AI返回的非标准值归一化为合法值，失败返回None"""
+        normalize_map = VALUE_NORMALIZE_MAP.get(field)
+        if normalize_map and value in normalize_map:
+            normalized = normalize_map[value]
+            print(f"[SettingsAgent] 值归一化: {field} '{value}' → '{normalized}'")
+            return normalized
+
+        allowed = FIELD_MAP[field]['values']
+        if allowed:
+            for valid_val in allowed:
+                if valid_val in value or value in valid_val:
+                    print(f"[SettingsAgent] 模糊匹配: {field} '{value}' → '{valid_val}'")
+                    return valid_val
+
+        return None
 
     @staticmethod
     def _clean_json(text):
