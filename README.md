@@ -15,6 +15,10 @@
 
 > 📹 Demo Video: https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
 
+<div align="center">
+  <img src="PPT/Graph.png" alt="WordNest Logo">
+</div>
+
 ## 🏆 Honors & Awards
 
 This project has received the following awards and accolades:
@@ -405,5 +409,6 @@ You are free to use, modify, and distribute this software for personal or commer
 For detailed terms, please refer to the [LICENSE](LICENSE) file.
 
 ---
+
 
 ⭐ If this project helps you, please give it a star!
