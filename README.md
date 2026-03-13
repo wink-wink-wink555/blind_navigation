@@ -16,7 +16,7 @@
 > 📹 Demo Video: https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
 
 <div align="center">
-  <img src="PPT/Graph.png" alt="WordNest Logo">
+  <img src="PPT/Graph.png" alt="Graph">
 </div>
 
 ## 🏆 Honors & Awards
