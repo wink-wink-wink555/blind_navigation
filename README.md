@@ -19,7 +19,8 @@
   <img src="PPT/Graph.png" alt="Graph">
 </div>
 
-## 🏆 Honors & Awards
+<details>
+<summary><strong>🏆 Honors & Awards</strong></summary>
 
 This project has received the following awards and accolades:
 
@@ -27,6 +28,8 @@ This project has received the following awards and accolades:
 * **Dec 2025** | **Top 20**, Intel Platform Corporate AI Solution Innovation Practice Competition (Preliminary Round) — *Successfully advanced to the Global Finals*
 * **Aug 2025** | **Third Prize (National Level)**, Chinese Collegiate Computing Competition (CCCC)
 * **May 2025** | **First Prize (Provincial Level)**, Shanghai Computer Application Competence Competition for College Students
+
+</details>
 
 ---
 
