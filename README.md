@@ -20,7 +20,7 @@
 </div>
 
 <details>
-<summary><strong>🏆 HONORS & AWARDS</strong>  <small>Click to expand</small></summary>
+<summary><strong>🏆 HONORS & AWARDS</strong>  <span>▼Click to expand</span></summary>
 
 This project has received the following awards and accolades:
 
