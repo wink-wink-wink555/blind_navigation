@@ -199,7 +199,7 @@ Or install packages individually:
 pip install flask pymysql ultralytics ollama numpy pyttsx3 geopy Pillow edge-tts requests opencv-python Werkzeug
 ```
 
-</deatils>
+</details>
 
 <details>
 <summary><strong>4. Install and Configure Ollama</strong></summary>
@@ -257,7 +257,7 @@ Example configuration:
 # YOLO model configuration
 MODEL_WEIGHTS = 'yolo/best.pt'  # Use the included pre-trained model
 ```
-</deatils>
+</details>
 
 ## 🏃 Running the Application
 
