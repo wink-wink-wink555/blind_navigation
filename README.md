@@ -257,7 +257,6 @@ Example configuration:
 # YOLO model configuration
 MODEL_WEIGHTS = 'yolo/best.pt'  # Use the included pre-trained model
 ```
-
 </deatils>
 
 ## 🏃 Running the Application
