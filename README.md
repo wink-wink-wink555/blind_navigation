@@ -118,8 +118,6 @@ RouterAgent (Intent Classifier)
     └─ chat     ──► ChatAgent (Warm companion chat with full context)
 ```
 
-</details>
-
 **Agent Responsibilities:**
 
 | Agent | File | Responsibility |
@@ -134,6 +132,8 @@ RouterAgent (Intent Classifier)
 - `"How do I walk from Tiananmen Square to the National Museum?"` → MapAgent plans a walking route
 - `"Send my family a message: I've arrived"` → Message handler notifies family
 - `"What a nice day today"` → ChatAgent responds warmly
+
+</details>
 
 ## 🎯 Pre-trained YOLO Model
 
@@ -159,15 +159,19 @@ You can use this model directly without any additional training. The model has b
 
 ## 🚀 Installation
 
-### 1. Clone Repository
+<details>
+<summary><strong>1. Clone Repository</strong></summary>
 
 ```bash
 git clone https://github.com/wink-wink-wink555/blind_navigation.git
 cd blind_navigation
 ```
 
-### 2. Create Virtual Environment (Recommended)
+</details>
 
+<details>
+<summary><strong>2. Create Virtual Environment (Recommended)</strong></summary>
+  
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -179,7 +183,11 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Install Dependencies
+</details>
+
+<details>
+<summary><strong>3. Install Dependencies</strong></summary>
+
 
 ```bash
 pip install -r requirements.txt
@@ -191,7 +199,11 @@ Or install packages individually:
 pip install flask pymysql ultralytics ollama numpy pyttsx3 geopy Pillow edge-tts requests opencv-python Werkzeug
 ```
 
-### 4. Install and Configure Ollama
+</deatils>
+
+<details>
+<summary><strong>4. Install and Configure Ollama</strong></summary>
+
 
 Install Ollama and pull the qwen2.5:3b model:
 
@@ -207,7 +219,10 @@ ollama list
 
 Make sure Ollama service is running on `http://localhost:11434` (default port).
 
-### 5. Database Setup
+</details>
+
+<details>
+<summary><strong>5. Database Setup</strong></summary>
 
 Create MySQL database:
 
@@ -217,7 +232,10 @@ CREATE DATABASE blind_navigation CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 
 The application will automatically create required tables on first run.
 
-### 6. Configuration
+</details>
+
+<details>
+<summary><strong>6. Configuration</strong></summary>
 
 Copy `config.example.py` to `config.py` and modify the configuration:
 
@@ -239,6 +257,8 @@ Example configuration:
 # YOLO model configuration
 MODEL_WEIGHTS = 'yolo/best.pt'  # Use the included pre-trained model
 ```
+
+</deatils>
 
 ## 🏃 Running the Application
 
