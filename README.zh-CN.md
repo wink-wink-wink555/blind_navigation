@@ -15,7 +15,8 @@
 
 > 📹 演示视频：https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
 
-## 🏆 荣誉与奖项
+<details>
+<summary><strong>🏆 荣誉与奖项</strong></summary>
 
 本项目已获得以下竞赛奖项与认可：
 
@@ -23,6 +24,8 @@
 - **2025.12** 英特尔平台企业AI解决方案创新实践赛 — 20强，*成功晋级决赛*
 - **2025.8** 中国大学生计算机设计大赛 — 国家级三等奖  
 - **2025.5** 上海市大学生计算机应用能力大赛 — 省级一等奖  
+
+</details>
 
 ---
 
@@ -78,7 +81,8 @@
 - ⚙️ **个性化设置**：可自定义语音速度、音量、性别、年龄段、称呼等参数
 - 🎯 **双端模式**：支持盲人端和家属端两种模式切换
 
-### Ollama 如何驱动导航
+<details>
+<summary><strong>Ollama 如何驱动导航</strong></summary>
 
 当系统检测到盲道方向变化（左转或右转）时，会使用 Ollama qwen2.5:3b 模型生成自然、个性化的语音提示。AI 会考虑：
 - 用户的偏好称呼或昵称
@@ -89,7 +93,10 @@
 
 这创造了比静态预录音消息更加人性化和有吸引力的体验。
 
-### 🤖 多Agent智能助手架构
+</details>
+
+<details>
+<summary><strong>🤖 多Agent智能助手架构</strong></summary>
 
 系统新增了一套统一的多Agent调度中心（`/chat` 接口），用户只需说一句话，系统自动判断意图并派发给对应的Agent处理。
 
@@ -125,6 +132,8 @@ RouterAgent（意图分类器）
 - `"给家属说一声我在路上"` → 消息处理器发送家属消息
 - `"今天天气真好"` → ChatAgent 温暖回应
 
+</details>
+
 ## 🎯 预训练YOLO模型
 
 本项目包含了一个**效果完美的YOLOv8盲道检测模型**：
@@ -149,14 +158,18 @@ RouterAgent（意图分类器）
 
 ## 🚀 安装步骤
 
-### 1. 克隆仓库
+<details>
+<summary><strong>1. 克隆仓库</strong></summary>
 
 ```bash
 git clone https://github.com/wink-wink-wink555/blind_navigation.git
 cd blind_navigation
 ```
 
-### 2. 创建并激活虚拟环境（推荐）
+</details>
+
+<details>
+<summary><strong>2. 创建并激活虚拟环境（推荐）</strong></summary>
 
 ```bash
 # 创建虚拟环境
@@ -169,7 +182,10 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. 安装依赖
+</details>
+
+<details>
+<summary><strong>3. 安装依赖</strong></summary>
 
 ```bash
 pip install -r requirements.txt
@@ -181,7 +197,10 @@ pip install -r requirements.txt
 pip install flask pymysql ultralytics ollama numpy pyttsx3 geopy Pillow edge-tts requests opencv-python Werkzeug
 ```
 
-### 4. 安装并配置 Ollama
+</details>
+
+<details>
+<summary><strong>4. 安装并配置 Ollama</strong></summary>
 
 安装 Ollama 并拉取 qwen2.5:3b 模型：
 
@@ -197,7 +216,10 @@ ollama list
 
 确保 Ollama 服务运行在 `http://localhost:11434`（默认端口）。
 
-### 5. 配置数据库
+</details>
+
+<details>
+<summary><strong>5. 配置数据库</strong></summary>
 
 创建MySQL数据库：
 
@@ -207,7 +229,10 @@ CREATE DATABASE blind_navigation CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 
 应用会在首次运行时自动创建所需的数据表。
 
-### 6. 配置文件
+</details>
+
+<details>
+<summary><strong>6. 配置文件</strong></summary>
 
 将 `config.example.py` 复制为 `config.py` 并修改配置：
 
@@ -229,6 +254,7 @@ copy config.example.py config.py  # Windows
 # YOLO模型配置
 MODEL_WEIGHTS = 'yolo/best.pt'  # 使用项目包含的预训练模型
 ```
+</details>
 
 ## 🏃 运行应用
 
@@ -240,7 +266,8 @@ python app.py
 
 ## 📖 使用说明
 
-### 1. 账户管理
+<details>
+<summary><strong>1. 账户管理</strong></summary>
 
 #### 注册账户
 1. 访问系统首页，点击"注册"按钮
@@ -253,7 +280,10 @@ python app.py
 2. 点击"登录"按钮进入系统
 3. 如忘记密码，可点击"忘记密码"进行重置
 
-### 2. 盲道导航
+</details>
+
+<details>
+<summary><strong>2. 盲道导航</strong></summary>
 
 #### 视频分析
 1. 点击"上传视频"按钮，选择待分析的视频文件
@@ -265,7 +295,10 @@ python app.py
 2. 点击"开始导航"按钮
 3. 系统会实时分析摄像头画面，提供语音导航指引
 
-### 3. 多Agent智能助手
+</details>
+
+<details>
+<summary><strong>3. 多Agent智能助手</strong></summary>
 
 系统内置统一的AI对话入口，自动识别您的意图并派发给对应的专属Agent处理，无需切换界面。
 
@@ -295,8 +328,11 @@ SettingsAgent 会自动解析意图、校验参数并实时更新设置。
 #### 日常闲聊
 系统内置温暖的陪伴式 ChatAgent，支持日常对话，带完整对话上下文记忆，让出行不孤单。
 
-### 4. 位置共享
+</details>
 
+<details>
+<summary><strong>4. 位置共享</strong></summary>
+  
 #### 分享位置
 1. 在主界面点击"位置共享"按钮
 2. 授权系统访问位置信息
@@ -308,8 +344,11 @@ SettingsAgent 会自动解析意图、校验参数并实时更新设置。
 2. 在主界面点击"查看位置"按钮
 3. 系统会显示地图界面，标注视障人士的实时位置
 
-### 5. 系统设置
+</details>
 
+<details>
+<summary><strong>5. 系统设置</strong></summary>
+  
 #### 个性化设置
 1. 点击主界面的"设置"按钮
 2. 可调整以下参数：
@@ -322,6 +361,8 @@ SettingsAgent 会自动解析意图、校验参数并实时更新设置。
    - **鼓励功能**：开/关（适当时给予鼓励）
 3. 点击"测试语音"按钮预览效果
 4. 点击"保存设置"按钮保存更改
+
+</details>
 
 ## ⚠️ 注意事项
 
