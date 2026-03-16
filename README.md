@@ -82,7 +82,8 @@ This system addresses the following challenges:
 - ⚙️ **Personalized Settings**: Customizable voice speed, volume, gender, age group, address preferences, etc.
 - 🎯 **Dual Mode**: Supports both visually impaired user mode and family member mode
 
-### How Ollama Powers Navigation
+<details>
+<summary><strong>How Ollama Powers Navigation</strong></summary>
 
 When the system detects a change in tactile paving direction (left or right turn), it uses the Ollama qwen2.5:3b model to generate natural, personalized voice prompts. The AI considers:
 - User's preferred name or nickname
@@ -93,7 +94,10 @@ When the system detects a change in tactile paving direction (left or right turn
 
 This creates a more human-like and engaging experience compared to static, pre-recorded messages.
 
-### 🤖 Multi-Agent Architecture
+</details>
+
+<details>
+<summary><strong>🤖 Multi-Agent Architecture</strong></summary>
 
 The system features a unified multi-agent dispatch center (`/chat` endpoint). Users send a single message and the system automatically identifies the intent and routes it to the appropriate agent.
 
@@ -113,6 +117,8 @@ RouterAgent (Intent Classifier)
     │
     └─ chat     ──► ChatAgent (Warm companion chat with full context)
 ```
+
+</details>
 
 **Agent Responsibilities:**
 
@@ -244,7 +250,8 @@ The application will run at http://127.0.0.1:5000/
 
 ## 📖 Usage Guide
 
-### 1. Account Management
+<details>
+<summary><strong>1. Account Management</strong></summary>
 
 #### Register Account
 1. Visit system homepage and click "Register"
@@ -257,7 +264,10 @@ The application will run at http://127.0.0.1:5000/
 2. Click "Login" to access the system
 3. Click "Forgot Password" to reset if needed
 
-### 2. Tactile Paving Navigation
+</details>
+
+<details>
+<summary><strong>2. Tactile Paving Navigation</strong></summary>
 
 #### Video Analysis
 1. Click "Upload Video" and select video file for analysis
@@ -269,7 +279,10 @@ The application will run at http://127.0.0.1:5000/
 2. Click "Start Navigation"
 3. System analyzes camera feed in real-time and provides voice navigation guidance
 
-### 3. Multi-Agent AI Assistant
+</details>
+
+<details>
+<summary><strong>3. Multi-Agent AI Assistant</strong></summary>
 
 The system has a unified AI chat interface that automatically identifies your intent and routes it to the appropriate agent — no need to switch screens.
 
@@ -299,8 +312,11 @@ Just say what you want to send:
 #### Companion Chat
 The built-in warm ChatAgent supports everyday conversation with full conversation memory, so you never feel alone on the road.
 
-### 4. Location Sharing
+</details>
 
+<details>
+<summary><strong>4. Location Sharing</strong></summary>
+  
 #### Share Location
 1. Click "Location Sharing" button on main interface
 2. Authorize system to access location information
@@ -312,8 +328,11 @@ The built-in warm ChatAgent supports everyday conversation with full conversatio
 2. Click "View Location" on main interface
 3. System displays map interface with real-time location marker
 
-### 5. System Settings
+</details>
 
+<details>
+<summary><strong>5. System Settings</strong></summary>
+  
 #### Personalized Settings
 1. Click "Settings" button on main interface
 2. Adjust the following parameters:
@@ -326,6 +345,8 @@ The built-in warm ChatAgent supports everyday conversation with full conversatio
    - **Encouragement**: On/Off (provides encouragement when appropriate)
 3. Click "Test Voice" to preview
 4. Click "Save Settings" to save changes
+
+</details>
 
 ## ⚠️ Notes
 
