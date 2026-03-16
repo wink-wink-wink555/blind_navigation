@@ -16,7 +16,7 @@
 > 📹 演示视频：https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
 
 <details>
-<summary><strong>🏆 荣誉与奖项</strong>  <em>点击查看</em></summary>
+<summary><strong>🏆 荣誉与奖项</strong>  <em>（点击查看）</em></summary>
 
 本项目已获得以下竞赛奖项与认可：
 
