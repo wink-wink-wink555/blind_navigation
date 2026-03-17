@@ -82,7 +82,7 @@
 - 🎯 **双端模式**：支持盲人端和家属端两种模式切换
 
 <details>
-<summary><strong>Ollama 如何驱动导航</strong></summary>
+<summary><strong>🦙 Ollama 如何驱动导航</strong></summary>
 
 当系统检测到盲道方向变化（左转或右转）时，会使用 Ollama qwen2.5:3b 模型生成自然、个性化的语音提示。AI 会考虑：
 - 用户的偏好称呼或昵称
