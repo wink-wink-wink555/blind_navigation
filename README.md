@@ -86,7 +86,7 @@ This system addresses the following challenges:
 - 🎯 **Dual Mode**: Supports both visually impaired user mode and family member mode
 
 <details>
-<summary><strong>How Ollama Powers Navigation</strong></summary>
+<summary><strong>🦙 How Ollama Powers Navigation</strong></summary>
 
 When the system detects a change in tactile paving direction (left or right turn), it uses the Ollama qwen2.5:3b model to generate natural, personalized voice prompts. The AI considers:
 - User's preferred name or nickname
