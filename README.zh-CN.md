@@ -13,7 +13,7 @@
 
 </div>
 
-> 📹 演示视频：https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
+> 📹 演示视频: [V1.0.0](https://www.bilibili.com/video/BV1kD57zGE68), [V2.0.0](https://openatom.tech/enterprise-ai/614b385486d53533dd74f9428aa83087/blob/master/A_%E9%A1%B9%E7%9B%AE%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91.mp4)
 
 <details>
 <summary><strong>🏆 荣誉与奖项</strong>  <em>（点击查看）</em></summary>
