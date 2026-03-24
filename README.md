@@ -13,7 +13,7 @@
 
 </div>
 
-> 📹 Demo Video: https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0)
+> 📹 Demo Video: https://www.bilibili.com/video/BV1kD57zGE68 (v1.0.0), https://openatom.tech/enterprise-ai/614b385486d53533dd74f9428aa83087/blob/master/A_%E9%A1%B9%E7%9B%AE%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91.mp4 (v2.0.0)
 
 <div align="center">
   <img src="PPT/Graph.png" alt="Graph">
