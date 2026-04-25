@@ -1,8 +1,3 @@
-"""
-dataset_tools/02_data_cleaning.py
-清晰度检测 + 曝光检测 + 尺寸标准化 + 清洗报告生成
-"""
-
 import json
 import cv2
 import numpy as np
@@ -12,98 +7,117 @@ from tqdm import tqdm
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
-from config import (RAW_IMAGE_DIR, CLEAN_IMAGE_DIR, TARGET_IMAGE_SIZE,
+from config import (MAKESENSE_IMAGE_DIR, MAKESENSE_LABEL_DIR,
+                    CLEAN_IMAGE_DIR, YOLO_LABEL_DIR,
+                    TARGET_IMAGE_SIZE,
                     MIN_BLUR_THRESHOLD, MAX_OVEREXPOSE_RATIO, MAX_UNDEREXPOSE_RATIO,
-                    REPORT_DIR)
+                    REPORT_DIR, NUM_CLASSES)
+from utils.bbox_utils import resize_pad_bboxes
 
 
 def compute_blur_laplacian(image: np.ndarray) -> float:
-    """
-    使用拉普拉斯算子方差评估清晰度。值越大越清晰。
-    """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return cv2.Laplacian(gray, cv2.CV_64F).var()
 
 
-def check_exposure(image: np.ndarray) -> Tuple[bool, float, float]:
-    """
-    检查过曝/欠曝比例
-    返回: (是否合格, 过曝比例, 欠曝比例)
-    """
+def check_exposure(image: np.ndarray):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     total_pixels = gray.size
-
     overexpose = np.sum(gray > 250) / total_pixels
     underexpose = np.sum(gray < 20) / total_pixels
-
     is_ok = (overexpose <= MAX_OVEREXPOSE_RATIO) and (underexpose <= MAX_UNDEREXPOSE_RATIO)
     return is_ok, overexpose, underexpose
 
 
-def clean_image(image_path: Path) -> dict:
-    """
-    对单张图片执行清洗流程
-    """
+def load_yolo_bboxes(label_path: Path) -> list:
+    if not label_path.exists():
+        return []
+    bboxes = []
+    with open(label_path, 'r') as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) == 5:
+                bboxes.append([int(parts[0])] + [float(x) for x in parts[1:]])
+    return bboxes
+
+
+def save_yolo_bboxes(bboxes: list, save_path: Path):
+    lines = []
+    for b in bboxes:
+        lines.append(f"{int(b[0])} {b[1]:.6f} {b[2]:.6f} {b[3]:.6f} {b[4]:.6f}")
+    save_path.write_text("
+".join(lines), encoding='utf-8')
+
+
+def clean_and_normalize(image_path: Path, label_path: Path) -> dict:
     img = cv2.imread(str(image_path))
     if img is None:
-        return {"status": "failed", "reason": "无法读取文件", "path": str(image_path)}
+        return {"status": "failed", "reason": "Cannot read file", "path": image_path.name}
 
-    # 1. 清晰度检测
+    orig_h, orig_w = img.shape[:2]
+    bboxes = load_yolo_bboxes(label_path)
+
     blur_score = compute_blur_laplacian(img)
     if blur_score < MIN_BLUR_THRESHOLD:
         return {
             "status": "rejected",
-            "reason": "过于模糊",
+            "reason": "Too blurry",
             "blur_score": round(blur_score, 2),
             "path": image_path.name
         }
 
-    # 2. 曝光检测
     exposure_ok, over_r, under_r = check_exposure(img)
     if not exposure_ok:
         return {
             "status": "rejected",
-            "reason": f"曝光异常(过曝:{over_r:.2%}, 欠曝:{under_r:.2%})",
+            "reason": f"Exposure abnormal(over:{over_r:.2%}, under:{under_r:.2%})",
             "blur_score": round(blur_score, 2),
             "path": image_path.name
         }
 
-    # 3. 尺寸标准化（保持宽高比，短边填充至640x640）
-    pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    orig_w, orig_h = pil_img.size
     target_w, target_h = TARGET_IMAGE_SIZE
-
-    # 等比例缩放
     scale = min(target_w / orig_w, target_h / orig_h)
     new_w = int(orig_w * scale)
     new_h = int(orig_h * scale)
 
-    resized = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
 
-    # 创建640x640画布，居中填充
-    new_img = Image.new('RGB', TARGET_IMAGE_SIZE, (114, 114, 114))  # 灰色填充（YOLO常用）
     paste_x = (target_w - new_w) // 2
     paste_y = (target_h - new_h) // 2
-    new_img.paste(resized, (paste_x, paste_y))
 
-    # 保存
-    save_path = CLEAN_IMAGE_DIR / image_path.name
-    new_img.save(save_path, quality=95)
+    new_img = np.full((target_h, target_w, 3), 114, dtype=np.uint8)
+    new_img[paste_y:paste_y+new_h, paste_x:paste_x+new_w] = resized
+
+    new_bboxes = resize_pad_bboxes(bboxes, orig_w, orig_h, target_w, target_h)
+
+    img_save_path = CLEAN_IMAGE_DIR / image_path.name
+    cv2.imwrite(str(img_save_path), new_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    label_save_path = YOLO_LABEL_DIR / (image_path.stem + ".txt")
+    if new_bboxes:
+        save_yolo_bboxes(new_bboxes, label_save_path)
+    else:
+        label_save_path.write_text("")
 
     return {
         "status": "accepted",
         "blur_score": round(blur_score, 2),
         "original_size": [orig_w, orig_h],
-        "padded_size": TARGET_IMAGE_SIZE,
+        "normalized_size": TARGET_IMAGE_SIZE,
         "scale": round(scale, 4),
+        "boxes": len(new_bboxes),
         "path": image_path.name
     }
 
 
 def main():
-    image_files = sorted(list(RAW_IMAGE_DIR.glob("*.jpg")) + list(RAW_IMAGE_DIR.glob("*.png")))
+    image_files = sorted(list(MAKESENSE_IMAGE_DIR.glob("*.jpg")) +
+                           list(MAKESENSE_IMAGE_DIR.glob("*.jpeg")) +
+                           list(MAKESENSE_IMAGE_DIR.glob("*.png")))
+
     if not image_files:
-        print(f"[错误] {RAW_IMAGE_DIR} 中没有图片，请先运行 01_video_to_frames.py")
+        print(f"[Error] No images found in {MAKESENSE_IMAGE_DIR}")
+        print("Please place MakeSense exported images in data/makesense_export/images/")
         return
 
     report = {
@@ -114,9 +128,10 @@ def main():
         "details": []
     }
 
-    print(f"[开始清洗] 共 {len(image_files)} 张图片...")
-    for img_path in tqdm(image_files, desc="清洗进度"):
-        result = clean_image(img_path)
+    print(f"[Start Cleaning] Total {len(image_files)} images from MakeSense export...")
+    for img_path in tqdm(image_files, desc="Cleaning progress"):
+        label_path = MAKESENSE_LABEL_DIR / (img_path.stem + ".txt")
+        result = clean_and_normalize(img_path, label_path)
         report["details"].append(result)
 
         if result["status"] == "accepted":
@@ -126,17 +141,17 @@ def main():
         else:
             report["failed"] += 1
 
-    # 保存报告
     report_path = REPORT_DIR / "cleaning_report.json"
     with open(report_path, 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
-    print(f"\n[清洗完成]")
-    print(f"  通过: {report['accepted']} | 拒绝: {report['rejected']} | 失败: {report['failed']}")
-    print(f"  报告保存至: {report_path}")
-    print(f"  清洗后图片保存至: {CLEAN_IMAGE_DIR}")
+    print(f"
+[Cleaning Done]")
+    print(f"  Accepted: {report['accepted']} | Rejected: {report['rejected']} | Failed: {report['failed']}")
+    print(f"  Report saved to: {report_path}")
+    print(f"  Cleaned images saved to: {CLEAN_IMAGE_DIR}")
+    print(f"  YOLO labels saved to: {YOLO_LABEL_DIR}")
 
 
 if __name__ == "__main__":
-    from typing import Tuple
     main()
