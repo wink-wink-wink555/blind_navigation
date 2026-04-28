@@ -39,7 +39,7 @@ class RouterAgent:
 extracted_info：
 - settings: {"field": "字段", "value": "目标值"}
 - map: {"query": "地图查询内容"}
-- message: {"message_content": "消息内容"}
+- message: {"recipient": "收件人称呼（如妈妈、爸爸，没指定则为空字符串）", "message_content": "消息内容"}
 - chat: {"topic": "话题"}"""
 
     def __init__(self, api_key):

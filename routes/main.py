@@ -4,7 +4,10 @@
 from flask import Blueprint, render_template, request, session, jsonify
 from utils.decorators import login_required
 from utils.voice_utils import get_available_voices, speak
-from models.database import update_user_settings_in_db, get_user_details, get_user_settings
+from utils.email_utils import is_valid_email
+from models.database import (update_user_settings_in_db, get_user_details,
+                              get_user_settings, get_family_contacts,
+                              add_family_contact, delete_family_contact)
 from config import DEFAULT_USER_SETTINGS
 import threading
 import time
@@ -225,6 +228,55 @@ def send_message():
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": f"发送失败: {str(e)}"}), 500
+
+
+@main_bp.route('/family_contacts', methods=['GET'])
+@login_required
+def list_family_contacts():
+    """获取当前用户的家属联系人列表"""
+    user_id = session.get('user_id')
+    contacts, msg = get_family_contacts(user_id)
+    return jsonify({"status": "success", "contacts": contacts})
+
+
+@main_bp.route('/family_contacts', methods=['POST'])
+@login_required
+def create_family_contact():
+    """添加家属联系人"""
+    user_id = session.get('user_id')
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": "error", "message": "请求数据为空"}), 400
+
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip()
+
+    if not name or not email:
+        return jsonify({"status": "error", "message": "称呼和邮箱不能为空"}), 400
+
+    if len(name) > 50:
+        return jsonify({"status": "error", "message": "称呼不能超过50个字符"}), 400
+
+    if not is_valid_email(email):
+        return jsonify({"status": "error", "message": "邮箱格式不正确"}), 400
+
+    success, msg = add_family_contact(user_id, name, email)
+    if success:
+        contacts, _ = get_family_contacts(user_id)
+        return jsonify({"status": "success", "message": msg, "contacts": contacts})
+    return jsonify({"status": "error", "message": msg}), 400
+
+
+@main_bp.route('/family_contacts/<int:contact_id>', methods=['DELETE'])
+@login_required
+def remove_family_contact(contact_id):
+    """删除家属联系人"""
+    user_id = session.get('user_id')
+    success, msg = delete_family_contact(user_id, contact_id)
+    if success:
+        contacts, _ = get_family_contacts(user_id)
+        return jsonify({"status": "success", "message": msg, "contacts": contacts})
+    return jsonify({"status": "error", "message": msg}), 400
 
 
 @main_bp.route('/get_user_details', methods=['GET'])

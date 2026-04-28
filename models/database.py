@@ -58,6 +58,18 @@ def init_database():
                 )
             ''')
 
+            # 创建家属联系人表
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS family_contacts (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    name VARCHAR(50) NOT NULL,
+                    email VARCHAR(100) NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            ''')
+
         conn.commit()
         print("数据库初始化成功")
         return True
@@ -271,6 +283,104 @@ def get_user_details(user_id):
     except Exception as e:
         print(f"获取用户信息失败: {e}")
         return None, f"获取用户信息失败: {str(e)}"
+    finally:
+        conn.close()
+
+
+def get_family_contacts(user_id):
+    """获取用户的所有家属联系人"""
+    conn = get_db_connection()
+    if not conn:
+        return [], "数据库连接失败"
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, email, created_at FROM family_contacts WHERE user_id = %s ORDER BY id",
+                (user_id,)
+            )
+            contacts = cursor.fetchall()
+            for c in contacts:
+                if c.get('created_at'):
+                    c['created_at'] = c['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            return contacts, "成功"
+    except Exception as e:
+        print(f"获取家属联系人失败: {e}")
+        return [], f"获取失败: {str(e)}"
+    finally:
+        conn.close()
+
+
+def add_family_contact(user_id, name, email):
+    """添加家属联系人"""
+    conn = get_db_connection()
+    if not conn:
+        return False, "数据库连接失败"
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) as cnt FROM family_contacts WHERE user_id = %s",
+                (user_id,)
+            )
+            count = cursor.fetchone()['cnt']
+            if count >= 10:
+                return False, "最多只能添加10个家属联系人"
+
+            cursor.execute(
+                "INSERT INTO family_contacts (user_id, name, email) VALUES (%s, %s, %s)",
+                (user_id, name, email)
+            )
+        conn.commit()
+        return True, "添加成功"
+    except Exception as e:
+        conn.rollback()
+        print(f"添加家属联系人失败: {e}")
+        return False, f"添加失败: {str(e)}"
+    finally:
+        conn.close()
+
+
+def delete_family_contact(user_id, contact_id):
+    """删除家属联系人（确保只能删除自己的）"""
+    conn = get_db_connection()
+    if not conn:
+        return False, "数据库连接失败"
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM family_contacts WHERE id = %s AND user_id = %s",
+                (contact_id, user_id)
+            )
+            if cursor.rowcount == 0:
+                return False, "联系人不存在"
+        conn.commit()
+        return True, "删除成功"
+    except Exception as e:
+        conn.rollback()
+        print(f"删除家属联系人失败: {e}")
+        return False, f"删除失败: {str(e)}"
+    finally:
+        conn.close()
+
+
+def find_family_contact_by_name(user_id, name):
+    """根据称呼模糊查找家属联系人"""
+    conn = get_db_connection()
+    if not conn:
+        return None
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, email FROM family_contacts WHERE user_id = %s AND name LIKE %s",
+                (user_id, f'%{name}%')
+            )
+            return cursor.fetchone()
+    except Exception as e:
+        print(f"查找家属联系人失败: {e}")
+        return None
     finally:
         conn.close()
 

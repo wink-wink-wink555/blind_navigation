@@ -5,8 +5,8 @@ edge-tts==6.1.9
 requests==2.31.0
 opencv-python==4.8.1.78
 Werkzeug==3.0.1
-ollama==0.1.6
 numpy==1.24.3
 pyttsx3==2.90
 geopy==2.4.0
 Pillow==10.1.0
+dashscope>=1.20.0

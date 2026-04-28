@@ -3,16 +3,21 @@
 基于意图路由器将用户消息分发到不同的Agent处理
 支持完整对话上下文传递
 """
+import os
 import re
 import requests
 import json
+import tempfile
 from flask import Blueprint, request, session, jsonify
 from utils.decorators import login_required
 from services.router_agent import RouterAgent
 from services.settings_agent import SettingsAgent
 from services.deepseek_ai import DeepSeekAI
 from services.baidu_map_mcp import BaiduMapMCP
-from config import DEEPSEEK_CONFIG, BAIDU_MAP_CONFIG
+from services.speech_agent import SpeechToTextAgent, StutterCorrectionAgent
+from config import DEEPSEEK_CONFIG, BAIDU_MAP_CONFIG, DASHSCOPE_CONFIG
+from models.database import get_family_contacts, find_family_contact_by_name
+from utils.email_utils import send_family_email
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -67,6 +72,119 @@ def chat():
             "intent": "error",
             "message": f"服务异常：{str(e)}"
         }), 500
+
+
+@chat_bp.route('/speech_to_text', methods=['POST'])
+@login_required
+def speech_to_text():
+    """语音转文字接口 - 接收音频文件，返回识别文本（经口吃纠正处理）"""
+    try:
+        if 'audio' not in request.files:
+            return jsonify({"status": "error", "message": "未收到音频文件"}), 400
+
+        audio_file = request.files['audio']
+        if not audio_file.filename:
+            return jsonify({"status": "error", "message": "音频文件为空"}), 400
+
+        api_key = request.form.get('api_key', '').strip()
+        stt_model = request.form.get('stt_model', '').strip()
+
+        if not api_key:
+            api_key = session.get('dashscope_api_key', DASHSCOPE_CONFIG['api_key'])
+        if not stt_model:
+            stt_model = session.get('stt_model', DASHSCOPE_CONFIG['stt_model'])
+
+        tmp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
+        os.makedirs(tmp_dir, exist_ok=True)
+
+        tmp_path = os.path.join(tmp_dir, f'stt_temp_{session.get("user_id", "0")}.wav')
+        audio_file.save(tmp_path)
+        print(f"[STT] 音频文件已保存: {tmp_path}, 大小: {os.path.getsize(tmp_path)} bytes")
+
+        # Step 1: 语音转文字
+        stt_agent = SpeechToTextAgent(api_key, stt_model)
+        stt_result = stt_agent.transcribe(tmp_path)
+
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+
+        if not stt_result['success']:
+            return jsonify({
+                "status": "error",
+                "message": stt_result['error']
+            }), 400
+
+        raw_text = stt_result['text']
+
+        if not raw_text.strip():
+            return jsonify({
+                "status": "error",
+                "message": "未识别到有效语音内容，请重新录制"
+            }), 400
+
+        # Step 2: 口吃纠正Agent
+        stutter_agent = StutterCorrectionAgent()
+        correction_result = stutter_agent.correct(raw_text)
+
+        final_text = correction_result['corrected'] if correction_result['success'] else raw_text
+
+        return jsonify({
+            "status": "success",
+            "text": final_text,
+            "raw_text": raw_text,
+            "has_stutter": correction_result.get('has_stutter', False)
+        })
+
+    except Exception as e:
+        print(f"[STT] 接口异常: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "message": f"语音识别服务异常：{str(e)}"
+        }), 500
+
+
+@chat_bp.route('/update_stt_settings', methods=['POST'])
+@login_required
+def update_stt_settings():
+    """更新语音识别设置（API Key 和模型）"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "请求数据为空"}), 400
+
+        api_key = data.get('api_key', '').strip()
+        stt_model = data.get('stt_model', '').strip()
+
+        if api_key:
+            session['dashscope_api_key'] = api_key
+        if stt_model:
+            session['stt_model'] = stt_model
+        session.modified = True
+
+        return jsonify({
+            "status": "success",
+            "message": "语音识别设置已更新"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"更新失败：{str(e)}"
+        }), 500
+
+
+@chat_bp.route('/get_stt_settings', methods=['GET'])
+@login_required
+def get_stt_settings():
+    """获取当前语音识别设置"""
+    return jsonify({
+        "status": "success",
+        "api_key": session.get('dashscope_api_key', DASHSCOPE_CONFIG['api_key']),
+        "stt_model": session.get('stt_model', DASHSCOPE_CONFIG['stt_model'])
+    })
 
 
 def _build_context_messages(chat_history, max_turns=20):
@@ -241,26 +359,74 @@ def _execute_map_tool(baidu_mcp, action, params):
 
 
 def _handle_message(user_message, extracted_info):
-    """处理发送消息请求"""
+    """处理发送消息请求 — 真正通过邮件发送给家属"""
+    user_id = session.get('user_id')
+    user_profile, user_settings = _get_user_profile_context()
+    sender_name = user_settings.get('name', '用户')
+
+    # 1. 提取消息内容和收件人
     message_content = extracted_info.get('message_content', '')
+    recipient_name = extracted_info.get('recipient', '')
 
     if not message_content:
         patterns = [
-            r'(?:发给|发送给?)(?:家属|家人)(?:消息|信息)?[：:]\s*(.+)',
-            r'(?:给|跟)(?:家属|家人)(?:说|发|发送)[：:]?\s*(.+)',
-            r'(?:告诉|通知)(?:家属|家人)[：:]?\s*(.+)',
+            r'(?:发给|发送给?)(.+?)(?:消息|信息|说|：|:)\s*(.+)',
+            r'(?:给|跟)(.+?)(?:说|发|发送|发消息)[：:]?\s*(.+)',
+            r'(?:告诉|通知)(.+?)[：:]?\s*(.+)',
         ]
         for pattern in patterns:
             match = re.search(pattern, user_message)
             if match:
-                message_content = match.group(1).strip()
+                possible_recipient = match.group(1).strip()
+                message_content = match.group(2).strip()
+                if not recipient_name and possible_recipient not in ('家属', '家人'):
+                    recipient_name = possible_recipient
                 break
 
     if not message_content:
         message_content = _extract_message_via_llm(user_message)
 
-    user_profile, _ = _get_user_profile_context()
-    reply = _generate_message_reply(user_profile, message_content)
+    if not message_content:
+        reply = _generate_message_reply(user_profile, '', None)
+        return jsonify({"status": "success", "intent": "message", "content": reply})
+
+    # 2. 查找家属联系人
+    contacts, _ = get_family_contacts(user_id)
+
+    if not contacts:
+        return jsonify({
+            "status": "success",
+            "intent": "message",
+            "content": "您还没有添加家属联系人哦，请先在设置中添加家属的称呼和邮箱，我就能帮您发消息了。"
+        })
+
+    target_contact = None
+
+    if recipient_name:
+        target_contact = find_family_contact_by_name(user_id, recipient_name)
+
+    if not target_contact and len(contacts) == 1:
+        target_contact = contacts[0]
+
+    if not target_contact and len(contacts) > 1:
+        names = '、'.join([c['name'] for c in contacts])
+        return jsonify({
+            "status": "success",
+            "intent": "message",
+            "content": f"您有多个家属联系人（{names}），请告诉我要发给谁呢？"
+        })
+
+    # 3. 发送邮件
+    success, msg = send_family_email(
+        to_email=target_contact['email'],
+        sender_name=sender_name,
+        message_content=message_content
+    )
+
+    # 4. 生成自然语言回复
+    reply = _generate_message_reply(
+        user_profile, message_content, target_contact['name'], success
+    )
 
     return jsonify({
         "status": "success",
@@ -269,22 +435,30 @@ def _handle_message(user_message, extracted_info):
     })
 
 
-def _generate_message_reply(user_profile, message_content):
-    """使用LLM为消息发送结果生成自然回复，避免硬编码千篇一律"""
+def _generate_message_reply(user_profile, message_content, recipient_name, send_success=None):
+    """使用LLM为消息发送结果生成自然回复"""
     try:
         headers = {
             'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
             'Content-Type': 'application/json'
         }
-        if message_content:
+        if message_content and send_success is True:
             prompt = (
                 f'{user_profile}\n'
-                f'你是视障导航系统的AI助手，用户刚让你帮忙发了一条消息给家属，内容是：「{message_content}」。\n'
+                f'你是视障导航系统的AI助手，用户刚让你帮忙通过邮件发了一条消息给{recipient_name}，内容是：「{message_content}」。邮件已经成功发送。\n'
                 '请用1句温暖自然的话确认消息已发送。要求：\n'
-                '- 提及消息内容的关键词，让用户确认发对了\n'
+                '- 提及发给了谁、消息内容的关键词，让用户确认发对了\n'
                 '- 语气亲切，不要机械化\n'
                 '- 不超过30个字\n'
-                '- 每次措辞要有变化，不要总说"请放心"'
+                '- 每次措辞要有变化'
+            )
+        elif message_content and send_success is False:
+            prompt = (
+                f'{user_profile}\n'
+                f'你是视障导航系统的AI助手，用户让你帮忙给{recipient_name}发消息，但邮件发送失败了。\n'
+                '请用1句话温和地告知用户发送失败，建议稍后重试。要求：\n'
+                '- 语气安抚，不要让用户焦虑\n'
+                '- 不超过25个字'
             )
         else:
             prompt = (
@@ -296,9 +470,7 @@ def _generate_message_reply(user_profile, message_content):
             )
         data = {
             'model': DEEPSEEK_CONFIG['model'],
-            'messages': [
-                {'role': 'system', 'content': prompt}
-            ],
+            'messages': [{'role': 'system', 'content': prompt}],
             'temperature': 0.8,
             'max_tokens': 100
         }
@@ -309,13 +481,16 @@ def _generate_message_reply(user_profile, message_content):
             return response.json()['choices'][0]['message']['content'].strip()
     except Exception:
         pass
-    if message_content:
-        return f'消息已发给家属了：「{message_content}」'
+
+    if message_content and send_success is True:
+        return f'已把消息通过邮件发给{recipient_name}了：「{message_content}」'
+    elif message_content and send_success is False:
+        return '抱歉，邮件发送失败了，请稍后再试一下。'
     return '您想给家属说什么呢？'
 
 
 def _extract_message_via_llm(user_message):
-    """使用LLM提取消息内容（正则匹配失败时的兜底）"""
+    """使用LLM提取消息内容和收件人（正则匹配失败时的兜底）"""
     try:
         headers = {
             'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',

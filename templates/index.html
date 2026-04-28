@@ -541,15 +541,24 @@
             display: flex;
             border-bottom: 2px solid #e9ecef;
             margin-bottom: 1.5rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .tab {
-            padding: 0.8rem 1.2rem;
+            padding: 0.8rem 1rem;
             cursor: pointer;
             transition: var(--transition);
             border-bottom: 2px solid transparent;
             margin-bottom: -2px;
             font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-size: 0.9rem;
         }
 
         .tab.active {
@@ -558,7 +567,7 @@
         }
 
         .tab-icon {
-            margin-right: 0.5rem;
+            margin-right: 0.3rem;
         }
 
         .tab-content {
@@ -566,6 +575,133 @@
         }
 
         .tab-content.active {
+            display: block;
+        }
+
+        /* 家属联系人样式 */
+        .contact-list {
+            margin: 1rem 0;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 0.6rem;
+            transition: var(--transition);
+        }
+
+        .contact-item:hover {
+            background: #e9ecef;
+        }
+
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contact-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .contact-details {
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .contact-email {
+            font-size: 0.8rem;
+            color: #999;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .contact-delete {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .contact-delete:hover {
+            background: #fee2e2;
+        }
+
+        .contact-add-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-add-form input {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .contact-add-form input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+        }
+
+        .contact-add-btn {
+            padding: 0.6rem 1.2rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .contact-add-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .contact-empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #adb5bd;
+        }
+
+        .contact-empty i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
             display: block;
             animation: fadeIn 0.3s ease;
         }
@@ -1269,6 +1405,89 @@
             animation: pulse-red 1.5s infinite;
         }
         .chat-send-btn.speaking:hover { background: #c82333; }
+
+        .chat-mic-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #6c757d;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .chat-mic-btn:hover { background: #5a6268; transform: scale(1.05); }
+
+        .chat-mic-btn.recording {
+            background: #dc3545;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        .chat-mic-btn.processing {
+            background: #fd7e14;
+            animation: pulse-orange 1.5s infinite;
+        }
+
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 0 0 rgba(253, 126, 20, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(253, 126, 20, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(253, 126, 20, 0); }
+        }
+
+        .recording-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: linear-gradient(135deg, #fff5f5, #ffe3e3);
+            border: 1px solid #ffc9c9;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #c92a2a;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .recording-indicator.active { display: flex; }
+
+        .recording-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .recording-timer {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        .stt-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            color: #868e96;
+            margin-top: 0.3rem;
+        }
+
+        .stt-badge i { font-size: 0.7rem; }
+
+        .stt-badge .stutter-fixed {
+            color: #2b8a3e;
+            font-weight: 500;
+        }
 
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
@@ -2167,7 +2386,8 @@
                                     🗺️ <strong>查地图</strong> — 路线规划、附近搜索<br>
                                     ⚙️ <strong>改设置</strong> — 语音速度、音量、鼓励功能<br>
                                     💬 <strong>发消息</strong> — 给家属发送消息<br>
-                                    直接说就好！
+                                    🎤 <strong>语音输入</strong> — 点击麦克风按钮说话<br>
+                                    直接打字或语音说就好！
                                 </div>
                             </div>
                         </div>
@@ -2181,9 +2401,19 @@
                             <span class="chat-suggestion-pill" onclick="fillChatInput('帮我发给家属消息：我已经到了')">💬 发消息</span>
                         </div>
 
+                        <!-- 录音状态指示器 -->
+                        <div class="recording-indicator" id="recordingIndicator">
+                            <span class="recording-dot"></span>
+                            <span>正在录音</span>
+                            <span class="recording-timer" id="recordingTimer">00:00</span>
+                        </div>
+
                         <!-- 输入区域 -->
                         <div class="chat-input-area">
-                            <input type="text" id="chatInput" class="chat-input" placeholder="输入消息，例如：帮我把音量调大...">
+                            <input type="text" id="chatInput" class="chat-input" placeholder="输入消息，或点击麦克风语音输入...">
+                            <button id="chatMicBtn" class="chat-mic-btn" onclick="toggleRecording()" title="按住说话 / 点击开始录音">
+                                <i class="fas fa-microphone" id="chatMicIcon"></i>
+                            </button>
                             <button id="chatSendBtn" class="chat-send-btn" onclick="handleChatSend()">
                                 <i class="fas fa-paper-plane" id="chatSendIcon"></i>
                             </button>
@@ -2248,6 +2478,12 @@
                 </div>
                 <div class="tab" onclick="switchTab('voiceTab')">
                     <i class="fas fa-volume-up tab-icon"></i>语音设置
+                </div>
+                <div class="tab" onclick="switchTab('contactsTab')">
+                    <i class="fas fa-address-book tab-icon"></i>家属联系人
+                </div>
+                <div class="tab" onclick="switchTab('sttTab')">
+                    <i class="fas fa-microphone-alt tab-icon"></i>语音识别
                 </div>
             </div>
 
@@ -2355,6 +2591,76 @@
 
                     <button type="button" class="settings-save" onclick="saveSettings()">
                         <i class="fas fa-save"></i> 保存全部设置
+                    </button>
+                </div>
+
+                <!-- 家属联系人标签页 -->
+                <div id="contactsTab" class="tab-content">
+                    <div class="section-title">家属联系人管理</div>
+                    <p style="margin-bottom: 1rem; color: #6c757d;">添加家属的称呼和邮箱后，您可以通过AI助手语音发送邮件消息给家属。</p>
+
+                    <div class="contact-list" id="contactList">
+                        <div class="contact-empty" id="contactEmpty">
+                            <i class="fas fa-user-plus"></i>
+                            <p>还没有添加家属联系人<br>请在下方添加</p>
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 1.5rem;">添加新联系人</div>
+                    <div class="contact-add-form">
+                        <input type="text" id="newContactName" placeholder="称呼（如：妈妈）" maxlength="50">
+                        <input type="email" id="newContactEmail" placeholder="邮箱地址">
+                        <button type="button" class="contact-add-btn" onclick="addFamilyContact()">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 语音识别设置标签页 -->
+                <div id="sttTab" class="tab-content">
+                    <div class="section-title">语音识别设置</div>
+                    <p style="margin-bottom: 1rem; color: #6c757d;">配置阿里云百炼平台的语音识别服务。在AI助手聊天中可以使用麦克风按钮进行语音输入。</p>
+
+                    <div class="form-group">
+                        <label for="sttApiKey">API Key（阿里云百炼）</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="password" id="sttApiKey" placeholder="请输入阿里云百炼 API Key" style="flex: 1;">
+                            <button type="button" onclick="toggleSttKeyVisibility()" style="background: none; border: 1px solid #dee2e6; border-radius: 6px; padding: 0.5rem 0.7rem; cursor: pointer; color: #6c757d;">
+                                <i class="fas fa-eye" id="sttKeyEyeIcon"></i>
+                            </button>
+                        </div>
+                        <small style="display: block; margin-top: 5px; color: #6c757d;">
+                            用于调用阿里云百炼平台的 Paraformer 语音识别模型。
+                            <a href="https://bailian.console.aliyun.com/" target="_blank" style="color: var(--primary-color);">获取 API Key</a>
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sttModel">语音识别模型</label>
+                        <select id="sttModel">
+                            <option value="paraformer-realtime-v2">paraformer-realtime-v2（推荐，多语言）</option>
+                            <option value="paraformer-realtime-8k-v2">paraformer-realtime-8k-v2（8kHz 电话场景）</option>
+                            <option value="paraformer-v2">paraformer-v2（高精度离线）</option>
+                        </select>
+                        <small style="display: block; margin-top: 5px; color: #6c757d;">
+                            推荐使用 paraformer-realtime-v2，支持中英日韩等多语言识别。
+                        </small>
+                    </div>
+
+                    <div style="background: #f0f9ff; border: 1px solid #bae7ff; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem; color: #0c5460;">
+                            <i class="fas fa-info-circle"></i> 工作流程说明
+                        </div>
+                        <div style="font-size: 0.85rem; color: #495057; line-height: 1.6;">
+                            <div>1. 点击聊天窗口中的 <i class="fas fa-microphone"></i> 麦克风按钮开始录音</div>
+                            <div>2. 录音完成后，音频发送到阿里云百炼进行语音识别</div>
+                            <div>3. <strong>口吃纠正 Agent</strong> 自动优化识别结果（如"你、你好"→"你好"）</div>
+                            <div>4. 优化后的文本自动填入输入框，点击发送即可</div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="settings-save" onclick="saveSttSettings()" style="margin-top: 0.5rem;">
+                        <i class="fas fa-save"></i> 保存语音识别设置
                     </button>
                 </div>
             </form>
@@ -3273,11 +3579,100 @@
                 console.warn('获取最新设置失败，使用缓存:', e);
             }
 
+            loadFamilyContacts();
             document.getElementById('settingsModal').style.display = 'flex';
         }
 
         function closeSettings() {
             document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        async function loadFamilyContacts() {
+            try {
+                const resp = await fetch('/family_contacts');
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    renderContacts(result.contacts);
+                }
+            } catch (e) {
+                console.warn('加载联系人失败:', e);
+            }
+        }
+
+        function renderContacts(contacts) {
+            const list = document.getElementById('contactList');
+            const empty = document.getElementById('contactEmpty');
+            list.querySelectorAll('.contact-item').forEach(el => el.remove());
+
+            if (!contacts || contacts.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            contacts.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'contact-item';
+                const initial = c.name.charAt(0);
+                item.innerHTML = `
+                    <div class="contact-info">
+                        <div class="contact-avatar">${initial}</div>
+                        <div class="contact-details">
+                            <div class="contact-name">${c.name}</div>
+                            <div class="contact-email">${c.email}</div>
+                        </div>
+                    </div>
+                    <button class="contact-delete" onclick="deleteFamilyContact(${c.id})" title="删除">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                list.insertBefore(item, empty);
+            });
+        }
+
+        async function addFamilyContact() {
+            const nameInput = document.getElementById('newContactName');
+            const emailInput = document.getElementById('newContactEmail');
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if (!name || !email) {
+                alert('请填写称呼和邮箱');
+                return;
+            }
+
+            try {
+                const resp = await fetch('/family_contacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    nameInput.value = '';
+                    emailInput.value = '';
+                    renderContacts(result.contacts);
+                } else {
+                    alert(result.message);
+                }
+            } catch (e) {
+                alert('添加失败，请重试');
+            }
+        }
+
+        async function deleteFamilyContact(contactId) {
+            if (!confirm('确定要删除这个联系人吗？')) return;
+            try {
+                const resp = await fetch(`/family_contacts/${contactId}`, { method: 'DELETE' });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    renderContacts(result.contacts);
+                } else {
+                    alert(result.message);
+                }
+            } catch (e) {
+                alert('删除失败，请重试');
+            }
         }
 
         // 标签页切换
@@ -3293,6 +3688,10 @@
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => tab.classList.remove('active'));
             event.currentTarget.classList.add('active');
+
+            if (tabId === 'sttTab') {
+                loadSttSettings();
+            }
         }
 
         // 用户模式切换
@@ -4639,6 +5038,299 @@
                 });
             }
         });
+
+        // ========== 语音识别功能（阿里云百炼 STT + 口吃纠正） ==========
+
+        let isRecording = false;
+        let mediaStream = null;
+        let audioContext = null;
+        let scriptProcessor = null;
+        let audioChunks = [];
+        let recordingStartTime = null;
+        let recordingTimerInterval = null;
+
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            if (isRecording || isChatBusy) return;
+
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        sampleRate: 16000,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                });
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+
+                const bufferSize = 4096;
+                scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+                audioChunks = [];
+
+                scriptProcessor.onaudioprocess = function(e) {
+                    const channelData = e.inputBuffer.getChannelData(0);
+                    audioChunks.push(new Float32Array(channelData));
+                };
+
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+
+                isRecording = true;
+                recordingStartTime = Date.now();
+                updateMicBtnState('recording');
+                startRecordingTimer();
+
+                document.getElementById('chatInput').placeholder = '正在录音，再次点击麦克风停止...';
+                playHintVoice('开始录音');
+
+            } catch (err) {
+                console.error('[录音] 获取麦克风失败:', err);
+                let errMsg = '无法访问麦克风';
+                if (err.name === 'NotAllowedError') {
+                    errMsg = '请允许浏览器使用麦克风';
+                } else if (err.name === 'NotFoundError') {
+                    errMsg = '未检测到麦克风设备';
+                }
+                addErrorBubble(errMsg);
+                playHintVoice(errMsg);
+            }
+        }
+
+        function stopRecording() {
+            if (!isRecording) return;
+
+            isRecording = false;
+            stopRecordingTimer();
+
+            if (scriptProcessor) {
+                scriptProcessor.disconnect();
+                scriptProcessor = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+
+            const sampleRate = audioContext ? audioContext.sampleRate : 16000;
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            if (audioChunks.length === 0) {
+                updateMicBtnState('idle');
+                document.getElementById('chatInput').placeholder = '输入消息，或点击麦克风语音输入...';
+                return;
+            }
+
+            const wavBlob = encodeWAV(audioChunks, sampleRate);
+            audioChunks = [];
+
+            updateMicBtnState('processing');
+            document.getElementById('chatInput').placeholder = '正在识别语音...';
+
+            uploadAudioForSTT(wavBlob);
+        }
+
+        function encodeWAV(chunks, sampleRate) {
+            let totalLength = 0;
+            chunks.forEach(c => totalLength += c.length);
+
+            const merged = new Float32Array(totalLength);
+            let offset = 0;
+            chunks.forEach(c => {
+                merged.set(c, offset);
+                offset += c.length;
+            });
+
+            const buffer = new ArrayBuffer(44 + merged.length * 2);
+            const view = new DataView(buffer);
+
+            function writeStr(offset, str) {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            }
+
+            writeStr(0, 'RIFF');
+            view.setUint32(4, 36 + merged.length * 2, true);
+            writeStr(8, 'WAVE');
+            writeStr(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeStr(36, 'data');
+            view.setUint32(40, merged.length * 2, true);
+
+            let pos = 44;
+            for (let i = 0; i < merged.length; i++) {
+                const s = Math.max(-1, Math.min(1, merged[i]));
+                view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                pos += 2;
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function uploadAudioForSTT(wavBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('audio', wavBlob, 'recording.wav');
+
+                const response = await fetch('/speech_to_text', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success' && result.text) {
+                    const input = document.getElementById('chatInput');
+                    input.value = result.text;
+                    input.focus();
+
+                    let hint = '语音识别完成';
+                    if (result.has_stutter) {
+                        hint = '已识别并优化语音内容';
+                    }
+                    playHintVoice(hint);
+
+                    console.log('[STT] 识别结果:', result.text);
+                    if (result.has_stutter) {
+                        console.log('[STT] 原始文本:', result.raw_text);
+                        console.log('[STT] 口吃已纠正');
+                    }
+                } else {
+                    const errMsg = result.message || '语音识别失败';
+                    addErrorBubble(errMsg);
+                    playHintVoice(errMsg);
+                }
+
+            } catch (error) {
+                console.error('[STT] 上传失败:', error);
+                addErrorBubble(`语音识别请求失败: ${error.message}`);
+                playHintVoice('语音识别服务出现问题');
+            } finally {
+                updateMicBtnState('idle');
+                document.getElementById('chatInput').placeholder = '输入消息，或点击麦克风语音输入...';
+            }
+        }
+
+        function updateMicBtnState(state) {
+            const btn = document.getElementById('chatMicBtn');
+            const icon = document.getElementById('chatMicIcon');
+            const indicator = document.getElementById('recordingIndicator');
+
+            btn.classList.remove('recording', 'processing');
+            indicator.classList.remove('active');
+
+            switch (state) {
+                case 'recording':
+                    btn.classList.add('recording');
+                    icon.className = 'fas fa-stop';
+                    indicator.classList.add('active');
+                    break;
+                case 'processing':
+                    btn.classList.add('processing');
+                    icon.className = 'fas fa-spinner fa-spin';
+                    break;
+                default:
+                    icon.className = 'fas fa-microphone';
+            }
+        }
+
+        function startRecordingTimer() {
+            const timerEl = document.getElementById('recordingTimer');
+            recordingTimerInterval = setInterval(() => {
+                if (!recordingStartTime) return;
+                const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const s = String(elapsed % 60).padStart(2, '0');
+                timerEl.textContent = `${m}:${s}`;
+
+                if (elapsed >= 60) {
+                    stopRecording();
+                    playHintVoice('录音已达到最长时间');
+                }
+            }, 1000);
+        }
+
+        function stopRecordingTimer() {
+            if (recordingTimerInterval) {
+                clearInterval(recordingTimerInterval);
+                recordingTimerInterval = null;
+            }
+            const timerEl = document.getElementById('recordingTimer');
+            if (timerEl) timerEl.textContent = '00:00';
+        }
+
+        // ===== 语音识别设置相关 =====
+
+        function toggleSttKeyVisibility() {
+            const input = document.getElementById('sttApiKey');
+            const icon = document.getElementById('sttKeyEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        async function loadSttSettings() {
+            try {
+                const resp = await fetch('/get_stt_settings');
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    document.getElementById('sttApiKey').value = result.api_key || '';
+                    document.getElementById('sttModel').value = result.stt_model || 'paraformer-realtime-v2';
+                }
+            } catch (e) {
+                console.warn('[STT] 加载设置失败:', e);
+            }
+        }
+
+        async function saveSttSettings() {
+            const apiKey = document.getElementById('sttApiKey').value.trim();
+            const sttModel = document.getElementById('sttModel').value;
+
+            if (!apiKey) {
+                alert('请输入阿里云百炼 API Key');
+                return;
+            }
+
+            try {
+                const resp = await fetch('/update_stt_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey, stt_model: sttModel })
+                });
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    alert('语音识别设置已保存');
+                } else {
+                    alert('保存失败: ' + (result.message || '未知错误'));
+                }
+            } catch (e) {
+                alert('保存设置失败: ' + e.message);
+            }
+        }
+
     </script>
 </body>
 </html>
