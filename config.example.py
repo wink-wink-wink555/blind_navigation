@@ -46,6 +46,12 @@ DEEPSEEK_CONFIG = {
     'model': 'deepseek-chat'
 }
 
+# 阿里云百炼（DashScope）语音识别配置
+DASHSCOPE_CONFIG = {
+    'api_key': 'your_dashscope_api_key',  # 填写您的阿里云百炼API密钥
+    'stt_model': 'paraformer-realtime-v2',  # 语音识别模型
+}
+
 # 视频检测配置
 THRESHOLD_SLOPE = 0.41  # 盲道方向检测斜率阈值
 CALL_INTERVAL = 14  # 语音提示间隔（秒）
@@ -60,6 +66,4 @@ DEFAULT_USER_SETTINGS = {
     "user_mode": "盲人端",  # 用户模式：盲人端/家属端
     "encourage": "开"  # 适当时给予鼓励：开/关
 }
-
-
 
