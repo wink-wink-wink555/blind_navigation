@@ -53,6 +53,7 @@ Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI
 - **Database**: MySQL
 - **Third-party Services**:
   - Baidu Map API - Location services and route planning
+  - DashScope (Alibaba Cloud) - Speech-to-text recognition (paraformer-realtime-v2)
   - Edge TTS / pyttsx3 - Text-to-speech synthesis
 
 ## 🎯 Problems Solved
@@ -78,11 +79,12 @@ This system addresses the following challenges:
 - 🤖 **Multi-Agent AI Assistant**: A DeepSeek AI-powered multi-agent system — users simply speak naturally to:
   - 🗺️ **Map Navigation**: Location queries, walking route planning (optimized for the visually impaired), and nearby place search
   - ⚙️ **Voice Settings**: Query or modify voice speed, volume, encouragement mode, and all other system settings via natural language
-  - 📨 **Family Messaging**: Send location or status messages to family members in one sentence
+  - 📨 **Family Messaging**: Send location or status messages to family members in one sentence (notified via email)
   - 💬 **Companion Chat**: Warm conversational companion to ease the loneliness of travel
 - 👤 **User System**: Complete registration, login, and password recovery functionality
 - 📍 **Location Sharing**: Real-time location sharing for family members
 - ⚙️ **Personalized Settings**: Customizable voice speed, volume, gender, age group, address preferences, etc.
+- 🎙️ **Speech-to-Text**: Real-time speech recognition powered by DashScope (Alibaba Cloud), enabling hands-free voice input
 - 🎯 **Dual Mode**: Supports both visually impaired user mode and family member mode
 
 <details>
@@ -253,6 +255,7 @@ Then modify `config.py`:
 - **Email Config** (`EMAIL_CONFIG`): Configure QQ email SMTP service (for verification codes)
 - **Baidu Map Config** (`BAIDU_MAP_CONFIG`): Set Baidu Map API key
 - **DeepSeek AI Config** (`DEEPSEEK_CONFIG`): Set DeepSeek AI API key
+- **DashScope Config** (`DASHSCOPE_CONFIG`): Set Alibaba Cloud DashScope API key (for speech-to-text recognition)
 - **YOLO Model Path** (`MODEL_WEIGHTS`): Set to `'yolo/best.pt'` (pre-trained model included)
 
 Example configuration:
@@ -374,12 +377,13 @@ The built-in warm ChatAgent supports everyday conversation with full conversatio
 
 - **Ollama service must be running** for personalized voice prompt generation
 - **Multi-Agent AI Assistant** (map navigation, settings modification, companion chat, etc.) requires a valid DeepSeek AI API key
-- Email configuration required for verification code functionality
+- Email configuration required for verification code and family notification functionality
 - Model recognition quality depends on training data quality
 - Ensure camera permissions are enabled when using camera
 - Location sharing requires GPS permissions
 - DeepSeek AI functionality requires valid API key
 - Baidu Map functionality requires valid API key (used by the Map Navigation Agent)
+- DashScope (Alibaba Cloud) API key required for speech-to-text recognition
 
 ## 📧 Contact
 
