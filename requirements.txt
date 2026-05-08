@@ -1,6 +1,6 @@
 Flask==3.0.0
 pymysql==1.1.0
-ultralytics==8.0.0
+ultralytics>=8.4.0
 edge-tts==6.1.9
 requests==2.31.0
 opencv-python==4.8.1.78

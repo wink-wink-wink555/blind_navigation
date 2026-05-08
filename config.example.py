@@ -56,6 +56,14 @@ DASHSCOPE_CONFIG = {
 THRESHOLD_SLOPE = 0.41  # 盲道方向检测斜率阈值
 CALL_INTERVAL = 14  # 语音提示间隔（秒）
 
+# 碰撞预警配置 (Collision Awareness)
+COLLISION_AWARENESS_CONFIG = {
+    "enable": False,            # 是否开启碰撞预警
+    "ttc_threshold": 3.0,       # 碰撞时间阈值（秒）
+    "alert_cooldown": 5.0,      # 语音报警冷却时间（秒）
+    "threat_threshold": 70,     # 威胁分数阈值 (0-100)
+}
+
 # 用户默认设置
 DEFAULT_USER_SETTINGS = {
     "gender": "未指定",  # 性别：男/女/未指定
