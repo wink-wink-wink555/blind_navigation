@@ -35,7 +35,7 @@ This project has received the following awards and accolades:
 
 ## 🌟 Introduction
 
-Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI-powered navigation system designed for visually impaired individuals. It combines computer vision and artificial intelligence to identify tactile paving (guide paths) through real-time video analysis and provides intelligent voice guidance. The system also features a built-in **Multi-Agent AI Assistant** — users can simply speak naturally to complete map navigation, adjust system settings, send messages to family members, and more. Additional features include real-time location sharing to enhance travel safety and independence.
+Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI-powered navigation system designed for visually impaired individuals. This version includes the **Collision Awareness Subsystem** ported from [Visiona AI](https://github.com/paavansirivardhan123/Visiona), enhancing safety through real-time obstacle threat assessment.
 
 ### Tech Stack
 
@@ -43,6 +43,7 @@ Travel Assistance System for the Visually Impaired (ARIADNE) is an innovative AI
 - **Backend**: Flask (Python 3.8+)
 - **AI Models**:
   - YOLO (You Only Look Once) - Tactile paving detection
+  - Collision Awareness Engine - Real-time obstacle threat assessment ★New
   - Ollama (Qwen2.5:3b) - Personalized voice prompt generation
   - DeepSeek AI - Multi-Agent assistant (intent routing, map navigation, settings management, companion chat)
 - **Multi-Agent Architecture**:
@@ -75,6 +76,7 @@ This system addresses the following challenges:
 ## ✨ Key Features
 
 - 🎥 **Real-time Video Analysis**: Uses YOLO model for real-time tactile paving detection
+- ⚠️ **Collision Awareness**: Real-time obstacle detection and Time-to-Collision (TTC) calculation to prevent accidents ★New
 - 🔊 **Intelligent Voice Feedback**: Uses Ollama (qwen2.5:3b) to generate personalized, context-aware voice prompts based on user profile (age, gender, name, preferences)
 - 🤖 **Multi-Agent AI Assistant**: A DeepSeek AI-powered multi-agent system — users simply speak naturally to:
   - 🗺️ **Map Navigation**: Location queries, walking route planning (optimized for the visually impaired), and nearby place search

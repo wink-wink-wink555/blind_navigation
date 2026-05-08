@@ -14,12 +14,19 @@ from ultralytics import YOLO
 from utils.decorators import login_required
 from utils.video_utils import allowed_file, create_error_frame, create_info_frame
 from utils.voice_utils import speak, get_prompt_template
-from config import MODEL_WEIGHTS, UPLOAD_FOLDER, THRESHOLD_SLOPE, CALL_INTERVAL, DEEPSEEK_CONFIG
+from config import MODEL_WEIGHTS, UPLOAD_FOLDER, THRESHOLD_SLOPE, CALL_INTERVAL, DEEPSEEK_CONFIG, COLLISION_AWARENESS_CONFIG
+from services.collision_awareness import CollisionAwarenessManager
 
 video_bp = Blueprint('video', __name__)
 
 # 加载YOLO模型
 model = YOLO(MODEL_WEIGHTS)
+
+# 初始化碰撞预警管理器
+collision_manager = CollisionAwarenessManager(
+    ttc_threshold=COLLISION_AWARENESS_CONFIG.get("ttc_threshold", 3.0),
+    alert_cooldown=COLLISION_AWARENESS_CONFIG.get("alert_cooldown", 5.0)
+)
 
 # 全局变量
 current_video_path = None
@@ -168,9 +175,43 @@ def generate_frames():
                     centers.append((center_x, center_y))
 
                     class_names = model.names
-                    label = f"{class_names[cls]}: {conf:.2f}"
+                    label_name = class_names[cls]
+                    label = f"{label_name}: {conf:.2f}"
                     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                     cv2.putText(frame, label, (int(x1), int(y1) - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # --- Collision Awareness Integration ---
+            if COLLISION_AWARENESS_CONFIG.get("enable", False):
+                # Prepare detections for collision manager
+                collision_dets = []
+                for result in results:
+                    boxes = result.boxes
+                    for box in boxes:
+                        x1, y1, x2, y2 = box.xyxy[0].tolist()
+                        cls = int(box.cls[0])
+                        collision_dets.append({
+                            'box': (x1, y1, x2, y2),
+                            'label': model.names[cls]
+                        })
+                
+                # Process detections
+                collision_result = collision_manager.process_frame(collision_dets)
+                
+                # Handle alerts
+                if collision_result["trigger_alert"] and collision_result["alert_message"]:
+                    from utils.voice_utils import SpeechPriority
+                    current_speech_text = collision_result["alert_message"]
+                    speak(current_speech_text, get_user_settings_for_video(), priority=SpeechPriority.URGENT)
+                    print(f"[碰撞预警] 触发紧急语音提示: {current_speech_text}")
+
+                # Optional: Overlay threat scores on frame
+                for det in collision_result["detections"]:
+                    if det.get('threat_score', 0) > 50:
+                        x1, y1, x2, y2 = det['box']
+                        score = det['threat_score']
+                        cv2.putText(frame, f"THREAT: {score}", (int(x1), int(y2) + 20), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            # ----------------------------------------
 
             current_time = time.time()
             if len(centers) >= 2 and current_time - last_call_time >= CALL_INTERVAL:
