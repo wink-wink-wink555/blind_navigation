@@ -3,6 +3,7 @@
 """
 import pymysql
 import hashlib
+import json
 from config import DB_CONFIG
 from utils.email_utils import verify_code
 
@@ -66,6 +67,17 @@ def init_database():
                     name VARCHAR(50) NOT NULL,
                     email VARCHAR(100) NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            ''')
+
+            # 创建AI模型配置表（按用户隔离，统一存JSON以便扩展更多模型类型）
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_ai_settings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL UNIQUE,
+                    config TEXT NOT NULL,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             ''')
@@ -381,6 +393,60 @@ def find_family_contact_by_name(user_id, name):
     except Exception as e:
         print(f"查找家属联系人失败: {e}")
         return None
+    finally:
+        conn.close()
+
+
+def get_user_ai_settings(user_id):
+    """获取用户的AI模型配置（JSON dict）。如果不存在返回 None。"""
+    conn = get_db_connection()
+    if not conn:
+        return None, "数据库连接失败"
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT config FROM user_ai_settings WHERE user_id = %s",
+                (user_id,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None, "未找到AI配置"
+            try:
+                cfg = json.loads(row['config'])
+                return cfg, "成功"
+            except json.JSONDecodeError as e:
+                return None, f"AI配置解析失败: {e}"
+    except Exception as e:
+        print(f"获取AI配置失败: {e}")
+        return None, f"获取AI配置失败: {str(e)}"
+    finally:
+        conn.close()
+
+
+def save_user_ai_settings(user_id, config_dict):
+    """写入或更新用户的AI模型配置（upsert）。"""
+    conn = get_db_connection()
+    if not conn:
+        return False, "数据库连接失败"
+
+    try:
+        config_json = json.dumps(config_dict, ensure_ascii=False)
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO user_ai_settings (user_id, config)
+                VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE config = VALUES(config)
+                """,
+                (user_id, config_json)
+            )
+        conn.commit()
+        return True, "AI配置保存成功"
+    except Exception as e:
+        conn.rollback()
+        print(f"保存AI配置失败: {e}")
+        return False, f"AI配置保存失败: {str(e)}"
     finally:
         conn.close()
 
