@@ -39,18 +39,24 @@ BAIDU_MAP_CONFIG = {
     'place_search_url': 'https://api.map.baidu.com/place/v2/search'
 }
 
-# DeepSeek AI配置
+# DeepSeek AI配置（系统默认的云端文本模型，用户可在「AI 设置」中按需覆盖为 OpenAI / 本地 Ollama 等）
 DEEPSEEK_CONFIG = {
     'api_key': 'your_deepseek_api_key',  # 填写您的DeepSeek API密钥
     'base_url': 'https://api.deepseek.com/chat/completions',
     'model': 'deepseek-chat'
 }
 
-# 阿里云百炼（DashScope）语音识别配置
+# 阿里云百炼（DashScope）语音识别配置（系统默认的云端STT，用户可在「AI 设置」中覆盖）
 DASHSCOPE_CONFIG = {
     'api_key': 'your_dashscope_api_key',  # 填写您的阿里云百炼API密钥
     'stt_model': 'paraformer-realtime-v2',  # 语音识别模型
 }
+
+# 说明：以上 DEEPSEEK_CONFIG / DASHSCOPE_CONFIG 仅作为系统默认/兜底配置，
+# 每位用户登录后可在「设置 → AI 设置」中独立选择：
+#   - 文本模型：云端（DeepSeek / OpenAI / 阿里云百炼 / 自定义 OpenAI 兼容）或 本地 Ollama
+#   - 语音模型：云端 DashScope Paraformer 或 本地 OpenAI 兼容 STT 服务
+# 这些用户级配置存储在 user_ai_settings 表中。
 
 # 视频检测配置
 THRESHOLD_SLOPE = 0.41  # 盲道方向检测斜率阈值

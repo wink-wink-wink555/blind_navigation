@@ -14,6 +14,7 @@ from routes.main import main_bp
 from routes.video import video_bp
 from routes.map import map_bp
 from routes.chat import chat_bp
+from routes.ai_settings import ai_settings_bp
 
 # 导入数据库初始化函数
 from models.database import init_database
@@ -37,6 +38,7 @@ def create_app():
     app.register_blueprint(video_bp)
     app.register_blueprint(map_bp)
     app.register_blueprint(chat_bp)
+    app.register_blueprint(ai_settings_bp)
     
     return app
 
