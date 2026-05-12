@@ -42,7 +42,7 @@
 - **多 Agent 架构**：
   - RouterAgent - 意图分类路由器
   - MapAgent (ReAct + 百度地图 MCP) - 地图导航 Agent
-  - SettingsAgent - 设置查询/修改 Agent
+  - SettingsAgent - 设置查询/修改 (Text-to-SQL) Agent
   - ChatAgent - 闲聊陪伴 Agent
 - **数据库**：MySQL
 - **第三方服务**：
