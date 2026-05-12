@@ -417,3 +417,32 @@ def get_prompt_template(user_settings):
 '''
 
     return prompt
+
+
+def build_static_turn_text(direction, user_settings):
+    """
+    生成关闭鼓励功能时的硬编码盲道转向播报文本。
+
+    直接使用确定性模板，不走 LLM，保证响应即时、文本稳定可预期：
+        "{称呼}，前方盲道向{左|右}，请缓慢{左|右}转。"
+
+    Args:
+        direction: 'left' 或 'right'
+        user_settings: 用户设置字典（需包含 name、gender）
+
+    Returns:
+        str: 播报文本
+    """
+    gender_term = ""
+    if user_settings.get("gender") == "男":
+        gender_term = "先生"
+    elif user_settings.get("gender") == "女":
+        gender_term = "女士"
+
+    name = (user_settings.get("name") or "").strip()
+    direction_word = "左" if direction == "left" else "右"
+
+    # 没有姓名时直接省略称呼，避免出现"先生，前方..."这种孤立的称谓
+    if name:
+        return f"{name}{gender_term}，前方盲道向{direction_word}，请缓慢{direction_word}转。"
+    return f"前方盲道向{direction_word}，请缓慢{direction_word}转。"
