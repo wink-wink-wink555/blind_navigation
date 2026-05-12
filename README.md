@@ -46,7 +46,7 @@ Travel Assistance System for the Visually Impaired (ARIADNE) is an AI-powered na
 - **Multi-Agent Architecture**:
   - RouterAgent - Intent classification & routing
   - MapAgent (ReAct loop + Baidu Map MCP) - Map navigation agent
-  - SettingsAgent - Settings query & modification agent
+  - SettingsAgent - Settings query & modification (Text-to-SQL) agent
   - ChatAgent - Companion chat agent
 - **Database**: MySQL
 - **Third-party Services**:
