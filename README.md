@@ -287,8 +287,8 @@ Customize gender, preferred name, age group, voice speed, volume, user mode (vis
 ## 🙏 Acknowledgments
 
 Special thanks to the following members for their contributions to the tactile paving dataset collection, annotation, and project proposal:
-- [Chen Xingyu](https://github.com/guangxiangdebizi)
-- Wang Youyi · Liu Yiheng · Cai Yuxin · Zhang Chenshu · Zhang Kai · Shen Qian · Sheng Sheng
+
+[Chen Xingyu](https://github.com/guangxiangdebizi) · Wang Youyi · Shen Qian · Liu Yiheng · Zhang Chenshu · Zhang Kai · Sheng Sheng · Cai Yuxin 
 
 ## 📁 Project Structure
 
