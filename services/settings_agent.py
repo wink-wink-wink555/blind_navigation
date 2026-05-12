@@ -4,9 +4,9 @@
 """
 import requests
 import json
-import re
 from config import DEEPSEEK_CONFIG
 from models.database import get_user_settings, update_user_settings_in_db
+from utils.json_extractor import extract_json_from_llm_response
 
 
 FIELD_MAP = {
@@ -75,8 +75,10 @@ class SettingsAgent:
 - 调慢速度 → {"changes": [{"field": "voice_speed", "value": "慢"}], "response": "已帮您调成慢速了。"}
 - 关鼓励 → {"changes": [{"field": "encourage", "value": "关"}], "response": "鼓励功能已关闭。"}"""
 
-    def __init__(self, api_key):
+    def __init__(self, api_key, base_url=None, model=None):
         self.api_key = api_key
+        self.base_url = base_url or DEEPSEEK_CONFIG['base_url']
+        self.model = model or DEEPSEEK_CONFIG['model']
         self.session = requests.Session()
 
     def process(self, user_message, user_id, chat_history=None, user_profile=""):
@@ -109,14 +111,14 @@ class SettingsAgent:
             messages.append({'role': 'user', 'content': user_message + context})
 
             data = {
-                'model': DEEPSEEK_CONFIG['model'],
+                'model': self.model,
                 'messages': messages,
                 'temperature': 0.1,
                 'max_tokens': 250
             }
 
             response = self.session.post(
-                DEEPSEEK_CONFIG['base_url'],
+                self.base_url,
                 headers=headers,
                 json=data
             )
@@ -127,7 +129,7 @@ class SettingsAgent:
             result = response.json()
             ai_response = result['choices'][0]['message']['content'].strip()
 
-            cleaned = self._clean_json(ai_response)
+            cleaned = extract_json_from_llm_response(ai_response)
             parsed = json.loads(cleaned)
             changes = parsed.get('changes', [])
             ai_reply = parsed.get('response', '')
@@ -183,7 +185,8 @@ class SettingsAgent:
                 'updated_settings': current_settings
             }
 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as je:
+            print(f"[SettingsAgent] JSON解析失败: {je}")
             return {'success': False, 'response': '抱歉，设置解析失败，请再试一次'}
         except Exception as e:
             print(f"[SettingsAgent] 异常: {e}")
@@ -206,16 +209,3 @@ class SettingsAgent:
                     return valid_val
 
         return None
-
-    @staticmethod
-    def _clean_json(text):
-        """清理AI返回中可能包含的Markdown格式"""
-        if '```json' in text:
-            match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
-            if match:
-                return match.group(1).strip()
-        elif '```' in text:
-            match = re.search(r'```\s*(.*?)\s*```', text, re.DOTALL)
-            if match:
-                return match.group(1).strip()
-        return text.strip()

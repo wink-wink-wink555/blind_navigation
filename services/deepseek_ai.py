@@ -3,15 +3,17 @@ DeepSeek AI助手类，用于理解用户自然语言并调用MCP功能
 """
 import requests
 import json
-import re
 from config import DEEPSEEK_CONFIG
+from utils.json_extractor import extract_json_from_llm_response
 
 
 class DeepSeekAI:
     """DeepSeek AI助手类，用于理解用户自然语言并调用MCP功能"""
     
-    def __init__(self, api_key):
+    def __init__(self, api_key, base_url=None, model=None):
         self.api_key = api_key
+        self.base_url = base_url or DEEPSEEK_CONFIG['base_url']
+        self.model = model or DEEPSEEK_CONFIG['model']
         self.session = requests.Session()
         self.system_prompt = """你是地图服务Agent，采用ReAct模式迭代调用工具。
 
@@ -61,6 +63,12 @@ class DeepSeekAI:
 - 调用geocoding时必须提取并传入city参数
 - 一次一个工具，观察结果再决定下一步
 - 避免重复调用
+
+⚠️ 输出格式硬性要求（必须严格遵守，否则系统无法解析）：
+- 你的回复必须是一个完整的JSON对象，第一个字符必须是 `{`，最后一个字符必须是 `}`
+- 不要在JSON前后添加任何说明文字、铺垫、前缀、后缀
+- 不要使用markdown代码块包裹
+- 即使是给出最终answer，也必须用 {"type":"answer","content":"...","reasoning":"..."} 的JSON格式包裹自然语言回复
 """
     
     def understand_user_intent(self, user_message, user_location=None, tool_history=None):
@@ -114,16 +122,16 @@ class DeepSeekAI:
             }
             
             data = {
-                'model': DEEPSEEK_CONFIG['model'],
+                'model': self.model,
                 'messages': messages,
                 'temperature': 0.1,
                 'max_tokens': 500
             }
             
-            print(f"[DeepSeek调试] 请求URL: {DEEPSEEK_CONFIG['base_url']}")
+            print(f"[DeepSeek调试] 请求URL: {self.base_url}")
             print(f"[DeepSeek调试] 请求数据: {data}")
             
-            response = self.session.post(DEEPSEEK_CONFIG['base_url'], headers=headers, json=data)
+            response = self.session.post(self.base_url, headers=headers, json=data)
             
             print(f"[DeepSeek调试] 响应状态码: {response.status_code}")
             print(f"[DeepSeek调试] 响应内容: {response.text}")
@@ -135,22 +143,11 @@ class DeepSeekAI:
                 print(f"[DeepSeek调试] AI回复: {ai_response}")
                 
                 try:
-                    # 解析AI返回的JSON，先清理Markdown格式
-                    # 移除Markdown代码块标记
-                    cleaned_response = ai_response
-                    if '```json' in ai_response:
-                        # 提取```json和```之间的内容
-                        json_match = re.search(r'```json\s*(.*?)\s*```', ai_response, re.DOTALL)
-                        if json_match:
-                            cleaned_response = json_match.group(1).strip()
-                    elif '```' in ai_response:
-                        # 提取```和```之间的内容
-                        json_match = re.search(r'```\s*(.*?)\s*```', ai_response, re.DOTALL)
-                        if json_match:
-                            cleaned_response = json_match.group(1).strip()
-                    
+                    # 容忍 markdown 代码块、前置铺垫文字等情况，提取首个完整 JSON
+                    cleaned_response = extract_json_from_llm_response(ai_response)
+
                     print(f"[DeepSeek调试] 清理后的JSON: {cleaned_response}")
-                    
+
                     intent_data = json.loads(cleaned_response)
                     print(f"[DeepSeek调试] 解析成功: {intent_data}")
                     return {
@@ -159,6 +156,24 @@ class DeepSeekAI:
                     }
                 except json.JSONDecodeError as je:
                     print(f"[DeepSeek调试] JSON解析失败: {je}")
+
+                    # 兜底：deepseek-v4-flash 等轻量模型在工具链末尾经常无视 JSON 约束、
+                    # 直接吐出最终口播内容。如果响应里完全没有 '{'，几乎可以确定它不是想
+                    # 继续调用工具，而是在用自然语言总结。直接当作 answer 播报，避免把已
+                    # 经成功的一串工具调用浪费掉。
+                    if '{' not in ai_response:
+                        fallback_content = ai_response.strip()
+                        if fallback_content:
+                            print(f"[DeepSeek调试] 兜底为最终answer: {fallback_content}")
+                            return {
+                                'success': True,
+                                'intent': {
+                                    'type': 'answer',
+                                    'content': fallback_content,
+                                    'reasoning': '模型未返回JSON，已将自然语言回复兜底为最终answer'
+                                }
+                            }
+
                     return {
                         'success': False,
                         'error': 'AI回复格式解析失败',

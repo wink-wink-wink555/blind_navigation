@@ -1,6 +1,9 @@
 """
-语音识别Agent - 基于阿里云百炼平台（DashScope）实现语音转文字
-包含口吃纠正Agent，对语音识别结果进行优化
+语音识别Agent
+- 云端：阿里云百炼平台（DashScope）Paraformer 模型
+- 本地：OpenAI 兼容的 /v1/audio/transcriptions 接口
+        （如 faster-whisper-server / openai-whisper-asr-webservice 等）
+口吃纠正Agent通过统一的 ai_provider 调用当前激活的文本模型。
 """
 import os
 import requests
@@ -11,11 +14,17 @@ from config import DEEPSEEK_CONFIG
 
 
 class SpeechToTextAgent:
-    """语音转文字Agent，使用阿里云百炼平台 Paraformer 模型"""
+    """
+    语音转文字Agent，支持云端 DashScope 与本地 OpenAI 兼容接口。
+    deployment='cloud' 时走 DashScope；'local' 时走 base_url + /v1/audio/transcriptions。
+    """
 
-    def __init__(self, api_key, model='paraformer-realtime-v2'):
+    def __init__(self, api_key, model='paraformer-realtime-v2',
+                 deployment='cloud', base_url=None):
         self.api_key = api_key
         self.model = model
+        self.deployment = deployment or 'cloud'
+        self.base_url = (base_url or '').rstrip('/')
 
     def transcribe(self, audio_file_path):
         """
@@ -23,9 +32,19 @@ class SpeechToTextAgent:
         :param audio_file_path: 音频文件路径（支持 wav、pcm、opus、aac、amr 等格式）
         :return: dict {'success': bool, 'text': str, 'error': str}
         """
+        if not os.path.exists(audio_file_path):
+            return {'success': False, 'text': '', 'error': '音频文件不存在'}
+
+        if self.deployment == 'local':
+            return self._transcribe_local(audio_file_path)
+        return self._transcribe_dashscope(audio_file_path)
+
+    # -------- 云端：DashScope Paraformer --------
+    def _transcribe_dashscope(self, audio_file_path):
         try:
-            if not os.path.exists(audio_file_path):
-                return {'success': False, 'text': '', 'error': '音频文件不存在'}
+            if not self.api_key:
+                return {'success': False, 'text': '',
+                        'error': '未配置 DashScope API Key，请到 AI 设置中填写'}
 
             dashscope.api_key = self.api_key
 
@@ -42,18 +61,55 @@ class SpeechToTextAgent:
             if result.status_code == HTTPStatus.OK:
                 sentences = result.get_sentence()
                 text = self._extract_text(sentences)
-                print(f"[STT] 识别成功: {text}")
+                print(f"[STT/cloud] 识别成功: {text}")
                 return {'success': True, 'text': text, 'error': ''}
             else:
                 error_msg = getattr(result, 'message', '未知错误')
-                print(f"[STT] 识别失败: {error_msg}")
+                print(f"[STT/cloud] 识别失败: {error_msg}")
                 return {'success': False, 'text': '', 'error': f'语音识别失败: {error_msg}'}
 
         except Exception as e:
-            print(f"[STT] 异常: {e}")
+            print(f"[STT/cloud] 异常: {e}")
             import traceback
             traceback.print_exc()
             return {'success': False, 'text': '', 'error': f'语音识别异常: {str(e)}'}
+
+    # -------- 本地：OpenAI 兼容音频接口 --------
+    def _transcribe_local(self, audio_file_path):
+        if not self.base_url:
+            return {'success': False, 'text': '',
+                    'error': '未配置本地语音识别服务地址'}
+        if not self.model:
+            return {'success': False, 'text': '',
+                    'error': '未选择本地语音识别模型'}
+
+        endpoint = f"{self.base_url}/v1/audio/transcriptions"
+        try:
+            with open(audio_file_path, 'rb') as f:
+                files = {'file': (os.path.basename(audio_file_path), f, 'audio/wav')}
+                data = {'model': self.model, 'language': 'zh'}
+                resp = requests.post(endpoint, files=files, data=data, timeout=120)
+
+            if resp.status_code != 200:
+                return {'success': False, 'text': '',
+                        'error': f'本地语音识别失败: HTTP {resp.status_code} - {resp.text[:200]}'}
+
+            try:
+                payload = resp.json()
+                text = (payload.get('text') or '').strip()
+            except ValueError:
+                text = resp.text.strip()
+
+            print(f"[STT/local] 识别成功: {text}")
+            return {'success': True, 'text': text, 'error': ''}
+        except requests.exceptions.ConnectionError:
+            return {'success': False, 'text': '',
+                    'error': '无法连接本地语音识别服务，请确认服务已启动'}
+        except requests.exceptions.Timeout:
+            return {'success': False, 'text': '', 'error': '本地语音识别超时'}
+        except Exception as e:
+            print(f"[STT/local] 异常: {e}")
+            return {'success': False, 'text': '', 'error': f'本地语音识别异常: {e}'}
 
     @staticmethod
     def _extract_text(sentences):
@@ -98,8 +154,10 @@ class StutterCorrectionAgent:
         '- 停顿重复：「嗯...就是...就是那个」 → 「嗯...就是那个」\n'
     )
 
-    def __init__(self, api_key=None):
+    def __init__(self, api_key=None, base_url=None, model=None):
         self.api_key = api_key or DEEPSEEK_CONFIG['api_key']
+        self.base_url = base_url or DEEPSEEK_CONFIG['base_url']
+        self.model = model or DEEPSEEK_CONFIG['model']
 
     def correct(self, text):
         """
@@ -122,7 +180,7 @@ class StutterCorrectionAgent:
             }
 
             data = {
-                'model': DEEPSEEK_CONFIG['model'],
+                'model': self.model,
                 'messages': [
                     {'role': 'system', 'content': self.CORRECTION_PROMPT},
                     {'role': 'user', 'content': text}
@@ -132,10 +190,10 @@ class StutterCorrectionAgent:
             }
 
             response = requests.post(
-                DEEPSEEK_CONFIG['base_url'],
+                self.base_url,
                 headers=headers,
                 json=data,
-                timeout=10
+                timeout=15
             )
 
             if response.status_code == 200:
