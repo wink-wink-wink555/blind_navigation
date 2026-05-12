@@ -283,8 +283,8 @@ python app.py
 ## 🙏 特别感谢
 
 特别感谢以下成员在盲道数据集收集、标注与项目书撰写中提供的帮助：
-- [Chen Xingyu](https://github.com/guangxiangdebizi)
-- Wang Youyi · Liu Yiheng · Cai Yuxin · Zhang Chenshu · Zhang Kai · Shen Qian · Sheng Sheng
+
+[Chen Xingyu](https://github.com/guangxiangdebizi) · Wang Youyi · Shen Qian · Liu Yiheng · Zhang Chenshu · Zhang Kai · Sheng Sheng · Cai Yuxin 
 
 ## 📁 项目结构
 
