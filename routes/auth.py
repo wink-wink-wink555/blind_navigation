@@ -45,8 +45,9 @@ def login():
                 session['user_settings'] = user_settings_data
                 
                 # 同时更新全局 user_settings（供视频流等非请求上下文使用）
-                from routes.main import update_current_user_settings
+                from routes.main import update_current_user_settings, set_current_active_user_id
                 update_current_user_settings(user_settings_data)
+                set_current_active_user_id(user_data['id'])
 
                 return redirect(url_for('main.index'))
             else:

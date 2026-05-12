@@ -13,8 +13,9 @@ from ultralytics import YOLO
 
 from utils.decorators import login_required
 from utils.video_utils import allowed_file, create_error_frame, create_info_frame
-from utils.voice_utils import speak, get_prompt_template
-from config import MODEL_WEIGHTS, UPLOAD_FOLDER, THRESHOLD_SLOPE, CALL_INTERVAL, DEEPSEEK_CONFIG
+from utils.voice_utils import speak, get_prompt_template, build_static_turn_text
+from services.ai_provider import chat_completion as unified_chat_completion
+from config import MODEL_WEIGHTS, UPLOAD_FOLDER, THRESHOLD_SLOPE, CALL_INTERVAL
 
 video_bp = Blueprint('video', __name__)
 
@@ -34,7 +35,7 @@ left_turn_question = "请用亲切且简短的话语告知要往左拐，因为�
 
 def call_deepseek_api(system_prompt, user_message):
     """
-    调用 DeepSeek API 生成导航语音内容
+    调用当前激活用户配置的文本模型生成导航语音内容（云端 or 本地 Ollama）
     
     Args:
         system_prompt: 系统提示词
@@ -44,36 +45,28 @@ def call_deepseek_api(system_prompt, user_message):
         tuple: (success, content) - 成功标志和生成的内容
     """
     try:
-        headers = {
-            'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
-            'Content-Type': 'application/json'
-        }
-        
-        data = {
-            'model': DEEPSEEK_CONFIG['model'],
-            'messages': [
+        # 视频流跑在后台线程，没有 session 上下文，
+        # 通过 routes.main 暴露的全局活跃 user_id 取配置
+        from routes.main import get_current_active_user_id
+        user_id = get_current_active_user_id()
+
+        result = unified_chat_completion(
+            user_id,
+            messages=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_message}
             ],
-            'temperature': 0.7,
-            'max_tokens': 150
-        }
-        
-        response = requests.post(DEEPSEEK_CONFIG['base_url'], headers=headers, json=data, timeout=10)
-        
-        if response.status_code == 200:
-            result = response.json()
-            content = result['choices'][0]['message']['content'].strip()
-            if content:
-                return True, content
-            else:
-                return False, ""
-        else:
-            print(f"[DeepSeek API] 请求失败，状态码: {response.status_code}")
-            return False, ""
-            
+            temperature=0.7,
+            max_tokens=150,
+            timeout=15.0
+        )
+        if result['success'] and result['content']:
+            return True, result['content']
+        if not result['success']:
+            print(f"[Video LLM] 调用失败: {result.get('error')}")
+        return False, ""
     except Exception as e:
-        print(f"[DeepSeek API] 调用异常: {type(e).__name__}: {e}")
+        print(f"[Video LLM] 调用异常: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         return False, ""
@@ -185,25 +178,32 @@ def generate_frames():
                 if slope < -THRESHOLD_SLOPE:
                     # 斜率显著为负，提示左转
                     print("[盲道检测] 检测到左转")
-                    answer_content = None
-                    api_success = False
-                    
-                    print(f"[DeepSeek API] 调用 DeepSeek API 生成左转提示")
-                    print(f"[DeepSeek API] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
-                    print(f"[DeepSeek API] 用户问题: {left_turn_question}")
-                    
-                    api_success, answer_content = call_deepseek_api(
-                        get_prompt_template(user_settings),
-                        left_turn_question
-                    )
-                    
-                    if api_success and answer_content:
-                        print(f"[DeepSeek API] ✓ 成功获取 AI 响应")
-                        print(f"[DeepSeek API] AI 生成内容: {answer_content}")
+
+                    if user_settings.get("encourage") == "关":
+                        # 关闭鼓励 → 硬编码模板，跳过 LLM，响应即时且稳定
+                        answer_content = build_static_turn_text("left", user_settings)
+                        print(f"[盲道检测] 鼓励已关闭，使用硬编码模板: {answer_content}")
                     else:
-                        print(f"[DeepSeek API] ✗ API 调用失败或返回内容为空")
-                        print(f"[盲道检测] 使用默认左转提示")
-                        answer_content = f"请注意，盲道向左转了，请往左走。"
+                        # 开启鼓励 → LLM 生成，保留温暖、有变化的口吻
+                        answer_content = None
+                        api_success = False
+
+                        print(f"[DeepSeek API] 调用 DeepSeek API 生成左转提示")
+                        print(f"[DeepSeek API] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
+                        print(f"[DeepSeek API] 用户问题: {left_turn_question}")
+
+                        api_success, answer_content = call_deepseek_api(
+                            get_prompt_template(user_settings),
+                            left_turn_question
+                        )
+
+                        if api_success and answer_content:
+                            print(f"[DeepSeek API] ✓ 成功获取 AI 响应")
+                            print(f"[DeepSeek API] AI 生成内容: {answer_content}")
+                        else:
+                            print(f"[DeepSeek API] ✗ API 调用失败或返回内容为空")
+                            print(f"[盲道检测] 使用默认左转提示")
+                            answer_content = build_static_turn_text("left", user_settings)
 
                     # 设置语音文本并播放
                     current_speech_text = answer_content
@@ -214,25 +214,32 @@ def generate_frames():
                 elif slope > THRESHOLD_SLOPE:
                     # 斜率显著为正，提示右转
                     print("[盲道检测] 检测到右转")
-                    answer_content = None
-                    api_success = False
-                    
-                    print(f"[DeepSeek API] 调用 DeepSeek API 生成右转提示")
-                    print(f"[DeepSeek API] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
-                    print(f"[DeepSeek API] 用户问题: {right_turn_question}")
-                    
-                    api_success, answer_content = call_deepseek_api(
-                        get_prompt_template(user_settings),
-                        right_turn_question
-                    )
-                    
-                    if api_success and answer_content:
-                        print(f"[DeepSeek API] ✓ 成功获取 AI 响应")
-                        print(f"[DeepSeek API] AI 生成内容: {answer_content}")
+
+                    if user_settings.get("encourage") == "关":
+                        # 关闭鼓励 → 硬编码模板，跳过 LLM，响应即时且稳定
+                        answer_content = build_static_turn_text("right", user_settings)
+                        print(f"[盲道检测] 鼓励已关闭，使用硬编码模板: {answer_content}")
                     else:
-                        print(f"[DeepSeek API] ✗ API 调用失败或返回内容为空")
-                        print(f"[盲道检测] 使用默认右转提示")
-                        answer_content = f"请注意，盲道向右转了，请往右走。"
+                        # 开启鼓励 → LLM 生成，保留温暖、有变化的口吻
+                        answer_content = None
+                        api_success = False
+
+                        print(f"[DeepSeek API] 调用 DeepSeek API 生成右转提示")
+                        print(f"[DeepSeek API] 使用的提示词模板:\n{get_prompt_template(user_settings)}")
+                        print(f"[DeepSeek API] 用户问题: {right_turn_question}")
+
+                        api_success, answer_content = call_deepseek_api(
+                            get_prompt_template(user_settings),
+                            right_turn_question
+                        )
+
+                        if api_success and answer_content:
+                            print(f"[DeepSeek API] ✓ 成功获取 AI 响应")
+                            print(f"[DeepSeek API] AI 生成内容: {answer_content}")
+                        else:
+                            print(f"[DeepSeek API] ✗ API 调用失败或返回内容为空")
+                            print(f"[盲道检测] 使用默认右转提示")
+                            answer_content = build_static_turn_text("right", user_settings)
 
                     # 设置语音文本并播放
                     current_speech_text = answer_content

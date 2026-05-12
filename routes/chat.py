@@ -2,6 +2,8 @@
 统一聊天路由 - 多Agent调度中心
 基于意图路由器将用户消息分发到不同的Agent处理
 支持完整对话上下文传递
+
+所有 LLM/STT 调用都通过 ai_provider 按用户的 AI 设置（云端/本地）路由。
 """
 import os
 import re
@@ -15,7 +17,10 @@ from services.settings_agent import SettingsAgent
 from services.deepseek_ai import DeepSeekAI
 from services.baidu_map_mcp import BaiduMapMCP
 from services.speech_agent import SpeechToTextAgent, StutterCorrectionAgent
-from config import DEEPSEEK_CONFIG, BAIDU_MAP_CONFIG, DASHSCOPE_CONFIG
+from services.ai_provider import (
+    get_text_llm_config, get_stt_config, chat_completion as unified_chat_completion
+)
+from config import BAIDU_MAP_CONFIG
 from models.database import get_family_contacts, find_family_contact_by_name
 from utils.email_utils import send_family_email
 
@@ -40,12 +45,15 @@ def chat():
 
         user_id = session.get('user_id')
 
+        # 取当前用户激活的文本模型配置（云端 or 本地 Ollama）
+        text_cfg = get_text_llm_config(user_id)
+
         # Step 1: 意图路由（带上下文，让Router看到对话脉络）
-        router = RouterAgent(DEEPSEEK_CONFIG['api_key'])
+        router = RouterAgent(text_cfg['api_key'], text_cfg['base_url'], text_cfg['model'])
         route_result = router.classify_intent(user_message, chat_history)
 
         if not route_result['success']:
-            return _handle_chat(user_message, chat_history)
+            return _handle_chat(user_message, chat_history, user_id)
 
         intent = route_result['intent']
         confidence = route_result['confidence']
@@ -55,13 +63,13 @@ def chat():
 
         # Step 2: 分发到对应Agent（均带上下文）
         if intent == 'settings':
-            return _handle_settings(user_message, user_id, chat_history)
+            return _handle_settings(user_message, user_id, chat_history, text_cfg)
         elif intent == 'map':
-            return _handle_map(user_message, user_location, chat_history)
+            return _handle_map(user_message, user_location, chat_history, user_id, text_cfg)
         elif intent == 'message':
-            return _handle_message(user_message, extracted_info)
+            return _handle_message(user_message, extracted_info, user_id)
         else:
-            return _handle_chat(user_message, chat_history)
+            return _handle_chat(user_message, chat_history, user_id)
 
     except Exception as e:
         print(f"[Chat] 异常: {e}")
@@ -77,7 +85,11 @@ def chat():
 @chat_bp.route('/speech_to_text', methods=['POST'])
 @login_required
 def speech_to_text():
-    """语音转文字接口 - 接收音频文件，返回识别文本（经口吃纠正处理）"""
+    """
+    语音转文字接口 - 接收音频文件，返回识别文本（经口吃纠正处理）
+    根据当前用户的 AI 设置自动选择云端 / 本地 STT，
+    口吃纠正使用当前激活的文本模型。
+    """
     try:
         if 'audio' not in request.files:
             return jsonify({"status": "error", "message": "未收到音频文件"}), 400
@@ -86,23 +98,24 @@ def speech_to_text():
         if not audio_file.filename:
             return jsonify({"status": "error", "message": "音频文件为空"}), 400
 
-        api_key = request.form.get('api_key', '').strip()
-        stt_model = request.form.get('stt_model', '').strip()
-
-        if not api_key:
-            api_key = session.get('dashscope_api_key', DASHSCOPE_CONFIG['api_key'])
-        if not stt_model:
-            stt_model = session.get('stt_model', DASHSCOPE_CONFIG['stt_model'])
+        user_id = session.get('user_id')
+        stt_cfg = get_stt_config(user_id)
+        text_cfg = get_text_llm_config(user_id)
 
         tmp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
         os.makedirs(tmp_dir, exist_ok=True)
 
-        tmp_path = os.path.join(tmp_dir, f'stt_temp_{session.get("user_id", "0")}.wav')
+        tmp_path = os.path.join(tmp_dir, f'stt_temp_{user_id or "0"}.wav')
         audio_file.save(tmp_path)
-        print(f"[STT] 音频文件已保存: {tmp_path}, 大小: {os.path.getsize(tmp_path)} bytes")
+        print(f"[STT] 音频文件已保存: {tmp_path}, 大小: {os.path.getsize(tmp_path)} bytes "
+              f"(deployment={stt_cfg['deployment']}, model={stt_cfg['model']})")
 
-        # Step 1: 语音转文字
-        stt_agent = SpeechToTextAgent(api_key, stt_model)
+        stt_agent = SpeechToTextAgent(
+            api_key=stt_cfg['api_key'],
+            model=stt_cfg['model'],
+            deployment=stt_cfg['deployment'],
+            base_url=stt_cfg.get('base_url', '')
+        )
         stt_result = stt_agent.transcribe(tmp_path)
 
         try:
@@ -124,8 +137,12 @@ def speech_to_text():
                 "message": "未识别到有效语音内容，请重新录制"
             }), 400
 
-        # Step 2: 口吃纠正Agent
-        stutter_agent = StutterCorrectionAgent()
+        # 口吃纠正使用当前文本模型（云端或 Ollama 同样适用）
+        stutter_agent = StutterCorrectionAgent(
+            api_key=text_cfg['api_key'],
+            base_url=text_cfg['base_url'],
+            model=text_cfg['model']
+        )
         correction_result = stutter_agent.correct(raw_text)
 
         final_text = correction_result['corrected'] if correction_result['success'] else raw_text
@@ -145,46 +162,6 @@ def speech_to_text():
             "status": "error",
             "message": f"语音识别服务异常：{str(e)}"
         }), 500
-
-
-@chat_bp.route('/update_stt_settings', methods=['POST'])
-@login_required
-def update_stt_settings():
-    """更新语音识别设置（API Key 和模型）"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"status": "error", "message": "请求数据为空"}), 400
-
-        api_key = data.get('api_key', '').strip()
-        stt_model = data.get('stt_model', '').strip()
-
-        if api_key:
-            session['dashscope_api_key'] = api_key
-        if stt_model:
-            session['stt_model'] = stt_model
-        session.modified = True
-
-        return jsonify({
-            "status": "success",
-            "message": "语音识别设置已更新"
-        })
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": f"更新失败：{str(e)}"
-        }), 500
-
-
-@chat_bp.route('/get_stt_settings', methods=['GET'])
-@login_required
-def get_stt_settings():
-    """获取当前语音识别设置"""
-    return jsonify({
-        "status": "success",
-        "api_key": session.get('dashscope_api_key', DASHSCOPE_CONFIG['api_key']),
-        "stt_model": session.get('stt_model', DASHSCOPE_CONFIG['stt_model'])
-    })
 
 
 def _build_context_messages(chat_history, max_turns=20):
@@ -226,9 +203,11 @@ def _get_user_profile_context():
     return profile, user_settings
 
 
-def _handle_settings(user_message, user_id, chat_history=None):
+def _handle_settings(user_message, user_id, chat_history=None, text_cfg=None):
     """处理设置查询/修改请求"""
-    agent = SettingsAgent(DEEPSEEK_CONFIG['api_key'])
+    if text_cfg is None:
+        text_cfg = get_text_llm_config(user_id)
+    agent = SettingsAgent(text_cfg['api_key'], text_cfg['base_url'], text_cfg['model'])
     user_profile, _ = _get_user_profile_context()
     result = agent.process(user_message, user_id, chat_history, user_profile)
 
@@ -248,9 +227,11 @@ def _handle_settings(user_message, user_id, chat_history=None):
     })
 
 
-def _handle_map(user_message, user_location, chat_history=None):
+def _handle_map(user_message, user_location, chat_history=None, user_id=None, text_cfg=None):
     """处理地图查询请求 - 复用现有ReAct循环，带对话上下文和用户信息"""
-    ai_assistant = DeepSeekAI(DEEPSEEK_CONFIG['api_key'])
+    if text_cfg is None:
+        text_cfg = get_text_llm_config(user_id)
+    ai_assistant = DeepSeekAI(text_cfg['api_key'], text_cfg['base_url'], text_cfg['model'])
     baidu_mcp = BaiduMapMCP(BAIDU_MAP_CONFIG['api_key'])
 
     user_profile, _ = _get_user_profile_context()
@@ -358,9 +339,10 @@ def _execute_map_tool(baidu_mcp, action, params):
         return {'success': False, 'error': f'工具执行异常: {str(e)}'}
 
 
-def _handle_message(user_message, extracted_info):
+def _handle_message(user_message, extracted_info, user_id=None):
     """处理发送消息请求 — 真正通过邮件发送给家属"""
-    user_id = session.get('user_id')
+    if user_id is None:
+        user_id = session.get('user_id')
     user_profile, user_settings = _get_user_profile_context()
     sender_name = user_settings.get('name', '用户')
 
@@ -384,10 +366,10 @@ def _handle_message(user_message, extracted_info):
                 break
 
     if not message_content:
-        message_content = _extract_message_via_llm(user_message)
+        message_content = _extract_message_via_llm(user_message, user_id)
 
     if not message_content:
-        reply = _generate_message_reply(user_profile, '', None)
+        reply = _generate_message_reply(user_profile, '', None, user_id=user_id)
         return jsonify({"status": "success", "intent": "message", "content": reply})
 
     # 2. 查找家属联系人
@@ -425,7 +407,7 @@ def _handle_message(user_message, extracted_info):
 
     # 4. 生成自然语言回复
     reply = _generate_message_reply(
-        user_profile, message_content, target_contact['name'], success
+        user_profile, message_content, target_contact['name'], success, user_id=user_id
     )
 
     return jsonify({
@@ -435,52 +417,44 @@ def _handle_message(user_message, extracted_info):
     })
 
 
-def _generate_message_reply(user_profile, message_content, recipient_name, send_success=None):
-    """使用LLM为消息发送结果生成自然回复"""
-    try:
-        headers = {
-            'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
-            'Content-Type': 'application/json'
-        }
-        if message_content and send_success is True:
-            prompt = (
-                f'{user_profile}\n'
-                f'你是视障导航系统的AI助手，用户刚让你帮忙通过邮件发了一条消息给{recipient_name}，内容是：「{message_content}」。邮件已经成功发送。\n'
-                '请用1句温暖自然的话确认消息已发送。要求：\n'
-                '- 提及发给了谁、消息内容的关键词，让用户确认发对了\n'
-                '- 语气亲切，不要机械化\n'
-                '- 不超过30个字\n'
-                '- 每次措辞要有变化'
-            )
-        elif message_content and send_success is False:
-            prompt = (
-                f'{user_profile}\n'
-                f'你是视障导航系统的AI助手，用户让你帮忙给{recipient_name}发消息，但邮件发送失败了。\n'
-                '请用1句话温和地告知用户发送失败，建议稍后重试。要求：\n'
-                '- 语气安抚，不要让用户焦虑\n'
-                '- 不超过25个字'
-            )
-        else:
-            prompt = (
-                f'{user_profile}\n'
-                '你是视障导航系统的AI助手，用户想给家属发消息但没说清楚内容。\n'
-                '请用1句话温和地询问要发什么。要求：\n'
-                '- 语气自然亲切\n'
-                '- 不超过20个字'
-            )
-        data = {
-            'model': DEEPSEEK_CONFIG['model'],
-            'messages': [{'role': 'system', 'content': prompt}],
-            'temperature': 0.8,
-            'max_tokens': 100
-        }
-        response = requests.post(
-            DEEPSEEK_CONFIG['base_url'], headers=headers, json=data
+def _generate_message_reply(user_profile, message_content, recipient_name,
+                            send_success=None, user_id=None):
+    """使用当前激活的文本模型生成自然回复"""
+    if message_content and send_success is True:
+        prompt = (
+            f'{user_profile}\n'
+            f'你是视障导航系统的AI助手，用户刚让你帮忙通过邮件发了一条消息给{recipient_name}，内容是：「{message_content}」。邮件已经成功发送。\n'
+            '请用1句温暖自然的话确认消息已发送。要求：\n'
+            '- 提及发给了谁、消息内容的关键词，让用户确认发对了\n'
+            '- 语气亲切，不要机械化\n'
+            '- 不超过30个字\n'
+            '- 每次措辞要有变化'
         )
-        if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content'].strip()
-    except Exception:
-        pass
+    elif message_content and send_success is False:
+        prompt = (
+            f'{user_profile}\n'
+            f'你是视障导航系统的AI助手，用户让你帮忙给{recipient_name}发消息，但邮件发送失败了。\n'
+            '请用1句话温和地告知用户发送失败，建议稍后重试。要求：\n'
+            '- 语气安抚，不要让用户焦虑\n'
+            '- 不超过25个字'
+        )
+    else:
+        prompt = (
+            f'{user_profile}\n'
+            '你是视障导航系统的AI助手，用户想给家属发消息但没说清楚内容。\n'
+            '请用1句话温和地询问要发什么。要求：\n'
+            '- 语气自然亲切\n'
+            '- 不超过20个字'
+        )
+
+    result = unified_chat_completion(
+        user_id,
+        messages=[{'role': 'system', 'content': prompt}],
+        temperature=0.8,
+        max_tokens=100
+    )
+    if result['success']:
+        return result['content']
 
     if message_content and send_success is True:
         return f'已把消息通过邮件发给{recipient_name}了：「{message_content}」'
@@ -489,89 +463,59 @@ def _generate_message_reply(user_profile, message_content, recipient_name, send_
     return '您想给家属说什么呢？'
 
 
-def _extract_message_via_llm(user_message):
-    """使用LLM提取消息内容和收件人（正则匹配失败时的兜底）"""
-    try:
-        headers = {
-            'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
-            'Content-Type': 'application/json'
-        }
-        data = {
-            'model': DEEPSEEK_CONFIG['model'],
-            'messages': [
-                {'role': 'system', 'content': '从用户的话中提取要发送给家属的消息内容。只返回消息内容本身，不要加任何额外说明。如果无法提取，返回空字符串。'},
-                {'role': 'user', 'content': user_message}
-            ],
-            'temperature': 0.1,
-            'max_tokens': 200
-        }
-        response = requests.post(
-            DEEPSEEK_CONFIG['base_url'], headers=headers, json=data
-        )
-        if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content'].strip()
-    except Exception:
-        pass
-    return ''
+def _extract_message_via_llm(user_message, user_id=None):
+    """使用当前激活的文本模型提取消息内容（正则匹配失败时兜底）"""
+    result = unified_chat_completion(
+        user_id,
+        messages=[
+            {'role': 'system', 'content': '从用户的话中提取要发送给家属的消息内容。只返回消息内容本身，不要加任何额外说明。如果无法提取，返回空字符串。'},
+            {'role': 'user', 'content': user_message}
+        ],
+        temperature=0.1,
+        max_tokens=200
+    )
+    return result['content'] if result['success'] else ''
 
 
-def _handle_chat(user_message, chat_history=None):
+def _handle_chat(user_message, chat_history=None, user_id=None):
     """处理普通闲聊 - 带完整对话上下文和用户个人信息"""
-    try:
-        headers = {
-            'Authorization': f'Bearer {DEEPSEEK_CONFIG["api_key"]}',
-            'Content-Type': 'application/json'
-        }
+    user_profile, _ = _get_user_profile_context()
 
-        user_profile, _ = _get_user_profile_context()
-
-        system_msg = {
-            'role': 'system',
-            'content': (
-                '你是一款视障导航系统的AI助手，用户是盲人或低视力人士，你的回复会被语音播报。\n\n'
-                '⚠️ 回复规则：\n'
-                '- 控制在1~3句话，不超过60个字\n'
-                '- 禁止列举、排比、长篇大论，直接回答\n'
-                '- 每次回复的措辞和句式要自然多样，不要反复使用同一种开头或结尾\n\n'
-                '语言规则：\n'
-                '- 语气温暖亲切，像朋友聊天一样自然\n'
-                '- 禁止"看一下/看看/看到"等视觉表述，用"了解/听听/感受"代替\n'
-                '- 不要建议用户乘坐公交、地铁、打车等，用户只能步行出行\n'
-                f'- {user_profile}\n'
-                '- 用用户的称呼来称呼他们，但不要每句话都以称呼开头'
-            )
-        }
-
-        messages = [system_msg]
-        if chat_history:
-            messages.extend(_build_context_messages(chat_history))
-        messages.append({'role': 'user', 'content': user_message})
-
-        data = {
-            'model': DEEPSEEK_CONFIG['model'],
-            'messages': messages,
-            'temperature': 0.7,
-            'max_tokens': 200
-        }
-        response = requests.post(
-            DEEPSEEK_CONFIG['base_url'], headers=headers, json=data
+    system_msg = {
+        'role': 'system',
+        'content': (
+            '你是一款视障导航系统的AI助手，用户是盲人或低视力人士，你的回复会被语音播报。\n\n'
+            '⚠️ 回复规则：\n'
+            '- 控制在1~3句话，不超过60个字\n'
+            '- 禁止列举、排比、长篇大论，直接回答\n'
+            '- 每次回复的措辞和句式要自然多样，不要反复使用同一种开头或结尾\n\n'
+            '语言规则：\n'
+            '- 语气温暖亲切，像朋友聊天一样自然\n'
+            '- 禁止"看一下/看看/看到"等视觉表述，用"了解/听听/感受"代替\n'
+            '- 不要建议用户乘坐公交、地铁、打车等，用户只能步行出行\n'
+            f'- {user_profile}\n'
+            '- 用用户的称呼来称呼他们，但不要每句话都以称呼开头'
         )
-        if response.status_code == 200:
-            content = response.json()['choices'][0]['message']['content'].strip()
-            return jsonify({
-                "status": "success",
-                "intent": "chat",
-                "content": content
-            })
-        else:
-            return jsonify({
-                "status": "error",
-                "intent": "chat",
-                "content": "AI服务暂时不可用，请稍后再试"
-            }), 500
-    except Exception as e:
+    }
+
+    messages = [system_msg]
+    if chat_history:
+        messages.extend(_build_context_messages(chat_history))
+    messages.append({'role': 'user', 'content': user_message})
+
+    result = unified_chat_completion(
+        user_id, messages=messages, temperature=0.7, max_tokens=200
+    )
+
+    if result['success']:
         return jsonify({
-            "status": "error",
+            "status": "success",
             "intent": "chat",
-            "content": f"对话异常：{str(e)}"
-        }), 500
+            "content": result['content']
+        })
+
+    return jsonify({
+        "status": "error",
+        "intent": "chat",
+        "content": result.get('error') or "AI服务暂时不可用，请稍后再试"
+    }), 500

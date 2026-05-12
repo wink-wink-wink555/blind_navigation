@@ -7,7 +7,8 @@ import geopy.distance
 from utils.decorators import login_required
 from services.baidu_map_mcp import BaiduMapMCP
 from services.deepseek_ai import DeepSeekAI
-from config import BAIDU_MAP_CONFIG, DEEPSEEK_CONFIG
+from services.ai_provider import get_text_llm_config
+from config import BAIDU_MAP_CONFIG
 from utils.voice_utils import ai_speak, stop_ai_speak, is_ai_speaking
 
 map_bp = Blueprint('map', __name__)
@@ -143,8 +144,9 @@ def ai_map_assistant():
         print(f"[Agent工作流] 用户问题: {user_message}")
         print(f"{'='*60}\n")
         
-        # 创建AI助手和地图服务实例
-        ai_assistant = DeepSeekAI(DEEPSEEK_CONFIG['api_key'])
+        # 创建AI助手和地图服务实例（使用当前用户的AI配置）
+        text_cfg = get_text_llm_config(session.get('user_id'))
+        ai_assistant = DeepSeekAI(text_cfg['api_key'], text_cfg['base_url'], text_cfg['model'])
         baidu_mcp = BaiduMapMCP(BAIDU_MAP_CONFIG['api_key'])
         
         # 工具调用历史
@@ -294,7 +296,8 @@ def deepseek_api_test():
         data = request.get_json()
         test_message = data.get('message', '你好')
         
-        ai_assistant = DeepSeekAI(DEEPSEEK_CONFIG['api_key'])
+        text_cfg = get_text_llm_config(session.get('user_id'))
+        ai_assistant = DeepSeekAI(text_cfg['api_key'], text_cfg['base_url'], text_cfg['model'])
         result = ai_assistant.understand_user_intent(test_message)
         
         return jsonify({

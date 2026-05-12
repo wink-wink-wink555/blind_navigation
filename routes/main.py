@@ -20,6 +20,21 @@ DEFAULT_SPEECH_TEXT = "提示：系统会实时分析盲道方向，当方向发
 # 全局用户设置
 user_settings = DEFAULT_USER_SETTINGS.copy()
 
+# 最近一次活跃的 user_id（供视频流等无 session 上下文的后台线程使用）
+current_active_user_id = None
+
+
+def get_current_active_user_id():
+    """获取当前活跃用户ID（线程安全的最近登录/活跃用户）"""
+    return current_active_user_id
+
+
+def set_current_active_user_id(user_id):
+    """更新当前活跃用户ID"""
+    global current_active_user_id
+    if user_id is not None:
+        current_active_user_id = user_id
+
 
 def get_current_user_settings():
     """获取当前用户设置（从session或全局变量）"""
@@ -57,6 +72,7 @@ def index():
     # 这样可以确保视频流等非请求上下文也能使用最新的设置
     user_id = session.get('user_id')
     if user_id:
+        set_current_active_user_id(user_id)
         user_settings_data, message = get_user_settings(user_id)
         if user_settings_data:
             # 更新 session 和全局变量
