@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>视障人士出行辅助系统</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Markdown 渲染 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- 百度地图API - 异步加载避免document.write警告 -->
     <script>
@@ -65,8 +67,26 @@
             padding: 0;
         }
 
+        button, input[type="submit"], input[type="button"],
+        .btn, .toggle-btn, .tab, .logout-btn,
+        .settings-btn, .help-btn {
+            font-family: "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif;
+            letter-spacing: 0.03em;
+        }
+
+        input[type="text"], input[type="password"], input[type="email"],
+        select, textarea {
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+        }
+
+        .section-title {
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+            font-family: "Noto Serif SC", "STSong", "SimSun", Georgia, "Times New Roman", serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             padding: 0;
@@ -74,7 +94,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            line-height: 1.6;
+            line-height: 1.75;
         }
 
         header {
@@ -88,14 +108,25 @@
         }
 
         h1 {
+            font-family: "Playfair Display", "Noto Serif SC", "STSong", Georgia, serif;
             font-size: 2.2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            letter-spacing: 0.04em;
+        }
+
+        h2, h3 {
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-weight: 600;
         }
 
         .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-size: 1.05rem;
+            font-weight: 300;
+            opacity: 0.92;
+            letter-spacing: 0.06em;
+            font-style: italic;
         }
 
         .container {
@@ -145,12 +176,14 @@
         .card-title {
             display: flex;
             align-items: center;
-            font-size: 1.25rem;
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-size: 1.2rem;
             font-weight: 600;
             color: var(--primary-dark);
             margin-bottom: 1.25rem;
             padding-bottom: 0.75rem;
             border-bottom: 2px solid #eee;
+            letter-spacing: 0.02em;
         }
         
         .card-title i {
@@ -178,9 +211,12 @@
         }
 
         .upload-title {
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-weight: 500;
             margin-bottom: 1rem;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             color: #495057;
+            letter-spacing: 0.02em;
         }
 
         .file-input-wrapper {
@@ -207,6 +243,9 @@
             cursor: pointer;
             display: inline-block;
             transition: var(--transition);
+            font-family: "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
         }
 
         .file-input:hover + .file-input-label {
@@ -226,7 +265,9 @@
             border: none;
             border-radius: 30px;
             cursor: pointer;
-            font-size: 1rem;
+            font-family: "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
             transition: var(--transition);
             margin-top: 1rem;
         }
@@ -303,7 +344,9 @@
             background-color: var(--secondary-color);
             color: white;
             padding: 1rem 1.5rem;
-            font-size: 1rem;
+            font-family: "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
             border: none;
             border-radius: 0 30px 30px 0;
             cursor: pointer;
@@ -399,14 +442,29 @@
         .settings-content {
             background-color: white;
             border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 500px;
-            padding: 1.5rem;
+            width: 92%;
+            max-width: 560px;
+            padding: 0;
             box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
             position: relative;
             animation: modalFadeIn 0.3s ease;
             max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-header {
+            padding: 1.5rem 1.5rem 0;
+            flex-shrink: 0;
+            background: white;
+            position: relative;
+        }
+
+        .settings-body {
             overflow-y: auto;
+            flex: 1;
+            padding: 0 1.5rem 1.5rem;
         }
 
         @keyframes modalFadeIn {
@@ -432,6 +490,9 @@
         }
 
         .settings-title {
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-weight: 600;
+            letter-spacing: 0.03em;
             color: var(--primary-dark);
             border-bottom: 2px solid #e9ecef;
             padding-bottom: 1rem;
@@ -472,7 +533,9 @@
             border: none;
             border-radius: 30px;
             padding: 0.8rem 2rem;
-            font-size: 1rem;
+            font-family: "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 0.05em;
             cursor: pointer;
             transition: var(--transition);
             width: 100%;
@@ -538,36 +601,197 @@
 
         /* 标签页样式 */
         .tabs {
-            display: flex;
-            border-bottom: 2px solid #e9ecef;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            background: #f1f3f5;
+            border-radius: 10px;
+            padding: 4px;
             margin-bottom: 1.5rem;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .tabs::-webkit-scrollbar {
-            display: none;
+            gap: 2px;
         }
 
         .tab {
-            padding: 0.8rem 1rem;
+            padding: 0.45rem 0.3rem;
             cursor: pointer;
             transition: var(--transition);
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
             font-weight: 500;
             white-space: nowrap;
-            flex-shrink: 0;
-            font-size: 0.9rem;
+            font-size: 0.78rem;
+            text-align: center;
+            border-radius: 7px;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
         }
 
         .tab.active {
+            background: white;
             color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255,255,255,0.6);
+            color: #495057;
         }
 
         .tab-icon {
+            font-size: 0.75rem;
+        }
+
+        /* ========= AI 设置面板 ========= */
+        .ai-card {
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 0.9rem 1rem 1rem;
+            margin-bottom: 1rem;
+            background: #ffffff;
+        }
+        .ai-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px dashed #e9ecef;
+        }
+        .ai-card-title {
+            font-weight: 600;
+            color: var(--primary-dark, #1864ab);
+            font-size: 0.98rem;
+        }
+        .ai-card-title i {
+            margin-right: 0.4rem;
+            color: var(--primary-color, #339af0);
+        }
+        .ai-deployment-switch {
+            display: inline-flex;
+            border: 1px solid #dee2e6;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        .dep-btn {
+            background: transparent;
+            border: none;
+            padding: 0.4rem 0.95rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            color: #6c757d;
+            transition: var(--transition, all 0.2s);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .dep-btn.active {
+            background: var(--primary-color, #339af0);
+            color: #fff;
+        }
+        .dep-btn:not(.active):hover {
+            background: #e9ecef;
+            color: #333;
+        }
+        .ai-pane .form-group {
+            margin-bottom: 0.85rem;
+        }
+        .ai-cloud-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-left: 3px solid var(--primary-color, #339af0);
+            border-radius: 8px;
+            padding: 0.7rem 0.9rem 0.5rem;
+        }
+        .ai-cloud-info-title {
+            font-size: 0.85rem;
+            color: #495057;
+            margin-bottom: 0.55rem;
+            line-height: 1.4;
+        }
+        .ai-cloud-info-title i {
+            color: var(--primary-color, #339af0);
             margin-right: 0.3rem;
+        }
+        .ai-cloud-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.32rem 0;
+            font-size: 0.83rem;
+            border-top: 1px dashed #e9ecef;
+        }
+        .ai-cloud-info-row .k {
+            color: #868e96;
+        }
+        .ai-cloud-info-row .v {
+            color: #212529;
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+        }
+        .ai-cloud-info-row .v.mono {
+            font-family: ui-monospace, "SF Mono", Consolas, monospace;
+            font-size: 0.78rem;
+            color: #495057;
+        }
+        .ai-status {
+            margin: 0 0 0.85rem 0;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            display: none;
+        }
+        .ai-status.online {
+            display: block;
+            background: #e6fcf5;
+            border: 1px solid #96f2d7;
+            color: #0b7285;
+        }
+        .ai-status.offline {
+            display: block;
+            background: #fff5f5;
+            border: 1px solid #ffc9c9;
+            color: #c92a2a;
+        }
+        .ai-status.empty {
+            display: block;
+            background: #fff9db;
+            border: 1px solid #ffe066;
+            color: #5c3c00;
+        }
+        .ai-status.loading {
+            display: block;
+            background: #e7f5ff;
+            border: 1px solid #a5d8ff;
+            color: #1864ab;
+        }
+        .ai-status .ai-status-hint {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.78rem;
+            opacity: 0.85;
+        }
+        .eye-toggle {
+            background: none;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 0.5rem 0.7rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        .eye-toggle:hover {
+            background: #f8f9fa;
+        }
+        .ai-card code {
+            background: #f1f3f5;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            color: #c92a2a;
         }
 
         .tab-content {
@@ -743,12 +967,12 @@
             }
 
             .tab {
-                padding: 0.6rem 1rem;
-                font-size: 0.9rem;
+                padding: 0.5rem 0.55rem;
+                font-size: 0.78rem;
             }
 
             .tab-icon {
-                margin-right: 0.3rem;
+                margin-right: 0.2rem;
             }
 
             /* MCP模块响应式设计 */
@@ -2373,7 +2597,7 @@
                 <div class="card">
                     <div class="card-title">
                         <i class="fas fa-robot"></i> AI智能助手
-                        <span style="font-size: 0.75rem; color: #6c757d; margin-left: 0.5rem;">多Agent模式</span>
+                        <span style="font-size: 0.75rem; color: #6c757d; margin-left: 0.5rem;">针对视障人士优化设计，支持语音输入。</span>
                     </div>
 
                     <div class="chat-container">
@@ -2463,30 +2687,35 @@
     <!-- 用户设置模态框 -->
     <div class="settings-modal" id="settingsModal">
         <div class="settings-content">
-            <button class="settings-close" onclick="closeSettings()">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="settings-title">设置</h2>
+            <!-- 固定头部：标题 + 标签导航 -->
+            <div class="settings-header">
+                <button class="settings-close" onclick="closeSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="settings-title">设置</h2>
 
-            <!-- 标签页导航 -->
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('modeTab')">
-                    <i class="fas fa-exchange-alt tab-icon"></i>模式
-                </div>
-                <div class="tab" onclick="switchTab('profileTab')">
-                    <i class="fas fa-user tab-icon"></i>个人信息
-                </div>
-                <div class="tab" onclick="switchTab('voiceTab')">
-                    <i class="fas fa-volume-up tab-icon"></i>语音设置
-                </div>
-                <div class="tab" onclick="switchTab('contactsTab')">
-                    <i class="fas fa-address-book tab-icon"></i>家属联系人
-                </div>
-                <div class="tab" onclick="switchTab('sttTab')">
-                    <i class="fas fa-microphone-alt tab-icon"></i>语音识别
+                <!-- 标签页导航 -->
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('modeTab')">
+                        <i class="fas fa-exchange-alt tab-icon"></i>模式选择
+                    </div>
+                    <div class="tab" onclick="switchTab('profileTab')">
+                        <i class="fas fa-user tab-icon"></i>个人信息
+                    </div>
+                    <div class="tab" onclick="switchTab('voiceTab')">
+                        <i class="fas fa-volume-up tab-icon"></i>语音设置
+                    </div>
+                    <div class="tab" onclick="switchTab('contactsTab')">
+                        <i class="fas fa-address-book tab-icon"></i>家属设置
+                    </div>
+                    <div class="tab" onclick="switchTab('aiTab')">
+                        <i class="fas fa-robot tab-icon"></i>AI设置
+                    </div>
                 </div>
             </div>
 
+            <!-- 可滚动内容区 -->
+            <div class="settings-body">
             <form id="settingsForm">
                 <!-- 用户模式标签页 -->
                 <div id="modeTab" class="tab-content active">
@@ -2579,7 +2808,7 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
-                        <small style="display: block; margin-top: 5px; color: #6c757d;">开启后，系统会在语音导航中适当加入鼓励性话语，提升视障人士出行的信心与体验。</small>
+                        <small style="display: block; margin-top: 5px; color: #6c757d;">开启后，系统会在语音导航中适当加入鼓励性话语，提升视障人士出行的信心与体验。注意，鼓励模式可能会导致语音提示一定程度的不及时。</small>
                         <input type="hidden" id="encourageValue" value="{{ settings.encourage }}">
                     </div>
 
@@ -2616,528 +2845,476 @@
                     </div>
                 </div>
 
-                <!-- 语音识别设置标签页 -->
-                <div id="sttTab" class="tab-content">
-                    <div class="section-title">语音识别设置</div>
-                    <p style="margin-bottom: 1rem; color: #6c757d;">配置阿里云百炼平台的语音识别服务。在AI助手聊天中可以使用麦克风按钮进行语音输入。</p>
+                <!-- AI 设置标签页（统一管理文本/语音模型，云端 or 本地 Ollama） -->
+                <div id="aiTab" class="tab-content">
+                    <div class="section-title">AI 模型设置</div>
+                    <p style="margin-bottom: 1rem; color: #6c757d; font-size: 0.88rem; line-height: 1.5;">
+                        为系统选择「云端 API」或「本地 Ollama」两种部署方式。
+                        云端密钥由服务器 <code>config.py</code> 维护，本地模型在你电脑上自动检测。
+                    </p>
 
-                    <div class="form-group">
-                        <label for="sttApiKey">API Key（阿里云百炼）</label>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <input type="password" id="sttApiKey" placeholder="请输入阿里云百炼 API Key" style="flex: 1;">
-                            <button type="button" onclick="toggleSttKeyVisibility()" style="background: none; border: 1px solid #dee2e6; border-radius: 6px; padding: 0.5rem 0.7rem; cursor: pointer; color: #6c757d;">
-                                <i class="fas fa-eye" id="sttKeyEyeIcon"></i>
-                            </button>
+                    <!-- ============ 文本模型卡片 ============ -->
+                    <div class="ai-card">
+                        <div class="ai-card-header">
+                            <div class="ai-card-title"><i class="fas fa-comments"></i> 文本模型</div>
+                            <div class="ai-deployment-switch">
+                                <button type="button" class="dep-btn active" data-section="text" data-deployment="cloud" onclick="switchDeployment('text','cloud')">云端</button>
+                                <button type="button" class="dep-btn" data-section="text" data-deployment="local" onclick="switchDeployment('text','local')">本地</button>
+                            </div>
                         </div>
-                        <small style="display: block; margin-top: 5px; color: #6c757d;">
-                            用于调用阿里云百炼平台的 Paraformer 语音识别模型。
-                            <a href="https://bailian.console.aliyun.com/" target="_blank" style="color: var(--primary-color);">获取 API Key</a>
-                        </small>
+
+                        <div class="ai-pane" id="textCloudPane">
+                            <div class="ai-cloud-info">
+                                <div class="ai-cloud-info-title">
+                                    <i class="fas fa-shield-alt"></i> 云端配置请在服务器端 <code>flask_app/config.py</code> 中维护
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">配置项</span>
+                                    <span class="v"><code>DEEPSEEK_CONFIG</code></span>
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">当前服务商</span>
+                                    <span class="v" id="textCloudInfo-provider">—</span>
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">当前模型</span>
+                                    <span class="v" id="textCloudInfo-model">—</span>
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">API Key</span>
+                                    <span class="v mono" id="textCloudInfo-apiKey">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ai-pane" id="textLocalPane" style="display:none;">
+                            <div class="form-group">
+                                <label>Ollama 地址</label>
+                                <div style="display:flex;gap:0.5rem;align-items:center;">
+                                    <input type="text" id="textLocalBaseUrl" placeholder="http://localhost:11434" style="flex:1;">
+                                    <button type="button" class="upload-btn" style="margin:0;padding:0.5rem 0.9rem;" onclick="probeOllama('text')">
+                                        <i class="fas fa-sync-alt"></i> 检测
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="textLocalStatus" class="ai-status"></div>
+                            <div class="form-group">
+                                <label>模型</label>
+                                <select id="textLocalModel">
+                                    <option value="">— 请先点击「检测」 —</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="sttModel">语音识别模型</label>
-                        <select id="sttModel">
-                            <option value="paraformer-realtime-v2">paraformer-realtime-v2（推荐，多语言）</option>
-                            <option value="paraformer-realtime-8k-v2">paraformer-realtime-8k-v2（8kHz 电话场景）</option>
-                            <option value="paraformer-v2">paraformer-v2（高精度离线）</option>
-                        </select>
-                        <small style="display: block; margin-top: 5px; color: #6c757d;">
-                            推荐使用 paraformer-realtime-v2，支持中英日韩等多语言识别。
-                        </small>
+                    <!-- ============ 语音模型卡片 ============ -->
+                    <div class="ai-card">
+                        <div class="ai-card-header">
+                            <div class="ai-card-title"><i class="fas fa-microphone-alt"></i> 语音模型</div>
+                            <div class="ai-deployment-switch">
+                                <button type="button" class="dep-btn active" data-section="stt" data-deployment="cloud" onclick="switchDeployment('stt','cloud')">云端</button>
+                                <button type="button" class="dep-btn" data-section="stt" data-deployment="local" onclick="switchDeployment('stt','local')">本地</button>
+                            </div>
+                        </div>
+
+                        <div class="ai-pane" id="sttCloudPane">
+                            <div class="ai-cloud-info">
+                                <div class="ai-cloud-info-title">
+                                    <i class="fas fa-shield-alt"></i> 云端配置请在服务器端 <code>flask_app/config.py</code> 中维护
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">配置项</span>
+                                    <span class="v"><code>DASHSCOPE_CONFIG</code></span>
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">当前服务商</span>
+                                    <span class="v" id="sttCloudInfo-provider">—</span>
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">当前模型</span>
+                                    <span class="v" id="sttCloudInfo-model">—</span>
+                                </div>
+                                <div class="ai-cloud-info-row">
+                                    <span class="k">API Key</span>
+                                    <span class="v mono" id="sttCloudInfo-apiKey">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ai-pane" id="sttLocalPane" style="display:none;">
+                            <div class="form-group">
+                                <label>服务地址</label>
+                                <div style="display:flex;gap:0.5rem;align-items:center;">
+                                    <input type="text" id="sttLocalBaseUrl" placeholder="http://localhost:11434" style="flex:1;">
+                                    <button type="button" class="upload-btn" style="margin:0;padding:0.5rem 0.9rem;" onclick="probeOllama('stt')">
+                                        <i class="fas fa-sync-alt"></i> 检测
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="sttLocalStatus" class="ai-status"></div>
+                            <div class="form-group">
+                                <label>模型</label>
+                                <select id="sttLocalModel">
+                                    <option value="">— 请先点击「检测」 —</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div style="background: #f0f9ff; border: 1px solid #bae7ff; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
-                        <div style="font-weight: 600; margin-bottom: 0.5rem; color: #0c5460;">
-                            <i class="fas fa-info-circle"></i> 工作流程说明
-                        </div>
-                        <div style="font-size: 0.85rem; color: #495057; line-height: 1.6;">
-                            <div>1. 点击聊天窗口中的 <i class="fas fa-microphone"></i> 麦克风按钮开始录音</div>
-                            <div>2. 录音完成后，音频发送到阿里云百炼进行语音识别</div>
-                            <div>3. <strong>口吃纠正 Agent</strong> 自动优化识别结果（如"你、你好"→"你好"）</div>
-                            <div>4. 优化后的文本自动填入输入框，点击发送即可</div>
-                        </div>
-                    </div>
-
-                    <button type="button" class="settings-save" onclick="saveSttSettings()" style="margin-top: 0.5rem;">
-                        <i class="fas fa-save"></i> 保存语音识别设置
+                    <button type="button" class="settings-save" onclick="saveAiSettings()">
+                        <i class="fas fa-save"></i> 保存 AI 设置
                     </button>
                 </div>
             </form>
+            </div><!-- /.settings-body -->
         </div>
     </div>
 
     <!-- 帮助模态框 -->
     <div class="settings-modal" id="helpModal">
-        <div class="settings-content" style="max-width: 800px;">
+        <div class="settings-content" style="max-width: 800px; display: block; padding: 1.5rem; overflow-y: auto;">
             <button class="settings-close" onclick="closeHelp()">
                 <i class="fas fa-times"></i>
             </button>
-            <h2 class="settings-title">系统实现原理与架构</h2>
+            <h2 class="settings-title"><i class="fas fa-question-circle" style="margin-right:0.5rem;"></i>帮助</h2>
 
-            <!-- 添加翻页导航 -->
+            <!-- 翻页导航 -->
             <div class="help-pagination">
-                <button class="pagination-btn active" onclick="switchHelpPage('systemOverview')">系统概述</button>
-                <button class="pagination-btn" onclick="switchHelpPage('coreTech')">核心技术实现</button>
-                <button class="pagination-btn" onclick="switchHelpPage('hardware')">硬件介绍</button>
-                <button class="pagination-btn" onclick="switchHelpPage('workflow')">详细工作流程</button>
-                <button class="pagination-btn" onclick="switchHelpPage('navSystem')">导航定位系统</button>
+                <button class="pagination-btn active" onclick="switchHelpPage('systemOverview')">快速入门</button>
+                <button class="pagination-btn" onclick="switchHelpPage('coreTech')">盲道导航</button>
+                <button class="pagination-btn" onclick="switchHelpPage('hardware')">AI 语音助手</button>
+                <button class="pagination-btn" onclick="switchHelpPage('workflow')">个人设置</button>
+                <button class="pagination-btn" onclick="switchHelpPage('navSystem')">盲道地图</button>
             </div>
 
             <div style="height: 70vh; overflow-y: auto; padding-right: 10px;">
-                <!-- 系统概述页面 -->
+
+                <!-- 快速入门页面 -->
                 <div class="help-page active" id="systemOverview">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                            <i class="fas fa-info-circle"></i> 系统概述
+                            <i class="fas fa-rocket"></i> 欢迎使用盲道导航助手
                         </h3>
-                        <p style="line-height: 1.8;">本系统是一款集成计算机视觉、自然语言处理与语音合成技术的盲道导航辅助系统，旨在帮助视障人士安全、独立地在盲道上行走。系统核心功能是实时检测盲道方向变化，通过智能语音提示引导用户正确转向，同时支持家属远程关注与消息提醒。</p>
+                        <p style="line-height: 1.8; color: #495057;">这是一款专为视障人士设计的出行辅助平台。无论您是视障用户还是家属，本平台都能帮您更安全、更便捷地出行。下面我们一步步带您了解如何开始使用。</p>
 
-                        <!-- 系统架构图 -->
-                        <div style="margin: 2rem 0; text-align: center;">
-                            <div style="font-weight: bold; margin-bottom: 1rem; color: var(--primary-dark);">系统整体架构</div>
-                            <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; background: #f8f9fa; text-align: center;">
-                                <div style="width: 90%; margin: 0 auto; position: relative;">
-                                    <!-- 前端层 -->
-                                    <div style="border: 2px solid #339af0; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #e7f5ff;">
-                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">前端展示层</div>
-                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-desktop"></i> Web界面
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-video"></i> 视频播放
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-cog"></i> 用户设置
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 箭头 -->
-                                    <div style="text-align: center; margin: -0.5rem 0;">
-                                        <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
-                                    </div>
-
-                                    <!-- 应用层 -->
-                                    <div style="border: 2px solid #20c997; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #e6fcf5;">
-                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">应用服务层</div>
-                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-user-shield"></i> 用户管理
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-upload"></i> 视频处理
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-volume-up"></i> 语音服务
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 箭头 -->
-                                    <div style="text-align: center; margin: -0.5rem 0;">
-                                        <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
-                                    </div>
-
-                                    <!-- 算法层 -->
-                                    <div style="border: 2px solid #f06595; border-radius: 8px; padding: 0.8rem; margin-bottom: 1.5rem; background: #fff0f6;">
-                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">算法核心层</div>
-                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-eye"></i> YOLO盲道检测
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-brain"></i> Ollama语言模型
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-chart-line"></i> 方向分析算法
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 箭头 -->
-                                    <div style="text-align: center; margin: -0.5rem 0;">
-                                        <i class="fas fa-arrow-down" style="color: #adb5bd; font-size: 1.5rem;"></i>
-                                    </div>
-
-                                    <!-- 数据层 -->
-                                    <div style="border: 2px solid #9775fa; border-radius: 8px; padding: 0.8rem; background: #f3f0ff;">
-                                        <div style="font-weight: bold; margin-bottom: 0.5rem;">数据存储层</div>
-                                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-database"></i> MySQL数据库
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-file-video"></i> 视频文件存储
-                                            </div>
-                                            <div style="background: white; border-radius: 5px; padding: 0.5rem; margin: 0.3rem; width: 28%;">
-                                                <i class="fas fa-user-cog"></i> 用户设置数据
-                                            </div>
-                                        </div>
-                                    </div>
+                        <!-- 注册与登录 -->
+                        <div style="margin: 1.5rem 0;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class="fas fa-user-plus" style="color: var(--primary-color);"></i> 第一步：注册账号</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">1</div>
+                                    <p style="margin: 0; line-height: 1.7;">打开系统首页，点击的<b>「注册」</b>按钮</p>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">2</div>
+                                    <p style="margin: 0; line-height: 1.7;">填写用户名、密码、邮箱，点击<b>「获取验证码」</b>，系统会把验证码发送到您填写的邮箱</p>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">3</div>
+                                    <p style="margin: 0; line-height: 1.7;">输入收到的验证码，点击<b>「注册」</b>，完成！下次直接用用户名和密码登录即可</p>
                                 </div>
                             </div>
+                        </div>
+
+                        <div style="margin: 1.5rem 0; padding: 1rem; background: #fff9db; border-radius: 8px; border-left: 4px solid #fab005;">
+                            <b><i class="fas fa-lightbulb" style="color:#fab005;"></i> 小提示：</b> 如果忘记密码，在登录页点击「忘记密码」，通过邮箱验证即可重新设置。
+                        </div>
+
+                        <!-- 两种模式说明 -->
+                        <div style="margin: 1.5rem 0;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary-color);"></i> 两种使用模式</h4>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 220px; background: #e7f5ff; border-radius: 10px; padding: 1.2rem; border: 2px solid #74c0fc;">
+                                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.6rem; color: var(--primary-dark);">
+                                        <i class="fas fa-blind"></i> 视障用户模式
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">使用手机或平板摄像头实时识别前方盲道，系统自动播报转弯提示，同时可以开口与 AI 助手交流，完成导航、查询等操作，全程解放双手。</p>
+                                </div>
+                                <div style="flex: 1; min-width: 220px; background: #f3f0ff; border-radius: 10px; padding: 1.2rem; border: 2px solid #b197fc;">
+                                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.6rem; color: #5f3dc4;">
+                                        <i class="fas fa-heart"></i> 家属模式
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">在地图上实时查看家人的位置，并可以向家人发送语音消息（系统会自动朗读给视障用户）。随时掌握家人出行动态，安心放心。</p>
+                                </div>
+                            </div>
+                            <p style="margin-top: 0.8rem; font-size: 0.9rem; color: #868e96;">在「个人设置」中可以随时切换模式。</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 核心技术实现页面 -->
+                <!-- 盲道导航页面 -->
                 <div class="help-page" id="coreTech">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                            <i class="fas fa-microchip"></i> 核心技术实现
+                            <i class="fas fa-walking"></i> 盲道导航——让摄像头帮您看路
                         </h3>
+                        <p style="line-height: 1.8; color: #495057;">这是本平台最核心的功能。系统通过摄像头实时识别地面盲道，判断盲道是否在拐弯，并第一时间用语音告诉您"请向左转"或"请向右转"，帮助您沿盲道安全行走。</p>
 
-                        <!-- 技术实现表格 -->
-                        <div style="overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #dee2e6;">
-                                <thead>
-                                    <tr style="background-color: var(--primary-color); color: white;">
-                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">技术模块</th>
-                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">使用技术</th>
-                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">实现功能</th>
-                                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">技术细节</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr style="background-color: #f8f9fa;">
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">计算机视觉</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">YOLO模型</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">盲道检测与跟踪</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">使用经过定制训练的YOLO模型识别盲道，精确捕捉形状和方向变化</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">自然语言处理</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">Ollama/qwen2.5</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">提示内容生成</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">结合用户个人信息生成自然、友好的语音提示内容，考虑年龄和性别因素</td>
-                                    </tr>
-                                    <tr style="background-color: #f8f9fa;">
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">语音合成</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">pyttsx3</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">文本转语音</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">支持中文语音合成，可调节语速和音量，适应不同用户需求</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">Web框架</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">Flask</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">前后端交互</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">负责路由管理、用户认证、视频流处理和实时通信</td>
-                                    </tr>
-                                    <tr style="background-color: #f8f9fa;">
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">数据存储</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">MySQL</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">用户数据管理</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">存储用户账号、个人设置和使用偏好，支持多用户系统</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">算法模块</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">线性回归</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">方向判断</td>
-                                        <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">使用斜率分析算法判断盲道方向变化，阈值为±0.41</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- 创新特点 -->
-                        <div class="help-section">
-                            <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                                <i class="fas fa-lightbulb"></i> 创新特点与应用价值
-                            </h3>
-
-                            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0;">
-                                <!-- 特点1 -->
-                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary-color); padding: 1rem; min-width: 250px;">
-                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--primary-dark);">
-                                        <i class="fas fa-users"></i> 双端模式设计
-                                    </div>
-                                    <p style="font-size: 0.9rem; margin: 0;">盲人端接收实时导航指引，家属端可远程监控并发送语音消息，增强安全性和使用便捷性</p>
+                        <!-- 实际产品：摄像头实时导航 -->
+                        <div style="margin: 1.5rem 0;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class="fas fa-camera" style="color: var(--primary-color);"></i> 实际产品：摄像头实时导航</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">1</div>
+                                    <p style="margin: 0; line-height: 1.7;">将手机/平板固定在胸前或手持，确保摄像头朝向地面前方，能拍到脚前的盲道</p>
                                 </div>
-
-                                <!-- 特点2 -->
-                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #fd7e14; padding: 1rem; min-width: 250px;">
-                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #e67700;">
-                                        <i class="fas fa-user-cog"></i> 个性化体验
-                                    </div>
-                                    <p style="font-size: 0.9rem; margin: 0;">根据用户性别、年龄等信息调整语音提示风格，提供贴心且个性化的语音导航体验</p>
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">2</div>
+                                    <p style="margin: 0; line-height: 1.7;">点击主界面上的<b>「开始实时导航」</b>按钮，允许浏览器使用摄像头</p>
                                 </div>
-
-                                <!-- 特点3 -->
-                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #20c997; padding: 1rem; min-width: 250px;">
-                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #087f5b;">
-                                        <i class="fas fa-shield-alt"></i> 多重安全机制
-                                    </div>
-                                    <p style="font-size: 0.9rem; margin: 0;">实时分析盲道走向和行走路线安全性，提前预警危险情况，增强视障人士出行安全</p>
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">3</div>
+                                    <p style="margin: 0; line-height: 1.7;">系统开始自动分析画面。当盲道出现拐弯时，耳机或扬声器会立刻播报语音提示</p>
                                 </div>
-
-                                <!-- 特点4 -->
-                                <div style="flex: 1 0 45%; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f06595; padding: 1rem; min-width: 250px;">
-                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #d6336c;">
-                                        <i class="fas fa-universal-access"></i> 无障碍设计
-                                    </div>
-                                    <p style="font-size: 0.9rem; margin: 0;">采用通用无障碍设计原则，确保界面适配视障用户需求，提供多种使用方式</p>
+                                <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">4</div>
+                                    <p style="margin: 0; line-height: 1.7;">想停止时，点击<b>「停止导航」</b>即可</p>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- 展示平台：上传视频分析 -->
+                        <div style="margin: 1.5rem 0;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class="fas fa-film" style="color: #fd7e14;"></i> 展示平台：上传视频分析</h4>
+                            <div style="background: #fff4e6; border-radius: 8px; padding: 1.2rem; border-left: 4px solid #fd7e14;">
+                                <p style="margin: 0 0 0.6rem 0; line-height: 1.7;">如果您已经提前录好了一段沿盲道行走的视频，可以上传给系统分析：</p>
+                                <ol style="margin: 0; padding-left: 1.5rem; line-height: 1.9;">
+                                    <li>点击主界面<b>「上传视频」</b>按钮，选择本地视频文件（支持 MP4、AVI 等常见格式）</li>
+                                    <li>系统自动逐帧分析视频中的盲道，识别拐弯位置并标注出来</li>
+                                    <li>分析完成后，您可以在视频播放器中看到盲道的标注结果，并听到对应的语音说明</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- 语音提示说明 -->
+                        <div style="margin: 1.5rem 0; padding: 1.2rem; background: #e6fcf5; border-radius: 8px; border-left: 4px solid #20c997;">
+                            <h4 style="margin: 0 0 0.6rem 0; color: #087f5b;"><i class="fas fa-volume-up"></i> 语音提示是什么样的？</h4>
+                            <p style="margin: 0; line-height: 1.8; color: #495057;">系统不会只说"左转"这么简单——它会根据您在「个人设置」里填写的姓名、年龄和喜好，生成温暖自然的提示语，比如：<br>
+                            <span style="font-style: italic; color: #20c997;">「小明，前方盲道向右转，请注意调整方向，加油哦！」</span><br>
+                            老人、年轻人、不同性别的语气都会有所不同，更贴心也更有温度。</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 新增硬件介绍页面 -->
+                <!-- AI 语音助手页面 -->
                 <div class="help-page" id="hardware">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                            <i class="fas fa-microchip"></i> 硬件设备介绍
+                            <i class="fas fa-microphone-alt"></i> AI 语音助手——开口就能搞定
                         </h3>
+                        <p style="line-height: 1.8; color: #495057;">点击界面上的<b>「语音助手」</b>或麦克风按钮，直接开口说话，系统会自动理解您的意思并帮您完成操作，不需要打字，不需要记命令。</p>
 
-                        <div style="margin-bottom: 2rem;">
-                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem;">Raspberry Pi 5 集成方案</h4>
-                            <div style="display: flex; margin-bottom: 1.5rem;">
-                                <div style="flex: 0 0 30%; padding-right: 20px;">
-                                    <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; text-align: center;">
-                                        <div style="background-color: #f8f9fa; padding: 1rem;">
-                                            <i class="fas fa-server" style="font-size: 3rem; color: var(--primary-color);"></i>
-                                        </div>
-                                        <div style="padding: 0.8rem; font-weight: bold;">Raspberry Pi 5</div>
-                                    </div>
-                                </div>
-                                <div style="flex: 1;">
-                                    <p style="line-height: 1.8; margin-bottom: 0.8rem;">
-                                        本系统计划采用Raspberry Pi 5作为核心计算平台，实现轻量级便携化的盲道检测与实时导航系统。Raspberry Pi 5凭借其卓越的性能和低功耗特性，非常适合用于可穿戴式视障辅助设备。
-                                    </p>
-                                    <p style="line-height: 1.8;">
-                                        相比传统PC平台，Raspberry Pi 5的集成方案大幅提升了系统的便携性和实用性，让视障人士能够在户外环境中获得实时的导航帮助。
-                                    </p>
+                        <!-- 四大能力卡片 -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0;">
+                            <div style="background: #e7f5ff; border-radius: 10px; padding: 1.2rem; border-top: 3px solid var(--primary-color);">
+                                <div style="font-weight: bold; margin-bottom: 0.5rem; color: var(--primary-dark);"><i class="fas fa-map-marked-alt"></i> 地图导航</div>
+                                <p style="font-size: 0.88rem; margin: 0; line-height: 1.7; color: #495057;">直接说出您想去哪里，系统会帮您规划一条步行路线，并用语音一步步引导您，方向描述会使用"左转""右转"等简单说法。</p>
+                                <div style="margin-top: 0.8rem; padding: 0.5rem 0.8rem; background: white; border-radius: 6px; font-size: 0.82rem; color: #339af0;">
+                                    例："从人民广场走到最近的便利店怎么走？"
                                 </div>
                             </div>
-
-                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem; margin-top: 2rem;">关键硬件指标</h4>
-                            <div style="overflow-x: auto;">
-                                <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #dee2e6;">
-                                    <thead>
-                                        <tr style="background-color: var(--primary-color); color: white;">
-                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">硬件组件</th>
-                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">技术规格</th>
-                                            <th style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">实现功能</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style="background-color: #f8f9fa;">
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">处理器</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">BCM2712 (2.4GHz四核Cortex-A76)</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">实时运行YOLOv8模型，处理视频流分析</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">内存</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">8GB LPDDR4X</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">支持多任务处理，保障模型推理性能</td>
-                                        </tr>
-                                        <tr style="background-color: #f8f9fa;">
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">摄像头</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">免驱USB麦克风摄像头</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">采集1080P高清视频流，支持广角视野</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">电源</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">便携式5V/5A移动电源</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">提供4-6小时持续工作时间</td>
-                                        </tr>
-                                        <tr style="background-color: #f8f9fa;">
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">扬声器</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">小型蓝牙扬声器模块</td>
-                                            <td style="padding: 0.75rem; text-align: left; border: 1px solid #dee2e6;">提供清晰的语音导航提示</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem; margin-top: 2rem;">性能指标</h4>
-                            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 1.5rem 0;">
-                                <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e9ecef;">
-                                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">15 FPS</div>
-                                    <div style="color: #495057;">YOLOv8模型推理速度</div>
-                                </div>
-                                <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e9ecef;">
-                                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">92%</div>
-                                    <div style="color: #495057;">盲道检测准确率</div>
-                                </div>
-                                <div style="flex: 1; min-width: 200px; background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e9ecef;">
-                                    <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">＜250ms</div>
-                                    <div style="color: #495057;">方向变化响应时间</div>
+                            <div style="background: #f3f0ff; border-radius: 10px; padding: 1.2rem; border-top: 3px solid #7950f2;">
+                                <div style="font-weight: bold; margin-bottom: 0.5rem; color: #5f3dc4;"><i class="fas fa-sliders-h"></i> 调整设置</div>
+                                <p style="font-size: 0.88rem; margin: 0; line-height: 1.7; color: #495057;">针对视障群体设计，用说话的方式修改系统设置。说完立刻生效。</p>
+                                <div style="margin-top: 0.8rem; padding: 0.5rem 0.8rem; background: white; border-radius: 6px; font-size: 0.82rem; color: #7950f2;">
+                                    例："把声音调大一点" / "语速改成慢速"
                                 </div>
                             </div>
+                            <div style="background: #fff0f6; border-radius: 10px; padding: 1.2rem; border-top: 3px solid #e64980;">
+                                <div style="font-weight: bold; margin-bottom: 0.5rem; color: #c2255c;"><i class="fas fa-paper-plane"></i> 通知家人</div>
+                                <p style="font-size: 0.88rem; margin: 0; line-height: 1.7; color: #495057;">一句话就能给家人发邮件通知，让他们知道您现在的情况，无需自己打字发信息。</p>
+                                <div style="margin-top: 0.8rem; padding: 0.5rem 0.8rem; background: white; border-radius: 6px; font-size: 0.82rem; color: #e64980;">
+                                    例："告诉家人我已经到学校了"
+                                </div>
+                            </div>
+                            <div style="background: #e6fcf5; border-radius: 10px; padding: 1.2rem; border-top: 3px solid #20c997;">
+                                <div style="font-weight: bold; margin-bottom: 0.5rem; color: #087f5b;"><i class="fas fa-comments"></i> 聊天陪伴</div>
+                                <p style="font-size: 0.88rem; margin: 0; line-height: 1.7; color: #495057;">外出路上不再孤单，您可以和 AI 随意聊天，它会记住对话内容，像一个贴心的伙伴陪伴您。</p>
+                                <div style="margin-top: 0.8rem; padding: 0.5rem 0.8rem; background: white; border-radius: 6px; font-size: 0.82rem; color: #20c997;">
+                                    例："今天天气真好" / "我有点担心走错路"
+                                </div>
+                            </div>
+                        </div>
 
-                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem; margin-top: 2rem;">集成效果</h4>
-                            <p style="line-height: 1.8; margin-bottom: 1.5rem;">
-                                将系统集成到Raspberry Pi 5后，我们成功实现了一个完全便携式的盲道导航辅助系统。设备可以轻松安装在使用者身上或辅助设备上，通过摄像头实时捕捉前方盲道情况，运行YOLOv8模型进行即时分析，并通过语音播报指引方向。
-                            </p>
-                            <p style="line-height: 1.8; margin-bottom: 1.5rem;">
-                                尽管相比服务器级硬件，推理速度有所降低，但Raspberry Pi 5的处理能力已足够支持实时导航需求，而且显著提高了系统的实用性和适配性。系统依靠WiFi或4G模块可实现家属远程监控功能，进一步提升了使用安全性。
-                            </p>
+                        <div style="padding: 1rem; background: #fff9db; border-radius: 8px; border-left: 4px solid #fab005; margin-top: 0.5rem;">
+                            <b><i class="fas fa-info-circle" style="color:#fab005;"></i> 如何使用语音输入？</b>
+                            <p style="margin: 0.5rem 0 0 0; line-height: 1.7;">点击对话框旁边的<b>麦克风图标</b>，对着话筒说话，系统自动识别后会把您说的话填入输入框，再自动发送给 AI。您也可以直接在输入框里打字发送。</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 详细工作流程页面 -->
+                <!-- 个人设置页面 -->
                 <div class="help-page" id="workflow">
                     <div class="help-section">
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                            <i class="fas fa-project-diagram"></i> 详细工作流程
+                            <i class="fas fa-cog"></i> 个人设置与位置共享
                         </h3>
 
-                        <!-- 流程图 -->
-                        <div style="margin: 1.5rem 0; text-align: center;">
-                            <div style="display: flex; flex-direction: column; align-items: center; max-width: 600px; margin: 0 auto;">
-                                <!-- 步骤1 -->
-                                <div style="width: 80%; background: #e7f5ff; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
-                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: var(--primary-color); color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</span>
-                                    <b>视频输入处理</b>
-                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">系统接收上传的视频或摄像头输入，转换为帧序列供模型分析</p>
-                                </div>
-                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                        <!-- 个人设置 -->
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class="fas fa-user-cog" style="color: var(--primary-color);"></i> 怎么设置个人信息？</h4>
+                            <p style="line-height: 1.8; color: #495057; margin-bottom: 1rem;">点击主界面左上角的<b>「设置」</b>按钮，可以调整以下内容：</p>
 
-                                <!-- 步骤2 -->
-                                <div style="width: 80%; background: #fff4e6; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
-                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #fd7e14; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</span>
-                                    <b>YOLO模型盲道检测</b>
-                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">每帧图像通过YOLO模型检测盲道位置，返回盲道的坐标框和置信度</p>
+                            <div style="display: flex; flex-direction: column; gap: 0.7rem;">
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: #f8f9fa; border-radius: 8px;">
+                                    <i class="fas fa-id-badge" style="color: var(--primary-color); width: 20px; text-align:center;"></i>
+                                    <div><b>称呼 / 昵称</b> — 系统在语音提示时会用您设置的称呼叫您，更亲切</div>
                                 </div>
-                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-
-                                <!-- 步骤3 -->
-                                <div style="width: 80%; background: #f3f0ff; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
-                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #7950f2; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</span>
-                                    <b>盲道方向分析</b>
-                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">应用线性回归计算盲道中心点的斜率，判断盲道是否转向及转向方向</p>
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: #f8f9fa; border-radius: 8px;">
+                                    <i class="fas fa-venus-mars" style="color: var(--primary-color); width: 20px; text-align:center;"></i>
+                                    <div><b>性别 / 年龄段</b> — 系统会根据这些信息调整语音风格，比如对长辈语气更温和</div>
                                 </div>
-                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-
-                                <!-- 步骤4 -->
-                                <div style="width: 80%; background: #e6fcf5; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
-                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #20c997; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">4</span>
-                                    <b>提示内容生成</b>
-                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">根据方向分析结果，调用Ollama大模型生成个性化语音提示内容</p>
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: #f8f9fa; border-radius: 8px;">
+                                    <i class="fas fa-tachometer-alt" style="color: var(--primary-color); width: 20px; text-align:center;"></i>
+                                    <div><b>语速 / 音量</b> — 可选慢速、正常、快速；音量可调高低，适配不同环境</div>
                                 </div>
-                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
-
-                                <!-- 步骤5 -->
-                                <div style="width: 80%; background: #fff0f6; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; text-align: left; position: relative;">
-                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #f06595; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">5</span>
-                                    <b>语音合成与播报</b>
-                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">将生成的文本转换为语音，根据用户设置调整语速和音量后播放</p>
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: #f8f9fa; border-radius: 8px;">
+                                    <i class="fas fa-smile-beam" style="color: var(--primary-color); width: 20px; text-align:center;"></i>
+                                    <div><b>鼓励模式</b> — 开启后，系统会在适当时候说一些鼓励的话，让您走得更有信心</div>
                                 </div>
-                                <div style="height: 30px; border-left: 2px dashed #adb5bd;"></div>
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: #f8f9fa; border-radius: 8px;">
+                                    <i class="fas fa-users-cog" style="color: var(--primary-color); width: 20px; text-align:center;"></i>
+                                    <div><b>用户模式</b> — 切换「视障用户」或「家属」模式，界面和功能会对应调整</div>
+                                </div>
+                            </div>
 
-                                <!-- 步骤6 -->
-                                <div style="width: 80%; background: #edf2ff; border-radius: 8px; padding: 1rem; text-align: left; position: relative;">
-                                    <span style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); background: #4c6ef5; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">6</span>
-                                    <b>交互反馈</b>
-                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #495057;">前端展示实时视频分析画面，显示语音提示内容，家属端可发送额外消息</p>
+                            <p style="margin-top: 1rem; color: #868e96; font-size: 0.9rem;">修改后点击「保存设置」即可生效；可以点击「测试语音」先试听效果。</p>
+                        </div>
+
+                        <!-- 位置共享 -->
+                        <div style="border-top: 1px solid #eee; padding-top: 1.5rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;"><i class="fas fa-map-pin" style="color: #e64980;"></i> 位置共享——让家人随时知道您在哪</h4>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 220px; background: #fff0f6; border-radius: 10px; padding: 1.2rem; border-left: 4px solid #e64980;">
+                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #c2255c;"><i class="fas fa-share-alt"></i> 视障用户：开启共享</div>
+                                    <ol style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem; line-height: 1.8;">
+                                        <li>点击主界面<b>「位置共享」</b>按钮</li>
+                                        <li>允许浏览器获取位置权限</li>
+                                        <li>选择要共享给哪位家属</li>
+                                        <li>点击<b>「开始共享」</b>即可</li>
+                                    </ol>
+                                </div>
+                                <div style="flex: 1; min-width: 220px; background: #f3f0ff; border-radius: 10px; padding: 1.2rem; border-left: 4px solid #7950f2;">
+                                    <div style="font-weight: bold; margin-bottom: 0.5rem; color: #5f3dc4;"><i class="fas fa-eye"></i> 家属：查看位置</div>
+                                    <ol style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem; line-height: 1.8;">
+                                        <li>用家属账号登录</li>
+                                        <li>切换到家属模式</li>
+                                        <li>点击<b>「查看位置」</b>按钮</li>
+                                        <li>地图上会实时显示家人的位置</li>
+                                    </ol>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 导航定位系统页面（新增） -->
+                <!-- 盲道地图（未来计划）页面 -->
                 <div class="help-page" id="navSystem">
                     <div class="help-section">
-                        <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                            <i class="fas fa-compass"></i> 导航定位系统
-                        </h3>
-
-                        <p style="line-height: 1.8;">导航定位系统是本平台的关键组成部分，为视障人士提供精准的位置服务和路线规划功能，主要由地图定位、路线规划和盲道发现三大模块组成。</p>
-
-                        <!-- 导航定位系统特点 -->
-                        <div style="margin: 1.5rem 0;">
-                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">系统特点</h4>
-                            <ul style="list-style-type: none; padding-left: 0;">
-                                <li style="margin-bottom: 1rem; display: flex; align-items: flex-start;">
-                                    <div style="min-width: 30px; height: 30px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
-                                        <i class="fas fa-map-marked-alt"></i>
-                                    </div>
-                                    <div>
-                                        <b>双向定位能力</b>
-                                        <p style="margin: 0.3rem 0 0 0; color: #495057;">同时支持自动定位和手动选择位置，解决非https环境下浏览器定位问题</p>
-                                    </div>
-                                </li>
-                                <li style="margin-bottom: 1rem; display: flex; align-items: flex-start;">
-                                    <div style="min-width: 30px; height: 30px; background-color: var(--secondary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
-                                        <i class="fas fa-route"></i>
-                                    </div>
-                                    <div>
-                                        <b>智能路线规划</b>
-                                        <p style="margin: 0.3rem 0 0 0; color: #495057;">基于百度地图API提供多种出行方式的路线规划，未来将优先选择有盲道的路线</p>
-                                    </div>
-                                </li>
-                                <li style="margin-bottom: 1rem; display: flex; align-items: flex-start;">
-                                    <div style="min-width: 30px; height: 30px; background-color: #20c997; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
-                                        <i class="fas fa-blind"></i>
-                                    </div>
-                                    <div>
-                                        <b>盲道优先导航</b>
-                                        <p style="margin: 0.3rem 0 0 0; color: #495057;">系统能够检索周边盲道信息，为视障人士提供更安全的出行路线</p>
-                                    </div>
-                                </li>
-                            </ul>
+                        <!-- 头部标题区 -->
+                        <div style="background: linear-gradient(135deg, #1971c2 0%, #0c8599 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; color: white; position: relative; overflow: hidden;">
+                            <div style="position: absolute; right: -20px; top: -20px; width: 120px; height: 120px; background: rgba(255,255,255,0.08); border-radius: 50%;"></div>
+                            <div style="position: absolute; right: 30px; bottom: -30px; width: 80px; height: 80px; background: rgba(255,255,255,0.06); border-radius: 50%;"></div>
+                            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.2rem; color: white;">
+                                <i class="fas fa-map" style="margin-right: 0.5rem;"></i>盲道地图——未来的计划
+                            </h3>
+                            <p style="margin: 0; font-size: 0.95rem; opacity: 0.9; line-height: 1.7;">一张真正属于视障人士的地图，填补城市地图领域长达数十年的空白</p>
                         </div>
 
-                        <!-- 未来发展 -->
-                        <div style="margin: 2rem 0; padding: 1.5rem; background-color: #f8f9fa; border-radius: 10px; border-left: 5px solid var(--primary-color);">
-                            <h4 style="color: var(--primary-dark); margin-top: 0;">未来规划与扩展</h4>
-                            <p style="line-height: 1.8;">未来系统将扩展至完整的"盲道地图"服务，通过以下方式提升导航能力：</p>
-                            <ol style="padding-left: 1.5rem; margin-top: 1rem;">
-                                <li style="margin-bottom: 0.7rem;">
-                                    <b>众包盲道数据采集</b> - 记录用户实际行走轨迹，自动标记盲道位置并上传至云端数据库
-                                </li>
-                                <li style="margin-bottom: 0.7rem;">
-                                    <b>盲道路网构建</b> - 根据行走记录构建盲人导向的地图，形成全国范围的盲道路网
-                                </li>
-                                <li style="margin-bottom: 0.7rem;">
-                                    <b>智能推荐系统</b> - 优先选择有盲道的路线进行行走，并考虑路线安全性和便捷性
-                                </li>
-                                <li style="margin-bottom: 0.7rem;">
-                                    <b>社区反馈机制</b> - 允许用户标记盲道状态（是否损坏、施工等），提高导航准确性
-                                </li>
-                                <li style="margin-bottom: 0.7rem;">
-                                    <b>多模态导航</b> - 结合视觉识别、地图定位和语音引导，提供全方位无障碍导航体验
-                                </li>
-                            </ol>
+                        <!-- 现状痛点 -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem;"><i class="fas fa-exclamation-triangle" style="color: #f03e3e;"></i> 现在缺什么？</h4>
+                            <p style="line-height: 1.8; color: #495057;">目前，高德地图、百度地图等导航软件能告诉我们公交、地铁、驾车怎么走——但对于视障人士来说，他们最需要的信息，那些人行道上的盲道在哪里、往哪个方向延伸，<b>至今没有任何一款地图产品能给出答案</b>。</p>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0;">
+                                <div style="flex: 1; min-width: 160px; text-align: center; padding: 1rem; background: #fff5f5; border-radius: 8px; border: 1px solid #ffa8a8;">
+                                    <i class="fas fa-subway" style="font-size: 1.8rem; color: #f03e3e; margin-bottom: 0.5rem; display: block;"></i>
+                                    <div style="font-weight: bold; font-size: 0.9rem;">地铁地图</div>
+                                    <div style="color: #20c997; font-size: 0.85rem;">✔ 已有</div>
+                                </div>
+                                <div style="flex: 1; min-width: 160px; text-align: center; padding: 1rem; background: #fff5f5; border-radius: 8px; border: 1px solid #ffa8a8;">
+                                    <i class="fas fa-bus" style="font-size: 1.8rem; color: #f03e3e; margin-bottom: 0.5rem; display: block;"></i>
+                                    <div style="font-weight: bold; font-size: 0.9rem;">公交地图</div>
+                                    <div style="color: #20c997; font-size: 0.85rem;">✔ 已有</div>
+                                </div>
+                                <div style="flex: 1; min-width: 160px; text-align: center; padding: 1rem; background: #fff5f5; border-radius: 8px; border: 1px solid #ffa8a8;">
+                                    <i class="fas fa-car" style="font-size: 1.8rem; color: #f03e3e; margin-bottom: 0.5rem; display: block;"></i>
+                                    <div style="font-weight: bold; font-size: 0.9rem;">驾车地图</div>
+                                    <div style="color: #20c997; font-size: 0.85rem;">✔ 已有</div>
+                                </div>
+                                <div style="flex: 1; min-width: 160px; text-align: center; padding: 1rem; background: #e7f5ff; border-radius: 8px; border: 2px solid var(--primary-color);">
+                                    <i class="fas fa-blind" style="font-size: 1.8rem; color: var(--primary-color); margin-bottom: 0.5rem; display: block;"></i>
+                                    <div style="font-weight: bold; font-size: 0.9rem; color: var(--primary-color);">盲道地图</div>
+                                    <div style="color: #f03e3e; font-size: 0.85rem; font-weight: bold;">✘ 全球空白</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- 技术架构 -->
-                        <div style="margin: 1.5rem 0;">
-                            <h4 style="color: var(--primary-dark); margin-bottom: 1rem;">系统技术架构</h4>
-                            <div style="width: 100%; border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden;">
-                                <div style="padding: 1rem; background-color: #e7f5ff; border-bottom: 1px solid #dee2e6;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="font-weight: bold;"><i class="fas fa-layer-group"></i> 前端展示层</span>
-                                        <span style="color: #666; font-size: 0.9rem;">百度地图JavaScript API</span>
+                        <!-- 我们的方案 -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 0.8rem;"><i class="fas fa-map-marked-alt" style="color: var(--primary-color);"></i> 我们打算怎么做？</h4>
+                            <p style="line-height: 1.8; color: #495057; margin-bottom: 1rem;">核心思路很简单：<b>把每一段盲道的位置都记录下来，存入地图数据库，导航时优先引导用户走有盲道的路。</b></p>
+                            <div style="display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 20px; margin-left: 10px;">
+                                <div style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; background: linear-gradient(180deg, var(--primary-color), #0c8599);"></div>
+                                <!-- step 1 -->
+                                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.2rem; position: relative;">
+                                    <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0; position: relative; z-index: 1; margin-left: -14px;">1</div>
+                                    <div style="background: #e7f5ff; border-radius: 8px; padding: 0.9rem 1rem; flex: 1;">
+                                        <b style="color: var(--primary-dark);">用户行走，自动记录</b>
+                                        <p style="margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">视障用户在使用盲道检测功能时，系统同时记录 GPS 轨迹与盲道检测结果。每走一段有盲道的路，这段路径就自动上传到云端数据库，为地图添砖加瓦。</p>
                                     </div>
                                 </div>
-                                <div style="padding: 1rem; background-color: #fff; border-bottom: 1px solid #dee2e6;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="font-weight: bold;"><i class="fas fa-exchange-alt"></i> 接口服务层</span>
-                                        <span style="color: #666; font-size: 0.9rem;">Flask API服务，位置信息传输</span>
+                                <!-- step 2 -->
+                                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.2rem; position: relative;">
+                                    <div style="min-width: 28px; height: 28px; background: #0c8599; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0; position: relative; z-index: 1; margin-left: -14px;">2</div>
+                                    <div style="background: #e6fcf5; border-radius: 8px; padding: 0.9rem 1rem; flex: 1;">
+                                        <b style="color: #087f5b;">越用越完善的"众包地图"</b>
+                                        <p style="margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">就像大家一起完善维基百科一样，每一位用户的出行都在默默贡献盲道数据。用的人越多，地图就越完整，越准确——这就是"众包"的力量，靠社区力量解决政府和企业难以单独完成的数据采集难题。</p>
                                     </div>
                                 </div>
-                                <div style="padding: 1rem; background-color: #e7f5ff; border-bottom: 1px solid #dee2e6;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="font-weight: bold;"><i class="fas fa-cogs"></i> 业务逻辑层</span>
-                                        <span style="color: #666; font-size: 0.9rem;">路线规划，盲道匹配算法</span>
+                                <!-- step 3 -->
+                                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.2rem; position: relative;">
+                                    <div style="min-width: 28px; height: 28px; background: #5f3dc4; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0; position: relative; z-index: 1; margin-left: -14px;">3</div>
+                                    <div style="background: #f3f0ff; border-radius: 8px; padding: 0.9rem 1rem; flex: 1;">
+                                        <b style="color: #5f3dc4;">导航时优先走盲道</b>
+                                        <p style="margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">当用户请求路线规划时，系统会在地图数据库中搜索途经盲道最多的路线，优先推荐给用户。再结合实时摄像头辅助，确保每一步都踩在盲道上，大幅提升出行安全感。</p>
                                     </div>
                                 </div>
-                                <div style="padding: 1rem; background-color: #fff;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="font-weight: bold;"><i class="fas fa-database"></i> 数据存储层</span>
-                                        <span style="color: #666; font-size: 0.9rem;">盲道位置信息，用户行走记录</span>
+                                <!-- step 4 -->
+                                <div style="display: flex; align-items: flex-start; gap: 1rem; position: relative;">
+                                    <div style="min-width: 28px; height: 28px; background: #d6336c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0; position: relative; z-index: 1; margin-left: -14px;">4</div>
+                                    <div style="background: #fff0f6; border-radius: 8px; padding: 0.9rem 1rem; flex: 1;">
+                                        <b style="color: #c2255c;">社区维护，标记损坏</b>
+                                        <p style="margin: 0.3rem 0 0 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">用户可以标记某段盲道已损坏、正在施工或被占用，帮助后来者绕开危险路段，让这张地图真正"活"起来。</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 社会价值 -->
+                        <div style="background: linear-gradient(135deg, #fff9db 0%, #fff3bf 100%); border-radius: 12px; padding: 1.5rem; border: 1px solid #ffe066;">
+                            <h4 style="margin: 0 0 0.8rem 0; color: #e67700;"><i class="fas fa-star"></i> 为什么这件事意义重大？</h4>
+                            <p style="line-height: 1.8; color: #495057; margin-bottom: 1rem;">盲道地图，是一个<b>从来没有人做过的事情</b>，但却是视障群体最迫切需要的。</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.8rem;">
+                                <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 200px;">
+                                    <i class="fas fa-globe-asia" style="color: #e67700; margin-top: 3px; flex-shrink: 0;"></i>
+                                    <p style="margin: 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">全球有超过 <b>2.85 亿</b> 视障人士，中国有约 <b>1700 万</b>。他们每天出行都要面对"我能走哪条路"这个无人解答的问题</p>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 200px;">
+                                    <i class="fas fa-city" style="color: #e67700; margin-top: 3px; flex-shrink: 0;"></i>
+                                    <p style="margin: 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">城市里铺了大量盲道，却没有任何数字化索引，这些设施的价值大打折扣。我们的项目把它们"搬上"地图，让盲道真正发挥应有的作用</p>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 200px;">
+                                    <i class="fas fa-handshake" style="color: #e67700; margin-top: 3px; flex-shrink: 0;"></i>
+                                    <p style="margin: 0; font-size: 0.9rem; line-height: 1.7; color: #495057;">这张地图一旦建立，还可以开放给政府、公益组织和其他开发者使用，推动整个无障碍出行生态的发展</p>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1.2rem; padding: 0.9rem 1rem; background: white; border-radius: 8px; border-left: 4px solid #e67700;">
+                                <p style="margin: 0; font-size: 0.9rem; line-height: 1.7; color: #495057;"><b>简单来说：</b>我们的盲道检测功能，不只是帮您今天走好这段路——它还在悄悄为所有视障人士的明天绘制一张从未有过的地图。<b>每走一步，都有意义。</b></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -3689,8 +3866,8 @@
             tabs.forEach(tab => tab.classList.remove('active'));
             event.currentTarget.classList.add('active');
 
-            if (tabId === 'sttTab') {
-                loadSttSettings();
+            if (tabId === 'aiTab') {
+                loadAiSettings();
             }
         }
 
@@ -5278,56 +5455,209 @@
             if (timerEl) timerEl.textContent = '00:00';
         }
 
-        // ===== 语音识别设置相关 =====
+        // ===== AI 设置（统一管理文本/语音模型，云端 or 本地 Ollama） =====
 
-        function toggleSttKeyVisibility() {
-            const input = document.getElementById('sttApiKey');
-            const icon = document.getElementById('sttKeyEyeIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fas fa-eye-slash';
-            } else {
-                input.type = 'password';
-                icon.className = 'fas fa-eye';
-            }
-        }
+        let _aiPresets = null;
+        let _aiCurrentConfig = null;
 
-        async function loadSttSettings() {
+        async function loadAiSettings() {
             try {
-                const resp = await fetch('/get_stt_settings');
+                if (!_aiPresets) {
+                    const presetsResp = await fetch('/ai_settings/presets');
+                    _aiPresets = await presetsResp.json();
+                }
+                const resp = await fetch('/ai_settings');
                 const result = await resp.json();
-                if (result.status === 'success') {
-                    document.getElementById('sttApiKey').value = result.api_key || '';
-                    document.getElementById('sttModel').value = result.stt_model || 'paraformer-realtime-v2';
+                if (result.status === 'success' && result.config) {
+                    _aiCurrentConfig = result.config;
+                    fillAiForm(result.config);
                 }
             } catch (e) {
-                console.warn('[STT] 加载设置失败:', e);
+                console.warn('[AI Settings] 加载失败:', e);
             }
         }
 
-        async function saveSttSettings() {
-            const apiKey = document.getElementById('sttApiKey').value.trim();
-            const sttModel = document.getElementById('sttModel').value;
+        function _providerLabel(presets, provider) {
+            const p = (presets || []).find(x => x.provider === provider);
+            return p ? p.label : (provider || '—');
+        }
 
-            if (!apiKey) {
-                alert('请输入阿里云百炼 API Key');
-                return;
+        function fillAiForm(cfg) {
+            // ---- 文本（云端只读） ----
+            const t = cfg.text || {};
+            const tCloud = t.cloud || {};
+            const tLocal = t.local || {};
+            const tDeployment = t.deployment || 'cloud';
+
+            document.getElementById('textCloudInfo-provider').textContent =
+                _providerLabel(_aiPresets && _aiPresets.text_presets, tCloud.provider);
+            document.getElementById('textCloudInfo-model').textContent = tCloud.model || '—';
+            document.getElementById('textCloudInfo-apiKey').textContent = tCloud.api_key || '（未配置）';
+
+            document.getElementById('textLocalBaseUrl').value =
+                tLocal.base_url || (_aiPresets && _aiPresets.default_ollama_url) || 'http://localhost:11434';
+            const tLocalSel = document.getElementById('textLocalModel');
+            tLocalSel.innerHTML = '';
+            const placeholderT = document.createElement('option');
+            placeholderT.value = '';
+            placeholderT.textContent = '— 请先点击「检测」 —';
+            tLocalSel.appendChild(placeholderT);
+            if (tLocal.model) {
+                const cur = document.createElement('option');
+                cur.value = tLocal.model;
+                cur.textContent = tLocal.model;
+                cur.selected = true;
+                tLocalSel.appendChild(cur);
             }
 
+            switchDeployment('text', tDeployment, false);
+            if (tDeployment === 'local') probeOllama('text');
+
+            // ---- 语音（云端只读） ----
+            const s = cfg.stt || {};
+            const sCloud = s.cloud || {};
+            const sLocal = s.local || {};
+            const sDeployment = s.deployment || 'cloud';
+
+            document.getElementById('sttCloudInfo-provider').textContent =
+                _providerLabel(_aiPresets && _aiPresets.stt_presets, sCloud.provider);
+            document.getElementById('sttCloudInfo-model').textContent = sCloud.model || '—';
+            document.getElementById('sttCloudInfo-apiKey').textContent = sCloud.api_key || '（未配置）';
+
+            document.getElementById('sttLocalBaseUrl').value =
+                sLocal.base_url || (_aiPresets && _aiPresets.default_ollama_url) || 'http://localhost:11434';
+            const sLocalSel = document.getElementById('sttLocalModel');
+            sLocalSel.innerHTML = '';
+            const placeholderS = document.createElement('option');
+            placeholderS.value = '';
+            placeholderS.textContent = '— 请先点击「检测」 —';
+            sLocalSel.appendChild(placeholderS);
+            if (sLocal.model) {
+                const cur = document.createElement('option');
+                cur.value = sLocal.model;
+                cur.textContent = sLocal.model;
+                cur.selected = true;
+                sLocalSel.appendChild(cur);
+            }
+
+            switchDeployment('stt', sDeployment, false);
+            if (sDeployment === 'local') probeOllama('stt');
+        }
+
+        function switchDeployment(section, deployment, focus = true) {
+            const cloudPane = document.getElementById(section + 'CloudPane');
+            const localPane = document.getElementById(section + 'LocalPane');
+            cloudPane.style.display = (deployment === 'cloud') ? 'block' : 'none';
+            localPane.style.display = (deployment === 'local') ? 'block' : 'none';
+
+            document.querySelectorAll(`.dep-btn[data-section="${section}"]`).forEach(b => {
+                if (b.dataset.deployment === deployment) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+        }
+
+        async function probeOllama(section) {
+            const baseUrlInput = document.getElementById(section + 'LocalBaseUrl');
+            const statusEl = document.getElementById(section + 'LocalStatus');
+            const modelSel = document.getElementById(section + 'LocalModel');
+
+            const baseUrl = (baseUrlInput.value || '').trim() || 'http://localhost:11434';
+            statusEl.className = 'ai-status loading';
+            statusEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 检测中…`;
+
             try {
-                const resp = await fetch('/update_stt_settings', {
+                const resp = await fetch('/ai_settings/ollama_probe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ api_key: apiKey, stt_model: sttModel })
+                    body: JSON.stringify({ base_url: baseUrl })
+                });
+                const data = await resp.json();
+
+                if (!data.online) {
+                    statusEl.className = 'ai-status offline';
+                    statusEl.innerHTML = `<i class="fas fa-times-circle"></i> Ollama 未运行`;
+                    modelSel.innerHTML = '<option value="">—</option>';
+                    return;
+                }
+
+                const list = (section === 'stt') ? (data.stt_models || []) : (data.text_models || []);
+                const finalList = list.length > 0 ? list : (data.models || []);
+
+                if (!finalList || finalList.length === 0) {
+                    statusEl.className = 'ai-status empty';
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 未检测到本地模型`;
+                    modelSel.innerHTML = '<option value="">—</option>';
+                    return;
+                }
+
+                statusEl.className = 'ai-status online';
+                statusEl.innerHTML = `<i class="fas fa-check-circle"></i> ${finalList.length} 个可用模型`;
+
+                const previous = modelSel.value;
+                modelSel.innerHTML = '';
+                const empty = document.createElement('option');
+                empty.value = '';
+                empty.textContent = '请选择';
+                modelSel.appendChild(empty);
+                finalList.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.name;
+                    opt.textContent = m.name + (m.size ? ` (${(m.size / 1e9).toFixed(2)} GB)` : '');
+                    modelSel.appendChild(opt);
+                });
+                if (previous && finalList.some(m => m.name === previous)) {
+                    modelSel.value = previous;
+                }
+            } catch (e) {
+                statusEl.className = 'ai-status offline';
+                statusEl.innerHTML = `<i class="fas fa-times-circle"></i> 探测失败`;
+            }
+        }
+
+        function _getActiveDeployment(section) {
+            const btn = document.querySelector(`.dep-btn[data-section="${section}"].active`);
+            return btn ? btn.dataset.deployment : 'cloud';
+        }
+
+        async function saveAiSettings() {
+            // 仅提交 deployment + local；云端配置由服务器 config.py 控制，前端不参与
+            const config = {
+                text: {
+                    deployment: _getActiveDeployment('text'),
+                    local: {
+                        base_url: document.getElementById('textLocalBaseUrl').value.trim()
+                                || 'http://localhost:11434',
+                        model: document.getElementById('textLocalModel').value.trim()
+                    }
+                },
+                stt: {
+                    deployment: _getActiveDeployment('stt'),
+                    local: {
+                        base_url: document.getElementById('sttLocalBaseUrl').value.trim()
+                                || 'http://localhost:11434',
+                        model: document.getElementById('sttLocalModel').value.trim()
+                    }
+                }
+            };
+
+            try {
+                const resp = await fetch('/ai_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
                 });
                 const result = await resp.json();
                 if (result.status === 'success') {
-                    alert('语音识别设置已保存');
+                    alert('AI 设置已保存');
+                    if (result.config) {
+                        _aiCurrentConfig = result.config;
+                        fillAiForm(result.config);
+                    }
                 } else {
-                    alert('保存失败: ' + (result.message || '未知错误'));
+                    alert('保存失败：' + (result.message || '未知错误'));
                 }
             } catch (e) {
-                alert('保存设置失败: ' + e.message);
+                alert('保存 AI 设置失败：' + e.message);
             }
         }
 

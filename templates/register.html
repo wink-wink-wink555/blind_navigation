@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>注册 - 盲道导航助手</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4dabf7;
@@ -25,8 +28,13 @@
             padding: 0;
         }
 
+        button, input[type="submit"] {
+            font-family: "Noto Sans SC", "PingFang SC", "Helvetica Neue", sans-serif;
+            letter-spacing: 0.04em;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+            font-family: "Noto Serif SC", "STSong", Georgia, "Times New Roman", serif;
             background: linear-gradient(135deg, #e0f7fa, #4dabf7);
             color: var(--text-color);
             padding: 0;
@@ -60,13 +68,20 @@
         }
 
         .register-header h1 {
+            font-family: "Playfair Display", "Noto Serif SC", "STSong", Georgia, serif;
             font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
             margin-bottom: 0.5rem;
         }
 
         .register-header p {
-            opacity: 0.9;
-            font-size: 1rem;
+            font-family: "Noto Serif SC", "STSong", Georgia, serif;
+            font-weight: 300;
+            font-style: italic;
+            opacity: 0.92;
+            font-size: 0.95rem;
+            letter-spacing: 0.05em;
         }
 
         .register-icon {
