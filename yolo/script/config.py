@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.resolve()
@@ -9,6 +8,11 @@ RAW_IMAGE_DIR = DATA_DIR / "images" / "raw"
 CLEAN_IMAGE_DIR = DATA_DIR / "images" / "cleaned"
 AUG_IMAGE_DIR = DATA_DIR / "images" / "augmented"
 DATASET_DIR = DATA_DIR / "dataset"
+
+# Provenance metadata written by 01_video_to_frames.py.
+# Each extracted frame keeps the source video / source group information,
+# so train/val/test can be split by independent source instead of frame.
+SOURCE_METADATA_CSV = RAW_IMAGE_DIR.parent / "metadata.csv"
 
 MAKESENSE_EXPORT_DIR = DATA_DIR / "makesense_export"
 MAKESENSE_IMAGE_DIR = MAKESENSE_EXPORT_DIR / "images"
@@ -27,23 +31,75 @@ REPORT_DIR = OUTPUT_DIR / "reports"
 VISUAL_DIR = OUTPUT_DIR / "visualizations"
 BAD_CASE_DIR = OUTPUT_DIR / "bad_cases"
 
-for d in [RAW_VIDEO_DIR, RAW_IMAGE_DIR, CLEAN_IMAGE_DIR, AUG_IMAGE_DIR,
-          DATASET_DIR, MAKESENSE_EXPORT_DIR, MAKESENSE_IMAGE_DIR, MAKESENSE_LABEL_DIR,
-          YOLO_LABEL_DIR, TRAINED_MODEL_DIR, EXPORT_MODEL_DIR,
-          REPORT_DIR, VISUAL_DIR, BAD_CASE_DIR]:
+# Dataset split artifacts.
+# 04_dataset_split.py creates these.
+# 05_train_augmentation.py later extends split_manifest.csv
+# with generated train-only samples.
+SPLIT_MANIFEST_CSV = REPORT_DIR / "split_manifest.csv"
+SPLIT_REPORT_JSON = REPORT_DIR / "split_distribution.json"
+DATASET_INTEGRITY_REPORT = REPORT_DIR / "dataset_integrity_report.json"
+
+for d in [
+    RAW_VIDEO_DIR,
+    RAW_IMAGE_DIR,
+    CLEAN_IMAGE_DIR,
+    AUG_IMAGE_DIR,
+    DATASET_DIR,
+    MAKESENSE_EXPORT_DIR,
+    MAKESENSE_IMAGE_DIR,
+    MAKESENSE_LABEL_DIR,
+    YOLO_LABEL_DIR,
+    TRAINED_MODEL_DIR,
+    EXPORT_MODEL_DIR,
+    REPORT_DIR,
+    VISUAL_DIR,
+    BAD_CASE_DIR,
+]:
     d.mkdir(parents=True, exist_ok=True)
 
 CLASS_NAMES = ["Tactile_Paving", "Tactile_Paving_Metro"]
 NUM_CLASSES = len(CLASS_NAMES)
 
+# Global reproducibility seed
+RANDOM_SEED = 42
+
+# -----------------------------
+# Video frame extraction
+# -----------------------------
+
 VIDEO_SAMPLE_INTERVAL = 2
 VIDEO_RESIZE_WIDTH = 1920
 DEDUP_HASH_THRESHOLD = 8
+
+# -----------------------------
+# Data cleaning
+# -----------------------------
 
 MIN_BLUR_THRESHOLD = 100.0
 MAX_OVEREXPOSE_RATIO = 0.15
 MAX_UNDEREXPOSE_RATIO = 0.10
 TARGET_IMAGE_SIZE = (640, 640)
+
+# -----------------------------
+# Leakage-safe dataset splitting
+# -----------------------------
+#
+# IMPORTANT:
+# Split ORIGINAL / CLEANED samples first.
+# Offline augmentation is performed only on TRAIN afterwards.
+
+TRAIN_RATIO = 0.80
+VAL_RATIO = 0.10
+TEST_RATIO = 0.10
+
+# Randomized group-partition search.
+# Among valid source-group-level splits, search for one whose
+# image/class distributions are closest to the requested ratios.
+SPLIT_SEARCH_TRIALS = 5000
+
+# -----------------------------
+# Offline augmentation
+# -----------------------------
 
 AUGMENTATION_FACTOR = 3
 MAX_ROTATION_ANGLE = 10
@@ -52,6 +108,10 @@ BRIGHTNESS_RANGE = (0.7, 1.3)
 CONTRAST_RANGE = (0.8, 1.2)
 NOISE_INTENSITY = 15
 BLUR_KERNEL_RANGE = (3, 5)
+
+# -----------------------------
+# YOLO training
+# -----------------------------
 
 TRAIN_EPOCHS = 200
 TRAIN_BATCH = 16
@@ -62,8 +122,16 @@ TRAIN_PATIENCE = 30
 TRAIN_DEVICE = "0"
 FREEZE_BACKBONE_EPOCHS = 10
 
+# -----------------------------
+# Inference / evaluation
+# -----------------------------
+
 INFERENCE_CONF = 0.45
 INFERENCE_IOU = 0.45
+
+# -----------------------------
+# Other project configuration
+# -----------------------------
 
 TTS_ENGINE = "pyttsx3"
 TTS_RATE = 150
@@ -75,5 +143,5 @@ DB_CONFIG = {
     "user": "root",
     "password": "your_password",
     "database": "blind_navigation",
-    "charset": "utf8mb4"
+    "charset": "utf8mb4",
 }
