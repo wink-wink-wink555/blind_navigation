@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="PPT/LOGO.png" alt=" Logo" width="350"/>
+<img src="LOGO.png" alt=" Logo" width="350"/>
 
 [English](README.md) | 简体中文
 
