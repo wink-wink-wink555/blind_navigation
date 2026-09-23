@@ -300,7 +300,8 @@ blind_navigation/
 │   ├── main.py            # 主页面路由
 │   ├── video.py           # 视频处理路由
 │   ├── map.py             # 地图相关路由
-│   └── ai_settings.py     # AI 设置路由
+│   ├── ai_settings.py     # AI 设置路由
+│   └── guidance.py        # 实时导航、视觉观察、事件流
 ├── services/
 │   ├── ai_provider.py     # 统一 AI 路由（云端 API ↔ Ollama）
 │   ├── baidu_map_mcp.py   # 百度地图 MCP 工具集
@@ -308,9 +309,11 @@ blind_navigation/
 │   ├── ollama_client.py   # Ollama 客户端封装
 │   ├── router_agent.py    # RouterAgent（意图分类路由器）
 │   ├── settings_agent.py  # SettingsAgent（设置查询/修改）
-│   └── speech_agent.py    # 语音 Agent
+│   ├── speech_agent.py    # 语音识别 Agent
+│   ├── navigation.py      # 导航状态机
+│   └── guidance_bus.py    # 用户事件及回执
 ├── utils/
-│   ├── decorators.py · email_utils.py · video_utils.py · voice_utils.py
+│   ├── decorators.py · email_utils.py · video_utils.py
 ├── templates/
 │   ├── index.html · login.html · register.html · forget_password.html
 └── yolo/
