@@ -80,7 +80,7 @@ ARIADNE is a web demonstration that combines tactile-paving observations, Baidu 
 - 🎯 **Dual Mode**: Visually impaired user mode and family member mode
 - 🔧 **Flexible Text Backend**: Users can select a server-configured cloud service or a local Ollama text model without restarting the server
 
-## 🧭 Live Navigation and Speech Arbitration (Current Web Demo)
+## 🧭 Live Navigation and Speech Arbitration
 
 ### Route planning and visual observations
 
