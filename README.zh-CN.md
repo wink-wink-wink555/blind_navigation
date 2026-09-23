@@ -6,74 +6,109 @@
 
 [English](README.md) | 简体中文
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Flask](https://img.shields.io/badge/Flask-3.0.0-green.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/wink-wink-wink555/blind_navigation.svg)](https://github.com/wink-wink-wink555/blind_navigation/stargazers)
+[!\[Python](https://img.shields.io/badge/Python-3.10%2F3.11-blue.svg)](https://www.python.org/downloads/)
+[!\[Flask](https://img.shields.io/badge/Flask-3.0.0-green.svg)](https://flask.palletsprojects.com/)
+[!\[License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[!\[GitHub Stars](https://img.shields.io/github/stars/wink-wink-wink555/blind\_navigation.svg)](https://github.com/wink-wink-wink555/blind_navigation/stargazers)
 
 </div>
 
-> 📹 演示视频: [V1.0.0](https://www.bilibili.com/video/BV1kD57zGE68), [V2.0.0](https://openatom.tech/enterprise-ai/614b385486d53533dd74f9428aa83087/blob/master/A_%E9%A1%B9%E7%9B%AE%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91.mp4)
+> 📹 演示视频: \[V1.0.0](https://www.bilibili.com/video/BV1kD57zGE68), \[V2.0.0](https://openatom.tech/enterprise-ai/614b385486d53533dd74f9428aa83087/blob/master/A\_%E9%A1%B9%E7%9B%AE%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91.mp4)
 
 <details>
 <summary><strong>🏆 荣誉与奖项</strong>  <em>（点击查看）</em></summary>
 
-- **2026.1** 英特尔平台企业AI解决方案创新实践赛决赛 — 10强
-- **2025.12** 英特尔平台企业AI解决方案创新实践赛 — 20强，*成功晋级决赛*
-- **2025.8** 中国大学生计算机设计大赛 — 国家级三等奖
-- **2025.5** 上海市大学生计算机应用能力大赛 — 省级一等奖
+* **2026.1** 英特尔平台企业AI解决方案创新实践赛决赛 — 10强
+* **2025.12** 英特尔平台企业AI解决方案创新实践赛 — 20强，*成功晋级决赛*
+* **2025.8** 中国大学生计算机设计大赛 — 国家级三等奖
+* **2025.5** 上海市大学生计算机应用能力大赛 — 省级一等奖
 
 </details>
 
----
+\---
 
 ## 🌟 项目简介
 
-视障人士出行辅助系统 (ARIADNE) 是一个结合计算机视觉和人工智能的创新应用，专为视障人士设计。系统通过实时视频分析识别盲道方向变化，并通过个性化 AI 语音提示引导用户行走。同时，系统内置了一套**多 Agent 智能助手**，用户只需用自然语言说话，即可完成地图导航、系统设置修改、给家属发消息等操作，并提供位置共享功能，提高出行安全性。
+视障人士出行辅助系统（ARIADNE）是结合盲道视觉观察、百度地图步行路线与多 Agent 助手的网页演示。实时摄像头报告候选盲道是否可见；路线转向预告依据百度步行路段和实时定位生成，用户仍需自行确认路口、盲道连接情况和过街条件。浏览器将安全提醒、路线预告、经授权的家属语音消息与助手回复汇入同一语音通道，按优先级和消息有效状态调度。系统还提供账户管理、位置共享和自然语言交互。
 
 ### 核心技术栈
 
-- **前端**：HTML5, CSS3, JavaScript（原生）
-- **后端**：Flask (Python 3.8+)
-- **AI 模型**：
-  - YOLO (You Only Look Once) - 盲道检测
-  - **文本 AI 模型**（灵活可配置）：支持**云端 API**（DeepSeek、OpenAI、阿里云百炼/Qwen 或任何 OpenAI 兼容接口）和**本地 Ollama** 模型，每位用户可在设置面板中独立切换
-  - 多 Agent 智能助手（意图路由、地图导航、设置管理、闲聊陪伴）
-- **多 Agent 架构**：
-  - RouterAgent - 意图分类路由器
-  - MapAgent (ReAct + 百度地图 MCP) - 地图导航 Agent
-  - SettingsAgent - 设置查询/修改 (Text-to-SQL) Agent
-  - ChatAgent - 闲聊陪伴 Agent
-- **数据库**：MySQL
-- **第三方服务**：
-  - 百度地图 API - 位置服务和路线规划
-  - 阿里云百炼（DashScope）- 语音识别（paraformer-realtime-v2），也支持本地 Ollama STT
-  - Edge TTS / pyttsx3 - 语音合成
+* **前端**：HTML5, CSS3, JavaScript（原生）
+* **后端**：Flask（建议 Python 3.10 / 3.11）
+* **AI 模型**：
+
+  * YOLO (You Only Look Once) - 盲道检测
+  * **文本 AI 模型**：支持服务器配置的云端接口（DeepSeek、OpenAI、阿里云百炼/Qwen 或其他 OpenAI 兼容服务）与用户选择的本地 Ollama 模型；云端密钥保留在服务器端
+  * 多 Agent 智能助手（意图路由、地图问答、设置管理、闲聊陪伴）
+* **多 Agent 架构**：
+
+  * RouterAgent - 意图分类路由器
+  * MapAgent (ReAct + 百度地图 MCP) - 地图问答 Agent，不接管实时导航
+  * SettingsAgent - 结构化提取用户意图并校验后修改设置
+  * ChatAgent - 闲聊陪伴 Agent
+* **数据库**：MySQL
+* **第三方服务**：
+
+  * 百度地图 Web 服务与浏览器 JSAPI - 步行路线、坐标转换和地图展示
+  * 阿里云百炼（DashScope）- 云端语音识别；本地语音识别需单独配置 OpenAI 兼容的音频转写服务
+  * 浏览器 Web Speech API - 单通道语音输出
 
 ## 🎯 解决的问题
 
-1. **盲道识别与导航**：实时视频分析识别盲道位置和方向变化，帮助视障人士安全行走
-2. **实时语音反馈**：检测到方向变化时，自动提供个性化 AI 语音提示
-3. **多 Agent 智能助手**：意图路由 + 多 Agent 调度，支持地图导航、系统设置修改、家属消息及日常闲聊
-4. **安全监护**：位置共享让家属可远程查看视障人士位置
+1. **盲道观察与步行规划**：YOLO 报告候选盲道是否可见；百度步行路段提供需由用户核对的计划转向
+2. **统一语音仲裁**：安全提醒可打断路线、家属与助手播报；导航状态改变后，过时的路线提示自动失效
+3. **多 Agent 智能助手**：意图路由与 Agent 调度，支持地图问答、系统设置、向家属发邮件及日常闲聊
+4. **家属位置查看**：关联的家属账号可查看用户共享的浏览器位置
 5. **个性化体验**：自定义语音速度、音量、称呼等参数
 6. **无障碍设计**：降低视障人士使用现代城市设施的门槛
 
 ## ✨ 功能亮点
 
-- 🎥 **实时视频分析**：YOLO 模型实时识别盲道
-- 🔊 **智能语音反馈**：根据用户资料（年龄、性别、称呼、偏好）生成个性化、情境感知的语音提示
-- 🤖 **多 Agent 智能助手**：自然语言一句话完成：
-  - 🗺️ **地图导航**：位置查询、步行路线规划（专为视障设计）、周边搜索
-  - ⚙️ **语音设置**：自然语言修改/查询任何系统设置
-  - 📨 **家属消息**：一句话给家属发送位置或状态消息（邮件通知）
-  - 💬 **闲聊陪伴**：带完整对话记忆的温暖陪伴
-- 👤 **用户系统**：注册、登录、密码找回
-- 📍 **位置共享**：实时位置共享，方便家属了解视障人士位置
-- ⚙️ **个性化设置**：语音速度、音量、性别、年龄段、称呼等均可自定义
-- 🎙️ **语音识别**：支持阿里云百炼云端识别或本地 Ollama，免手操作
-- 🎯 **双端模式**：盲人端与家属端两种模式
-- 🔧 **灵活 AI 后端**：每位用户可独立切换云端/本地 AI，无需重启服务
+* 🎥 **实时盲道观察**：YOLO 报告候选盲道是否可见，不判断转向安全性
+* 🔊 **浏览器语音调度**：安全、路线、家属及助手消息共用按优先级仲裁的语音通道；语速和音量按用户设置播放
+* 🤖 **多 Agent 智能助手**：自然语言一句话完成：
+
+  * 🗺️ **地图问答**：位置查询、百度步行路线查询和周边搜索；实时转向预告由导航状态机负责
+  * ⚙️ **语音设置**：自然语言查询或修改系统支持的语音及个人资料设置
+  * 📨 **向家属发邮件**：通过助手给家属联系人发送位置或状态消息
+  * 💬 **闲聊陪伴**：参考近期对话上下文生成回复
+* 📨 **家属端语音消息**：经授权的家属账号可向接收者浏览器发送消息，并查询播放状态
+* 👤 **用户系统**：注册、登录、密码找回
+* 📍 **位置共享**：实时位置共享，方便家属了解视障人士位置
+* ⚙️ **个性化设置**：语音速度、音量、性别、年龄段、称呼等均可自定义
+* 🎙️ **语音识别**：阿里云百炼云端识别，或使用实现 `/v1/audio/transcriptions` 的本地服务
+* 🎯 **双端模式**：盲人端与家属端两种模式
+* 🔧 **灵活的文本后端**：每位用户可选择服务器配置的云端文本模型或本地 Ollama 模型，无需重启服务
+
+## 🧭 实时导航与统一语音调度
+
+### 路线与视觉如何配合
+
+用户选择目的地后，系统通过百度地图 Web 服务获取步行路线。实时定位从浏览器提供的 WGS84 坐标转换为百度地图使用的 BD09 坐标；只有取得足够新且精度合格的定位、确认路线并启动导航后，系统才会依据路线步骤给出转向预告。手动选取的起点仅能预览路线，不能据此启动实时语音导航。
+
+可选的实时摄像头使用 YOLO 检测盲道候选区域。检测框只能提供“是否看到候选盲道”的观察结果，不能证明分支是否连通、脚下是否安全，也不能自行决定左转或右转。当盲道持续未被识别、摄像头观察中断、定位失准或偏离路线时，导航进入不确定状态并暂停路线预告；路线提示需要过街时也不会自动确认可以通行。上传的历史视频仅用于展示检测结果，不会产生实时导航语音。多 Agent 中的 MapAgent 负责地图问答，不接管实时转向状态机。
+
+### 单通道语音仲裁
+
+网页通过浏览器 Web Speech API 播放语音，`static/js/guidance.js` 负责统一排序、打断、恢复和失效判断。各类消息共用以下优先级，数字越小越优先：
+
+|优先级|消息|
+|-|-|
+|0|安全提醒|
+|1|步行路线预告|
+|2|经授权的家属端语音消息|
+|3|助手回复|
+|4|背景提示与测试语音|
+
+更高优先级的消息可以打断当前播报。家属语音消息在仍有效时可从被打断的文本片段继续；路线提示和一般助手播报按各自规则失效或丢弃。事件具有有效期，并可关联导航会话、路线版本和路段：路线停止、重新规划、路段变化或进入不确定状态后，过时的转向提示不会继续播放。重复提示受到去重与节流约束。家属端可以查询消息的入队、播放和结束状态；“已入队”不代表接收者已经听到。助手替用户**向家属发送邮件**与家属端**向用户发送语音消息**是两条不同的流程。
+
+### 配置、验证与适用边界
+
+建议使用 Python 3.10 或 3.11。`BAIDU\_MAP\_CONFIG\['api\_key']` 用于后端百度 Web 服务，`BAIDU\_MAP\_CONFIG\['browser\_api\_key']` 用于浏览器地图 JSAPI，后者应配置允许使用的域名。实时定位与摄像头通常需要 HTTPS 或 localhost、浏览器授权，以及支持 Web Speech 的浏览器；语音须在页面中启用。AI 模型用于助手对话，固定的安全提醒与路线预告不依赖 LLM。
+
+事件队列、导航会话和最近位置保存在当前服务进程内；关闭页面、服务重启或同时打开多个接收页面时，不能保证语音持续播放或只播放一次。地图路线和盲道检测均不能验证信号灯、障碍物、过街安全及盲道实际连通性；本版本是网页演示，不能作为独立的出行辅助设备。
+
+本地回归检查可运行 `python -m unittest discover -s tests` 和 `node tests/test\_guidance.js`。这些测试使用模拟的地图与视觉输入，不等同于真实街道验收。
 
 <details>
 <summary><strong>🤖 多 Agent 智能助手架构</strong></summary>
@@ -89,7 +124,7 @@ RouterAgent（意图分类器）
     ├─ map      ──► MapAgent（ReAct 循环 + 百度地图 MCP）
     │                  └─ 地址解析 → 周边搜索 → 步行路线规划 → 自然语言回答
     │
-    ├─ settings ──► SettingsAgent（设置查询 & 修改）
+    ├─ settings ──► SettingsAgent（设置查询 \& 修改）
     │                  └─ 理解意图 → 校验字段值 → 写入数据库 → 同步 Session
     │
     ├─ message  ──► 消息处理器（给家属发消息）
@@ -97,31 +132,33 @@ RouterAgent（意图分类器）
     └─ chat     ──► ChatAgent（温暖闲聊，带完整上下文）
 ```
 
-| Agent | 文件 | 功能 |
-|---|---|---|
-| RouterAgent | `services/router_agent.py` | 意图分类，路由到对应 Agent |
-| MapAgent | `services/deepseek_ai.py` | ReAct 模式地图工具调用，专为视障步行导航优化 |
-| SettingsAgent | `services/settings_agent.py` | 自然语言查询/修改系统设置，实时同步数据库与 Session |
-| ChatAgent | `routes/chat.py` | 带完整对话上下文的温暖陪伴式闲聊 |
+|Agent|文件|功能|
+|-|-|-|
+|RouterAgent|`services/router\_agent.py`|意图分类，路由到对应 Agent|
+|MapAgent|`services/deepseek\_ai.py`|ReAct 模式地图问答与步行路线查询，不控制实时转向预告|
+|SettingsAgent|`services/settings\_agent.py`|自然语言查询/修改系统设置，实时同步数据库与 Session|
+|ChatAgent|`routes/chat.py`|使用近期对话上下文与用户资料生成聊天回复|
 
 **示例对话：**
-- `"帮我把语音速度调成慢"` → SettingsAgent
-- `"从上海人民广场到上海博物馆怎么走？"` → MapAgent
-- `"给家属说一声我在路上"` → 消息处理器
-- `"今天天气真好"` → ChatAgent
+
+* `"帮我把语音速度调成慢"` → SettingsAgent
+* `"从上海人民广场到上海博物馆怎么走？"` → MapAgent
+* `"给家属说一声我在路上"` → 消息处理器
+* `"今天天气真好"` → ChatAgent
 
 </details>
 
 ## 🎯 预训练 YOLO 模型
 
-`yolo/best.pt` 为开箱即用的 YOLOv8 盲道检测模型，无需额外训练。`yolo/` 目录包含完整训练指标（混淆矩阵、PR 曲线、F1 曲线等）。
+仓库包含已训练的盲道检测权重 `yolo/best.pt`，`yolo/` 目录保留训练指标。模型输出候选盲道区域，并未训练为能够判断盲道分支连通性、过街安全或可通行方向。
 
 ## 📋 环境要求
 
-- Python 3.8+
-- MySQL 数据库
-- 必要的 Python 库（见 `requirements.txt`）
-- 至少配置一种 AI 后端：云端 API 密钥（DeepSeek / OpenAI / DashScope 等）**或**本地运行的 [Ollama](https://ollama.com/) 实例
+* 建议 Python 3.10 或 3.11（依赖中固定的 NumPy 1.24.3 不支持 Python 3.12）
+* MySQL 数据库
+* 必要的 Python 库（见 `requirements.txt`）
+* 使用助手功能需配置云端文本模型密钥，或运行本地 [Ollama](https://ollama.com/) 文本模型；固定的安全提醒与路线预告不需要 LLM
+* 使用实时步行导航需配置百度 Web 服务及浏览器 JSAPI 密钥，并允许浏览器定位
 
 ## 🚀 安装步骤
 
@@ -129,8 +166,8 @@ RouterAgent（意图分类器）
 <summary><strong>1. 克隆仓库</strong></summary>
 
 ```bash
-git clone https://github.com/wink-wink-wink555/blind_navigation.git
-cd blind_navigation
+git clone https://github.com/wink-wink-wink555/blind\_navigation.git
+cd blind\_navigation
 ```
 
 </details>
@@ -141,7 +178,7 @@ cd blind_navigation
 ```bash
 python -m venv venv
 # Windows
-venv\Scripts\activate
+venv\\Scripts\\activate
 # Linux/Mac
 source venv/bin/activate
 ```
@@ -169,7 +206,7 @@ ollama pull qwen2.5:3b   # 或任何您偏好的模型
 ollama list              # 验证安装
 ```
 
-Ollama 默认运行在 `http://localhost:11434`，登录后可在 AI 设置面板中选择模型。
+Ollama 默认运行在 `http://localhost:11434`，登录后可在 AI 设置面板中选择本地文本模型。本地语音识别另需实现 `/v1/audio/transcriptions` 的服务；仅安装 Ollama 文本模型并不能提供音频转写。
 
 </details>
 
@@ -177,7 +214,7 @@ Ollama 默认运行在 `http://localhost:11434`，登录后可在 AI 设置面�
 <summary><strong>5. 配置数据库</strong></summary>
 
 ```sql
-CREATE DATABASE blind_navigation CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE blind\_navigation CHARACTER SET utf8mb4 COLLATE utf8mb4\_unicode\_ci;
 ```
 
 首次运行时应用会自动创建所需数据表。
@@ -194,12 +231,12 @@ copy config.example.py config.py  # Windows
 
 修改 `config.py`：
 
-- **`DB_CONFIG`**：MySQL 的 host、user、password 等
-- **`EMAIL_CONFIG`**：QQ 邮箱 SMTP（用于验证码和家属消息通知）
-- **`BAIDU_MAP_CONFIG`**：百度地图 API 密钥
-- **`DEEPSEEK_CONFIG`**：默认云端 AI API 密钥（用户未单独配置时使用）
-- **`DASHSCOPE_CONFIG`**：阿里云百炼 API 密钥（用于云端语音识别）
-- **`MODEL_WEIGHTS`**：设置为 `'yolo/best.pt'`
+* **`DB\_CONFIG`**：MySQL 的 host、user、password 等
+* **`EMAIL\_CONFIG`**：QQ 邮箱 SMTP（用于验证码及助手向家属联系人发送邮件；家属端给用户的浏览器语音消息不经 SMTP）
+* **`BAIDU\_MAP\_CONFIG`**：`api\_key` 用于后端 Web 服务，`browser\_api\_key` 用于地图 JSAPI；后者应设置域名白名单
+* **`DEEPSEEK\_CONFIG`**：服务器端默认云端文本模型配置；云端密钥不由浏览器提交
+* **`DASHSCOPE\_CONFIG`**：阿里云百炼 API 密钥（用于云端语音识别）
+* **`MODEL\_WEIGHTS`**：设置为 `'yolo/best.pt'`
 
 </details>
 
@@ -223,8 +260,9 @@ python app.py
 <details>
 <summary><strong>盲道导航</strong></summary>
 
-- **视频分析**：上传视频文件，系统自动分析盲道并在检测到方向变化时播放语音提示。
-- **实时导航**：点击"开始导航"，使用摄像头进行实时语音导引。
+* **历史视频检测**：上传视频后展示盲道检测框；历史视频不会触发实时导航或语音。
+* **实时路线演示**：先启用浏览器语音并获取新鲜、准确的定位，再选择目的地、查看百度步行路线并启动导航。摄像头为可选观察来源；盲道观察不可用时可暂停路线预告。路口与过街条件需由用户自行核对。
+* **手动起点**：在地图上手动选点只能预览路线；实时导引需要有效的浏览器定位。
 
 </details>
 
@@ -233,19 +271,20 @@ python app.py
 
 统一对话入口，直接自然语言提问：
 
-- **地图**：*"从北京站到天安门广场怎么走？"*
-- **设置**：*"帮我把语音速度调成慢"* / *"把音量调大一点"*
-- **家属消息**：*"帮我发给家属消息：我已经到学校了"*
-- **闲聊**：日常对话，带完整上下文记忆
+* **地图**：*"从北京站到天安门广场怎么走？"*
+* **设置**：*"帮我把语音速度调成慢"* / *"把音量调大一点"*
+* **家属消息**：*"帮我发给家属消息：我已经到学校了"*
+* **闲聊**：日常对话，参考近期上下文
 
 </details>
 
 <details>
 <summary><strong>AI 设置</strong></summary>
 
-每位用户可在设置面板独立配置 AI 后端：
-- **文本模型**：云端（DeepSeek / OpenAI / DashScope / 自定义 OpenAI 兼容接口）或本地（Ollama）
-- **语音识别**：云端（DashScope Paraformer）或本地（Ollama）
+用户可在 AI 设置面板切换服务器配置的云端服务与本地服务。云端密钥由服务器配置；面板可选择本地接口地址与模型：
+
+* **文本模型**：服务器配置的云端接口（DeepSeek / OpenAI / DashScope/Qwen 或其他兼容服务），或本地 Ollama 模型
+* **语音识别**：云端 DashScope，或实现 OpenAI 兼容音频转写接口的本地服务
 
 修改立即生效，无需重启服务。
 
@@ -254,7 +293,7 @@ python app.py
 <details>
 <summary><strong>位置共享</strong></summary>
 
-视障用户在主界面开启位置共享；家属使用家属账号登录后可在地图上查看实时位置。
+视障用户允许浏览器定位并保持页面打开后，关联的家属账号可以在地图上查看最近一次共享的位置；过期位置会标注为过期。
 
 </details>
 
@@ -267,63 +306,78 @@ python app.py
 
 ## ⚠️ 注意事项
 
-- 至少需要配置一种 AI 后端（云端 API 密钥或本地 Ollama），语音提示和多 Agent 助手才能正常工作。
-- 邮件配置用于验证码发送和家属消息通知。
-- 地图导航需要有效的百度地图 API 密钥。
-- 云端语音识别需要阿里云百炼 API 密钥；也可配置本地 Ollama STT 替代。
-- 使用摄像头和位置共享功能时请确保已开启对应权限。
+* 助手对话需要文本 AI 后端；固定的安全提醒和步行路线预告不依赖 LLM。
+* SMTP 配置用于验证码及助手向家属发邮件；经授权的家属端向用户发送浏览器语音消息使用语音事件通道。
+* 步行路线与地图展示分别需要百度 Web 服务 AK 和设置了域名白名单的浏览器 JSAPI AK。
+* 云端语音识别需要 DashScope API 密钥；本地语音识别需要可用的 `/v1/audio/transcriptions` 服务，仅有 Ollama 文本模型并不足够。
+* 实时导航需要新鲜的浏览器定位；摄像头是可选盲道观察来源。定位与摄像头通常需要 HTTPS 或 localhost 及相应授权；浏览器语音播放时需保持支持 Web Speech 的页面打开。
 
 ## 📧 联系方式
 
-- **Email**: yfsun.jeff@gmail.com
-- **GitHub**: [wink-wink-wink555](https://github.com/wink-wink-wink555)
-- **LinkedIn**: [Yifei Sun](https://www.linkedin.com/in/yifei-sun-0bab66341/)
-- **Bilibili**: [NO_Desire](https://space.bilibili.com/623490717)
+* **Email**: yfsun.jeff@gmail.com
+* **GitHub**: [wink-wink-wink555](https://github.com/wink-wink-wink555)
+* **LinkedIn**: [Yifei Sun](https://www.linkedin.com/in/yifei-sun-0bab66341/)
+* **Bilibili**: [NO\_Desire](https://space.bilibili.com/623490717)
 
 ## 🙏 特别感谢
 
 特别感谢以下成员在盲道数据集收集、标注与项目书撰写中提供的帮助：
 
-[Chen Xingyu](https://github.com/guangxiangdebizi) · Wang Youyi · Shen Qian · Liu Yiheng · Zhang Chenshu · Zhang Kai · Sheng Sheng · Cai Yuxin 
+[Chen Xingyu](https://github.com/guangxiangdebizi) · Wang Youyi · Shen Qian · Liu Yiheng · Zhang Chenshu · Zhang Kai · Sheng Sheng · Cai Yuxin
 
 ## 📁 项目结构
 
+以下列出主要文件；`config.py` 由配置模板在本地生成，不提交到仓库。
+
 ```
-blind_navigation/
-├── app.py                 # Flask 应用入口
-├── config.py              # 配置文件
+blind\_navigation/
+├── app.py                    # Flask 应用入口
+├── config.example.py         # 配置模板；复制为 config.py
 ├── models/
-│   └── database.py        # 数据库操作
+│   └── database.py           # 数据库操作
 ├── routes/
-│   ├── auth.py            # 认证相关路由
-│   ├── chat.py            # 多 Agent 调度中心（统一 /chat 入口）
-│   ├── main.py            # 主页面路由
-│   ├── video.py           # 视频处理路由
-│   ├── map.py             # 地图相关路由
-│   ├── ai_settings.py     # AI 设置路由
-│   └── guidance.py        # 实时导航、视觉观察、事件流
+│   ├── auth.py               # 账户认证
+│   ├── chat.py               # 多 Agent /chat 入口
+│   ├── main.py               # 主页面、设置与家属端语音消息
+│   ├── video.py              # 历史视频检测展示
+│   ├── map.py                # 地图相关接口
+│   ├── ai\_settings.py        # AI 设置接口
+│   └── guidance.py           # 实时导航、视觉观察和事件流
 ├── services/
-│   ├── ai_provider.py     # 统一 AI 路由（云端 API ↔ Ollama）
-│   ├── baidu_map_mcp.py   # 百度地图 MCP 工具集
-│   ├── deepseek_ai.py     # MapAgent（ReAct 模式地图导航）
-│   ├── ollama_client.py   # Ollama 客户端封装
-│   ├── router_agent.py    # RouterAgent（意图分类路由器）
-│   ├── settings_agent.py  # SettingsAgent（设置查询/修改）
-│   ├── speech_agent.py    # 语音识别 Agent
-│   ├── navigation.py      # 导航状态机
-│   └── guidance_bus.py    # 用户事件及回执
+│   ├── ai\_provider.py        # 云端/本地 AI 配置
+│   ├── baidu\_map\_mcp.py      # 助手使用的百度地图工具
+│   ├── baidu\_navigation.py   # 百度步行路线与坐标转换
+│   ├── deepseek\_ai.py        # 地图问答 MapAgent
+│   ├── ollama\_client.py      # Ollama 客户端
+│   ├── router\_agent.py       # 意图分类
+│   ├── settings\_agent.py     # 设置查询与修改
+│   ├── speech\_agent.py       # 语音识别
+│   ├── guidance\_bus.py       # 用户事件与播放回执
+│   ├── location\_store.py     # 进程内近期定位
+│   ├── navigation.py         # 导航状态机
+│   └── vision\_observer.py    # 盲道可见性观察
+├── static/js/
+│   ├── guidance.js           # 浏览器语音调度器
+│   └── navigation\_ui.js      # 定位、地图、摄像头与事件接入
+├── tests/
+│   ├── test\_guidance.js      # 语音调度场景
+│   ├── test\_http\_guidance.py # HTTP 接口边界场景
+│   └── test\_navigation.py    # 导航状态与事件场景
 ├── utils/
-│   ├── decorators.py · email_utils.py · video_utils.py
+│   ├── decorators.py
+│   ├── email\_utils.py
+│   └── video\_utils.py
 ├── templates/
-│   ├── index.html · login.html · register.html · forget_password.html
+│   └── index.html            # 主页面
 └── yolo/
-    └── best.pt            # 预训练模型权重（开箱即用）
+    └── best.pt               # 盲道检测权重
 ```
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE) 开源协议。Copyright (c) 2025 wink-wink-wink555。
+本项目采用 [MIT License](LICENSE) 开源协议。Copyright (c) 2026 wink-wink-wink555。
 
----
+\---
 
 ⭐ 如果这个项目对您有帮助，欢迎给个 Star！
+
