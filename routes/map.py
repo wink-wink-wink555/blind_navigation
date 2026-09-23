@@ -3,65 +3,45 @@
 """
 from flask import Blueprint, request, session, jsonify
 import time
-import geopy.distance
 from utils.decorators import login_required
 from services.baidu_map_mcp import BaiduMapMCP
 from services.deepseek_ai import DeepSeekAI
 from services.ai_provider import get_text_llm_config
 from config import BAIDU_MAP_CONFIG
-from utils.voice_utils import ai_speak, stop_ai_speak, is_ai_speaking
+from services.guidance_bus import guidance_bus
+from services.location_store import read as read_location
+from models.database import can_view_location
 
 map_bp = Blueprint('map', __name__)
-
-# 位置数据存储
-user_locations = {}  # 格式: {user_id: {'lat': latitude, 'lng': longitude, 'timestamp': timestamp}}
-
 
 @map_bp.route('/update_location', methods=['POST'])
 @login_required
 def update_location():
-    """更新用户位置"""
-    user_id = session.get('user_id')
-    data = request.get_json()
-
-    if not data or 'lat' not in data or 'lng' not in data:
-        return jsonify({"status": "error", "message": "位置数据不完整"}), 400
-
-    # 更新用户位置
-    user_locations[user_id] = {
-        'lat': data['lat'],
-        'lng': data['lng'],
-        'timestamp': time.time()
-    }
-
-    return jsonify({
-        "status": "success",
-        "message": "位置已更新"
-    })
+    """Only validated browser GPS fixes from /navigation/position are shared."""
+    return jsonify({"status": "error", "message": "请使用带精度和时间的实时定位"}), 410
 
 
 @map_bp.route('/get_location/<int:user_id>', methods=['GET'])
 @login_required
 def get_location(user_id):
     """获取指定用户的位置"""
-    # 检查权限（只允许查看自己或关联的家属/被照顾者的位置）
     current_user_id = session.get('user_id')
+    if not can_view_location(current_user_id, user_id):
+        return jsonify({"status": "error", "message": "无权查看该用户位置"}), 403
 
-    # 这里应该有更完善的权限检查逻辑，例如家属关系验证
-    # 暂时简化为允许查看所有用户位置
-
-    if user_id in user_locations:
+    location = read_location(user_id)
+    if location:
         # 检查位置数据是否过期（例如5分钟）
-        if time.time() - user_locations[user_id]['timestamp'] > 300:
+        if time.time() - location['received_at'] > 300:
             return jsonify({
                 "status": "warning",
                 "message": "位置数据已过期",
-                "location": user_locations[user_id]
+                "location": location
             })
 
         return jsonify({
             "status": "success",
-            "location": user_locations[user_id]
+            "location": location
         })
     else:
         return jsonify({
@@ -73,56 +53,8 @@ def get_location(user_id):
 @map_bp.route('/nearby_blindways', methods=['GET'])
 @login_required
 def nearby_blindways():
-    """获取附近的盲道数据（示例数据）"""
-    # 在实际应用中，这里应该连接到盲道数据库或API
-    # 现在返回示例数据用于演示
-
-    lat = request.args.get('lat', type=float)
-    lng = request.args.get('lng', type=float)
-
-    if not lat or not lng:
-        return jsonify({"status": "error", "message": "请提供位置参数"}), 400
-
-    # 示例盲道数据（在实际应用中应从数据库获取）
-    sample_blindways = [
-        {
-            'id': 1,
-            'name': '中心广场盲道',
-            'points': [
-                {'lat': lat + 0.001, 'lng': lng + 0.001},
-                {'lat': lat + 0.002, 'lng': lng + 0.001},
-                {'lat': lat + 0.002, 'lng': lng - 0.001}
-            ]
-        },
-        {
-            'id': 2,
-            'name': '南街盲道',
-            'points': [
-                {'lat': lat - 0.0005, 'lng': lng - 0.0005},
-                {'lat': lat - 0.001, 'lng': lng - 0.001},
-                {'lat': lat - 0.002, 'lng': lng - 0.001}
-            ]
-        }
-    ]
-
-    # 计算每条盲道到用户的距离
-    user_coord = (lat, lng)
-    for blindway in sample_blindways:
-        min_distance = float('inf')
-        for point in blindway['points']:
-            point_coord = (point['lat'], point['lng'])
-            distance = geopy.distance.distance(user_coord, point_coord).meters
-            min_distance = min(min_distance, distance)
-
-        blindway['distance'] = round(min_distance, 1)  # 四舍五入到小数点后1位
-
-    # 按距离排序
-    sample_blindways.sort(key=lambda x: x['distance'])
-
-    return jsonify({
-        "status": "success",
-        "blindways": sample_blindways
-    })
+    """No verified tactile paving network is available for route decisions."""
+    return jsonify({"status": "error", "message": "目前没有经过核验的盲道路网数据"}), 501
 
 
 @map_bp.route('/ai_map_assistant', methods=['POST'])
@@ -330,29 +262,13 @@ def ai_speak_api():
         if not text:
             return jsonify({"status": "error", "message": "播报文本为空"}), 400
         
-        # 从 session['user_settings'] 中获取语音设置
-        stored_settings = session.get('user_settings', {})
-        user_settings = {
-            "voice_speed": stored_settings.get('voice_speed', '中等'),
-            "voice_volume": stored_settings.get('voice_volume', '中等')
-        }
-        
         print(f"[AI语音API] 开始播报: '{text[:50]}...'")
         
-        # 调用语音播放函数
-        result = ai_speak(text, user_settings)
-        
-        if result:
-            return jsonify({
-                "status": "success",
-                "message": "开始播放语音",
-                "is_playing": True
-            })
-        else:
-            return jsonify({
-                "status": "error",
-                "message": "语音播放启动失败"
-            }), 500
+        event = guidance_bus.publish(session['user_id'], "speech", text[:400],
+                                     priority="ASSISTANT", ttl_ms=45000,
+                                     resume_policy="discard")
+        return jsonify({"status": "success", "message": "语音已提交当前浏览器",
+                        "is_playing": None, "event_id": event['event_id']})
             
     except Exception as e:
         print(f"AI语音播报错误: {e}")
@@ -370,13 +286,9 @@ def ai_speak_stop_api():
     try:
         print("[AI语音API] 收到停止请求")
         
-        result = stop_ai_speak()
-        
-        return jsonify({
-            "status": "success",
-            "message": "语音已停止",
-            "is_playing": False
-        })
+        guidance_bus.publish(session['user_id'], "cancel_assistant",
+                             priority="ASSISTANT", ttl_ms=3000)
+        return jsonify({"status": "success", "message": "已请求浏览器停止助手语音"})
         
     except Exception as e:
         print(f"停止AI语音错误: {e}")
@@ -392,12 +304,8 @@ def ai_speak_status_api():
     获取AI助手语音播放状态
     """
     try:
-        is_playing = is_ai_speaking()
-        
-        return jsonify({
-            "status": "success",
-            "is_playing": is_playing
-        })
+        return jsonify({"status": "success", "is_playing": None,
+                        "message": "播放状态由浏览器本地调度器维护"})
         
     except Exception as e:
         print(f"获取AI语音状态错误: {e}")

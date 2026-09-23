@@ -3,59 +3,24 @@
 """
 from flask import Blueprint, render_template, request, session, jsonify
 from utils.decorators import login_required
-from utils.voice_utils import get_available_voices, speak
+from services.guidance_bus import guidance_bus
 from utils.email_utils import is_valid_email
 from models.database import (update_user_settings_in_db, get_user_details,
                               get_user_settings, get_family_contacts,
-                              add_family_contact, delete_family_contact)
-from config import DEFAULT_USER_SETTINGS
-import threading
-import time
+                              add_family_contact, delete_family_contact,
+                              resolve_caregiver_recipient)
+from config import DEFAULT_USER_SETTINGS, BAIDU_MAP_CONFIG
 
 main_bp = Blueprint('main', __name__)
 
-# 默认提示文字
-DEFAULT_SPEECH_TEXT = "提示：系统会实时分析盲道方向，当方向发生变化时会自动播报语音提示。"
-
-# 全局用户设置
-user_settings = DEFAULT_USER_SETTINGS.copy()
-
-# 最近一次活跃的 user_id（供视频流等无 session 上下文的后台线程使用）
-current_active_user_id = None
-
-
-def get_current_active_user_id():
-    """获取当前活跃用户ID（线程安全的最近登录/活跃用户）"""
-    return current_active_user_id
-
-
-def set_current_active_user_id(user_id):
-    """更新当前活跃用户ID"""
-    global current_active_user_id
-    if user_id is not None:
-        current_active_user_id = user_id
-
-
 def get_current_user_settings():
-    """获取当前用户设置（从session或全局变量）"""
-    if 'user_settings' in session:
-        return session['user_settings']
-    return user_settings
+    """Return settings only from the current user's session."""
+    return dict(session.get('user_settings') or DEFAULT_USER_SETTINGS)
 
 
 def update_current_user_settings(new_settings):
-    """更新当前用户设置"""
-    global user_settings
-    # 首先更新全局变量
-    user_settings.update(new_settings)
-    # 如果在请求上下文中，也更新 session
-    try:
-        if 'user_settings' in session:
-            session['user_settings'].update(new_settings)
-            session.modified = True
-    except RuntimeError:
-        # 不在请求上下文中，忽略
-        pass
+    """Update this browser session without crossing into another account."""
+    session['user_settings'] = {**DEFAULT_USER_SETTINGS, **new_settings}
 
 
 @main_bp.route('/')
@@ -68,20 +33,17 @@ def index():
         'username': session.get('username', '用户')
     }
     
-    # 每次访问首页时，从数据库重新加载用户设置到全局变量
-    # 这样可以确保视频流等非请求上下文也能使用最新的设置
+    # Each request resolves its own user's settings.
     user_id = session.get('user_id')
     if user_id:
-        set_current_active_user_id(user_id)
         user_settings_data, message = get_user_settings(user_id)
         if user_settings_data:
-            # 更新 session 和全局变量
-            session['user_settings'] = user_settings_data
             update_current_user_settings(user_settings_data)
             print(f"[首页] 已从数据库加载用户设置: {user_settings_data}")
     
     settings = get_current_user_settings()
-    return render_template('index.html', settings=settings, current_user=user)
+    return render_template('index.html', settings=settings, current_user=user,
+                           baidu_map_browser_ak=BAIDU_MAP_CONFIG.get('browser_api_key', ''))
 
 
 @main_bp.route('/update_settings', methods=['POST'])
@@ -120,6 +82,7 @@ def update_settings():
 
 
 @main_bp.route('/get_settings', methods=['GET'])
+@login_required
 def get_settings():
     """获取当前用户设置"""
     settings = get_current_user_settings()
@@ -131,21 +94,12 @@ def get_settings():
 
 @main_bp.route('/get_available_voices', methods=['GET'])
 def get_voices():
-    """获取系统可用的语音列表"""
-    try:
-        voices = get_available_voices()
-        return jsonify({
-            "status": "success",
-            "voices": voices
-        })
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": f"获取语音列表失败: {str(e)}"
-        }), 500
+    """Browser speech voices are local to the client, not the Flask host."""
+    return jsonify({"status": "success", "voices": [], "source": "browser"})
 
 
 @main_bp.route('/test_voice', methods=['POST'])
+@login_required
 def voice_test():
     """测试语音设置"""
     try:
@@ -174,12 +128,10 @@ def voice_test():
 
         print(f"[测试语音] 将播放文本: {test_text}")
 
-        # 直接使用 speak 函数，它内部已经有队列机制
-        # 不需要额外的线程包装
-        speak(test_text, test_settings)
-
-        print("[测试语音] 已添加到语音队列")
-        return jsonify({"status": "success", "message": "语音测试已开始"})
+        guidance_bus.publish(session['user_id'], "speech", str(test_text)[:180],
+                             priority="BACKGROUND", ttl_ms=10000,
+                             dedupe_key="voice_test")
+        return jsonify({"status": "success", "message": "语音测试已提交至当前浏览器"})
     except Exception as e:
         print(f"[测试语音] 错误: {e}")
         import traceback
@@ -188,62 +140,36 @@ def voice_test():
 
 
 @main_bp.route('/send_message', methods=['POST'])
+@login_required
 def send_message():
-    """接收来自前端的家属消息，添加前缀后调用语音播报"""
-    current_settings = get_current_user_settings()
-    
-    # 检查是否为盲人端模式，如果是则拒绝发送消息
-    if current_settings["user_mode"] == "盲人端":
-        return jsonify({"status": "error", "message": "盲人端模式不能发送消息"}), 403
+    """Send to a specifically authorized recipient's browser event stream."""
+    data = request.get_json(silent=True) or {}
+    message = str(data.get('message') or '').strip()
+    recipient_name = str(data.get('recipient_username') or '').strip()
+    if not message or len(message) > 200 or not recipient_name:
+        return jsonify({"status": "error", "message": "填写接收者用户名及1至200字消息"}), 400
+    user_id = session['user_id']
+    # Read stored account settings; a client-side mode switch is not proof of a link.
+    settings, _ = get_user_settings(user_id)
+    if not settings or settings.get('user_mode') != '家属端':
+        return jsonify({"status": "error", "message": "仅家属账号可以发送"}), 403
+    recipient_id = resolve_caregiver_recipient(user_id, recipient_name)
+    if not recipient_id:
+        return jsonify({"status": "error", "message": "接收者未登记您账号的邮箱"}), 403
+    event = guidance_bus.publish(recipient_id, "speech", f"家属消息：{message}",
+                                 priority="FAMILY", ttl_ms=300000,
+                                 resume_policy="continue", sender_id=user_id)
+    return jsonify({"status": "success", "message": "消息已入接收者队列；请通过状态查询确认是否播放",
+                    "event_id": event['event_id']})
 
-    data = request.get_json()
-    message = data.get('message', '').strip()
 
-    if not message:
-        return jsonify({"status": "error", "message": "消息为空"}), 400
-
-    try:
-        full_text = f"您有一条来自家属的消息：{message}"
-        print(f"[消息] 收到家属消息: {message}")
-
-        # 更新页面显示的文字为家属消息
-        from routes.video import current_speech_text
-        import routes.video as video_module
-        video_module.current_speech_text = full_text
-        print(f"[消息] 已更新页面显示文字")
-
-        # 直接调用 speak 函数，它内部已经有队列机制
-        speak(full_text, current_settings)
-        print(f"[消息] 已添加到语音队列")
-
-        # 根据文字长度估算播放时间（每个字约0.3秒，加上前缀）
-        # 考虑语速设置
-        speed_multiplier = {
-            "慢": 1.5,
-            "中等": 1.0,
-            "快": 0.7
-        }
-        base_duration = len(full_text) * 0.3
-        duration = base_duration * speed_multiplier.get(current_settings.get("voice_speed", "中等"), 1.0)
-        # 增加2秒的缓冲时间
-        duration += 2.0
-        
-        print(f"[消息] 预计播放时长: {duration:.1f}秒")
-
-        # 定时恢复默认文字
-        def restore_default_text():
-            time.sleep(duration)
-            video_module.current_speech_text = DEFAULT_SPEECH_TEXT
-            print(f"[消息] 已恢复默认提示文字")
-        
-        threading.Thread(target=restore_default_text, daemon=True).start()
-
-        return jsonify({"status": "success", "message": "消息发送成功"})
-    except Exception as e:
-        print(f"[消息] 发送消息出错: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": f"发送失败: {str(e)}"}), 500
+@main_bp.route('/family_message_status/<event_id>')
+@login_required
+def family_message_status(event_id):
+    status = guidance_bus.status(session['user_id'], event_id)
+    if status is None:
+        return jsonify({"status": "error", "message": "消息不存在或无权限查看"}), 404
+    return jsonify({"status": "success", "delivery_status": status})
 
 
 @main_bp.route('/family_contacts', methods=['GET'])

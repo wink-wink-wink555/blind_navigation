@@ -33,6 +33,7 @@ MODEL_WEIGHTS = 'yolo/best.pt'  # 使用项目包含的预训练YOLOv8盲道检�
 # 百度地图MCP配置
 BAIDU_MAP_CONFIG = {
     'api_key': 'your_baidu_map_api_key',  # 填写您的百度地图API密钥
+    'browser_api_key': 'your_baidu_browser_api_key',  # JSAPI专用 Browser AK，设置域名白名单
     'base_url': 'https://api.map.baidu.com',
     'web_service_url': 'https://api.map.baidu.com/geocoding/v3/',
     'direction_url': 'https://api.map.baidu.com/direction/v2/',
@@ -59,9 +60,6 @@ DASHSCOPE_CONFIG = {
 # 这些用户级配置存储在 user_ai_settings 表中。
 
 # 视频检测配置
-THRESHOLD_SLOPE = 0.41  # 盲道方向检测斜率阈值
-CALL_INTERVAL = 14  # 语音提示间隔（秒）
-
 # 用户默认设置
 DEFAULT_USER_SETTINGS = {
     "gender": "未指定",  # 性别：男/女/未指定

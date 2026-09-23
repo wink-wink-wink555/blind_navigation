@@ -15,6 +15,7 @@ from routes.video import video_bp
 from routes.map import map_bp
 from routes.chat import chat_bp
 from routes.ai_settings import ai_settings_bp
+from routes.guidance import guidance_bp
 
 # 导入数据库初始化函数
 from models.database import init_database
@@ -39,6 +40,7 @@ def create_app():
     app.register_blueprint(map_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(ai_settings_bp)
+    app.register_blueprint(guidance_bp)
     
     return app
 
@@ -52,4 +54,5 @@ if __name__ == '__main__':
     app = create_app()
     # 运行应用
     print("启动Flask应用...")
-    app.run(debug=True)
+    # The web-demo event log is process-local: keep a single worker/reloader.
+    app.run(debug=os.getenv('FLASK_DEBUG') == '1', use_reloader=False, threaded=True)

@@ -299,6 +299,51 @@ def get_user_details(user_id):
         conn.close()
 
 
+def resolve_caregiver_recipient(sender_id, recipient_username):
+    """Authorize a web-demo caregiver through the recipient's saved email.
+
+    The recipient must have added the sender's registered account email to
+    family_contacts. A user-mode dropdown by itself is never authorization.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT recipient.id
+                FROM users AS sender
+                JOIN users AS recipient ON recipient.username = %s
+                JOIN family_contacts AS link ON link.user_id = recipient.id
+                WHERE sender.id = %s AND recipient.id <> sender.id
+                  AND LOWER(link.email) = LOWER(sender.email)
+                LIMIT 1
+            """, (recipient_username, sender_id))
+            result = cursor.fetchone()
+            return result['id'] if result else None
+    finally:
+        conn.close()
+
+
+def can_view_location(viewer_id, target_id):
+    if viewer_id == target_id:
+        return True
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT 1 FROM users AS viewer
+                JOIN family_contacts AS link ON link.user_id = %s
+                WHERE viewer.id = %s AND LOWER(link.email) = LOWER(viewer.email)
+                LIMIT 1
+            """, (target_id, viewer_id))
+            return cursor.fetchone() is not None
+    finally:
+        conn.close()
+
+
 def get_family_contacts(user_id):
     """获取用户的所有家属联系人"""
     conn = get_db_connection()

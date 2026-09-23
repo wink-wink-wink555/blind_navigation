@@ -1,10 +1,19 @@
 """
 服务模块包
 """
-from .baidu_map_mcp import BaiduMapMCP
-from .deepseek_ai import DeepSeekAI
-from .router_agent import RouterAgent
-from .settings_agent import SettingsAgent
-
 __all__ = ['BaiduMapMCP', 'DeepSeekAI', 'RouterAgent', 'SettingsAgent']
+
+
+def __getattr__(name):
+    """Keep independent navigation components importable without LLM extras."""
+    if name not in __all__:
+        raise AttributeError(name)
+    from importlib import import_module
+    module = {
+        'BaiduMapMCP': 'baidu_map_mcp',
+        'DeepSeekAI': 'deepseek_ai',
+        'RouterAgent': 'router_agent',
+        'SettingsAgent': 'settings_agent',
+    }[name]
+    return getattr(import_module(f'.{module}', __name__), name)
 
