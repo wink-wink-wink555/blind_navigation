@@ -304,7 +304,8 @@ blind_navigation/
 │   ├── main.py            # Main page routes
 │   ├── video.py           # Video processing routes
 │   ├── map.py             # Map-related routes
-│   └── ai_settings.py     # AI settings routes
+│   ├── ai_settings.py     # AI settings routes
+│   └── guidance.py        # Navigation, live vision and event stream
 ├── services/
 │   ├── ai_provider.py     # Unified AI routing (cloud APIs ↔ Ollama)
 │   ├── baidu_map_mcp.py   # Baidu Map MCP tool set
@@ -312,9 +313,11 @@ blind_navigation/
 │   ├── ollama_client.py   # Ollama client wrapper
 │   ├── router_agent.py    # RouterAgent (intent classifier & router)
 │   ├── settings_agent.py  # SettingsAgent (settings query & modification)
-│   └── speech_agent.py    # Speech agent
+│   ├── speech_agent.py    # Speech recognition agent
+│   ├── navigation.py      # Navigation state machine
+│   └── guidance_bus.py    # Per-user events and receipts
 ├── utils/
-│   ├── decorators.py · email_utils.py · video_utils.py · voice_utils.py
+│   ├── decorators.py · email_utils.py · video_utils.py
 ├── templates/
 │   ├── index.html · login.html · register.html · forget_password.html
 └── yolo/
