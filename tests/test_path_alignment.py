@@ -1,9 +1,9 @@
 """Path geometry estimator and alignment state machine regression scenarios.
 
-Covers: near-field geometry, candidate selection, temporal stability,
-hysteresis, correction episodes, positive feedback, turn-zone suppression,
-crossing gating, severe deviation, visual loss and stale/out-of-order frames.
-No live API key or camera is needed.
+Covers: near-field geometry, candidate selection, stream isolation, temporal
+stability, hysteresis, correction episodes, positive feedback, turn-zone
+suppression, crossing gating, severe deviation, visual loss and stale/
+out-of-order frames. No live API key or camera is needed.
 """
 
 import time
@@ -19,6 +19,7 @@ from services.navigation import (
     SEVERE_SPEECH,
 )
 from services.path_alignment import PathGeometryEstimator
+from services.vision_observer import VisionObserver
 
 
 W, H = 480, 360  # matches the browser capture canvas
@@ -94,6 +95,41 @@ class PathGeometryEstimation(unittest.TestCase):
             self.estimator.estimate(0, H, [detection(240, 200, 320)])
 
 
+class VisionObserverStreamIsolation(unittest.TestCase):
+    def test_named_streams_receive_distinct_geometry_trackers(self):
+        observer = VisionObserver()
+        stream_a = ("live", 1)
+        stream_b = ("live", 2)
+
+        observer._estimate_geometry(W, H, [detection(100, 200, 320)], stream_a)
+        observer._estimate_geometry(W, H, [detection(380, 200, 320)], stream_b)
+
+        self.assertIn(stream_a, observer._geometry_streams)
+        self.assertIn(stream_b, observer._geometry_streams)
+        self.assertIsNot(observer._geometry_streams[stream_a],
+                         observer._geometry_streams[stream_b])
+        self.assertNotEqual(observer._geometry_streams[stream_a]._last_center_x,
+                            observer._geometry_streams[stream_b]._last_center_x)
+
+    def test_reset_removes_only_the_requested_stream(self):
+        observer = VisionObserver()
+        live = ("live", 7)
+        recorded = ("recorded", 7, "reader-a")
+        observer._estimate_geometry(W, H, [detection(100, 200, 320)], live)
+        observer._estimate_geometry(W, H, [detection(380, 200, 320)], recorded)
+
+        observer.reset_geometry_stream(live)
+
+        self.assertNotIn(live, observer._geometry_streams)
+        self.assertIn(recorded, observer._geometry_streams)
+
+    def test_unnamed_default_calls_are_stateless(self):
+        observer = VisionObserver()
+        observer._estimate_geometry(W, H, [detection(100, 200, 320)], None)
+        observer._estimate_geometry(W, H, [detection(380, 200, 320)], None)
+        self.assertEqual(observer._geometry_streams, {})
+
+
 class FakeProvider:
     def to_bd09(self, lat, lng, coord_type):
         assert coord_type == "wgs84"
@@ -128,7 +164,8 @@ class AlignmentStateMachine(unittest.TestCase):
         return {"lat": lat, "lng": lng, "accuracy": accuracy,
                 "timestamp_ms": self.now_ms + offset_ms, "coord_type": "wgs84"}
 
-    def obs(self, offset=0.0, status="VALID", confidence=0.85, seq=None, captured_offset=0):
+    def obs(self, offset=0.0, status="VALID", confidence=0.85, seq=None,
+            captured_offset=0, received_offset=0, processed_offset=40):
         self.seq += 1
         geometry = {"status": status,
                     "path_center_x": 240 + (offset or 0) * W if status == "VALID" else None,
@@ -142,7 +179,8 @@ class AlignmentStateMachine(unittest.TestCase):
                 "branch_status": "UNKNOWN", "geometry": geometry,
                 "frame_seq": self.seq if seq is None else seq,
                 "captured_at_ms": self.now_ms + captured_offset,
-                "processed_at_ms": self.now_ms + captured_offset + 40}
+                "server_received_at_ms": self.now_ms + received_offset,
+                "processed_at_ms": self.now_ms + processed_offset}
 
     def speeches(self, source=None):
         return [e for e in self.bus.events_since(7)
@@ -225,8 +263,6 @@ class AlignmentStateMachine(unittest.TestCase):
         # Offset improves but the filtered median is still in severe
         # territory: no micro-correction hint may follow the safety alert.
         self.stable_deviation(0.15, frames=2)
-        # While the filtered median is still in severe territory, no
-        # micro-correction hint may follow the safety alert.
         self.assertEqual(self.speeches("ALIGNMENT"), [])
         self.stable_deviation(0.15, frames=3)
         self.assertNotEqual(self.state(), "SEVERE")
@@ -240,11 +276,15 @@ class AlignmentStateMachine(unittest.TestCase):
         self.ack_correction()
         for _ in range(3):
             self.manager.report_visual(7, self.obs(0.0))
-        self.assertEqual(self.state(), "CENTERED")
-        self.assertIsNone(self.manager.snapshot(7)["alignment_episode"])
+        snapshot = self.manager.snapshot(7)
+        self.assertEqual(snapshot["alignment_state"], "CENTERED")
+        self.assertIsNone(snapshot["alignment_episode"])
         praises = [e for e in self.speeches("BACKGROUND") if "回正" in e["text"]]
         self.assertEqual(len(praises), 1)
         self.assertEqual(praises[0]["text"], PRAISE_SPEECH)
+        # Regression: praise must belong to the NEW centered epoch. Otherwise
+        # SpeechScheduler will immediately invalidate it as stale.
+        self.assertEqual(praises[0]["alignment_epoch"], snapshot["alignment_epoch"])
 
     def test_praise_requires_actually_played_correction(self):
         self.stable_deviation(0.2)
@@ -357,11 +397,28 @@ class AlignmentStateMachine(unittest.TestCase):
         self.assertEqual(after["alignment_state"], before["alignment_state"])
         self.assertEqual(after["alignment_history"], before["alignment_history"])
 
-    def test_stale_capture_never_steers(self):
+    def test_stale_server_received_frame_never_steers(self):
         for _ in range(4):
-            self.manager.report_visual(7, self.obs(0.3, captured_offset=-5000))
+            self.manager.report_visual(7, self.obs(0.3, received_offset=-5000))
         self.assertEqual(self.speeches("ALIGNMENT"), [])
         self.assertNotIn(self.state(), ("CORRECT_LEFT", "CORRECT_RIGHT", "SEVERE"))
+
+    def test_client_clock_skew_does_not_make_fresh_server_frame_stale(self):
+        # Browser clock can be one minute behind; server receive time is fresh.
+        for _ in range(4):
+            self.manager.report_visual(7, self.obs(0.2, captured_offset=-60000,
+                                                   received_offset=0))
+        self.assertEqual(self.state(), "CORRECT_RIGHT")
+        self.assertEqual(len(self.speeches("ALIGNMENT")), 1)
+
+    def test_legacy_processed_time_is_server_clock_fallback(self):
+        observation = self.obs(0.2)
+        observation.pop("server_received_at_ms")
+        for _ in range(4):
+            observation = self.obs(0.2)
+            observation.pop("server_received_at_ms")
+            self.manager.report_visual(7, observation)
+        self.assertEqual(self.state(), "CORRECT_RIGHT")
 
     def test_legacy_bool_observations_keep_working(self):
         self.manager.report_visual(7, True)

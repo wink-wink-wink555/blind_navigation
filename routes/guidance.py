@@ -1,6 +1,7 @@
 """Authenticated browser navigation, vision observations and event stream."""
 
 import json
+import time
 
 from flask import Blueprint, Response, jsonify, request, session
 
@@ -17,6 +18,20 @@ guidance_bp = Blueprint("guidance", __name__)
 navigation_manager = NavigationManager(BaiduWalkingProvider(BAIDU_MAP_CONFIG["api_key"]), guidance_bus)
 
 
+def _live_geometry_stream_id(user_id):
+    """Stable per-user key for the current live camera stream.
+
+    Navigation state is already keyed per user. Start/replan/stop and camera
+    loss explicitly reset this key, so temporal geometry can never leak across
+    navigation sessions while consecutive live frames still retain continuity.
+    """
+    return ("live", int(user_id))
+
+
+def _reset_live_geometry(user_id):
+    vision_observer.reset_geometry_stream(_live_geometry_stream_id(user_id))
+
+
 def _result(action):
     try:
         return jsonify({"status": "success", **action()})
@@ -30,8 +45,18 @@ def _result(action):
 @login_required
 def start_navigation():
     data = request.get_json(silent=True) or {}
-    return _result(lambda: {"navigation": navigation_manager.start(
-        session["user_id"], data.get("destination") or {}, data.get("position") or {})})
+
+    def action():
+        user_id = session["user_id"]
+        navigation = navigation_manager.start(
+            user_id, data.get("destination") or {}, data.get("position") or {})
+        # Reset only after a successful route start. A malformed request that
+        # never replaces the current navigation session should not disturb the
+        # current camera track.
+        _reset_live_geometry(user_id)
+        return {"navigation": navigation}
+
+    return _result(action)
 
 
 @guidance_bp.route("/navigation/preview", methods=["POST"])
@@ -47,10 +72,12 @@ def preview_navigation():
 @login_required
 def navigation_position():
     data = request.get_json(silent=True) or {}
+
     def action():
         result = navigation_manager.update_position(session["user_id"], data.get("position"))
         record_location(session["user_id"], result["position"])
         return result
+
     return _result(action)
 
 
@@ -64,16 +91,25 @@ def activate_navigation():
 @login_required
 def replan_navigation():
     data = request.get_json(silent=True) or {}
-    return _result(lambda: {"navigation": navigation_manager.replan(
-        session["user_id"], data.get("position") or {})})
+
+    def action():
+        user_id = session["user_id"]
+        navigation = navigation_manager.replan(user_id, data.get("position") or {})
+        _reset_live_geometry(user_id)
+        return {"navigation": navigation}
+
+    return _result(action)
 
 
 @guidance_bp.route("/navigation/stop", methods=["POST"])
 @login_required
 def stop_navigation():
     def action():
-        stopped = navigation_manager.stop(session["user_id"])
-        return {"stopped": stopped, "context": navigation_manager.context(session["user_id"])}
+        user_id = session["user_id"]
+        stopped = navigation_manager.stop(user_id)
+        _reset_live_geometry(user_id)
+        return {"stopped": stopped, "context": navigation_manager.context(user_id)}
+
     return _result(action)
 
 
@@ -87,6 +123,11 @@ def navigation_status():
 @guidance_bp.route("/vision/frame", methods=["POST"])
 @login_required
 def observe_frame():
+    # This timestamp comes from the Flask host, not from browser Date.now().
+    # It is the freshness anchor used by NavigationManager, so client/server
+    # wall-clock skew cannot invalidate otherwise fresh visual observations.
+    server_received_at_ms = int(time.time() * 1000)
+
     if "frame" not in request.files:
         return jsonify({"status": "error", "message": "缺少图像帧"}), 400
     frame = request.files["frame"].read(600001)
@@ -100,9 +141,15 @@ def observe_frame():
     except (TypeError, ValueError):
         return jsonify({"status": "error", "message": "无效的帧序号或采集时间"}), 400
     try:
-        observation = vision_observer.analyze(frame, frame_seq=frame_seq,
-                                              captured_at_ms=captured_at_ms)
-        navigation = navigation_manager.report_visual(session["user_id"], observation)
+        user_id = session["user_id"]
+        observation = vision_observer.analyze(
+            frame,
+            frame_seq=frame_seq,
+            captured_at_ms=captured_at_ms,
+            geometry_stream_id=_live_geometry_stream_id(user_id),
+            server_received_at_ms=server_received_at_ms,
+        )
+        navigation = navigation_manager.report_visual(user_id, observation)
         return jsonify({"status": "success", "observation": observation,
                         "vision_status": navigation["vision_status"] if navigation else "NO_SESSION",
                         "alignment": ({"state": navigation["alignment_state"],
@@ -117,7 +164,11 @@ def observe_frame():
 @guidance_bp.route("/vision/unavailable", methods=["POST"])
 @login_required
 def vision_unavailable():
-    navigation = navigation_manager.report_visual(session["user_id"], None)
+    user_id = session["user_id"]
+    # Reconnecting a camera starts a fresh geometry track; do not compare its
+    # first frame against a center remembered before the interruption.
+    _reset_live_geometry(user_id)
+    navigation = navigation_manager.report_visual(user_id, None)
     return jsonify({"status": "success", "navigation": navigation})
 
 

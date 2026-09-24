@@ -55,8 +55,11 @@ class HttpGuidanceContract(unittest.TestCase):
             state["user_id"] = 322
 
     def tearDown(self):
+        from routes.guidance import vision_observer, _live_geometry_stream_id
         self.manager.provider = self.original_provider
         self.manager.stop(321)
+        vision_observer.reset_geometry_stream(_live_geometry_stream_id(321))
+        vision_observer.reset_geometry_stream(_live_geometry_stream_id(322))
 
     @staticmethod
     def location(offset=0):
@@ -111,16 +114,21 @@ class HttpGuidanceContract(unittest.TestCase):
         self.assertEqual(invalid.status_code, 400)
         self.assertEqual(self.a.get('/navigation/status').json["context"]["nav_state"], "UNCERTAIN")
 
-    def test_frame_metadata_alignment_and_out_of_order_rejection(self):
+    def test_frame_metadata_alignment_stream_scope_and_out_of_order_rejection(self):
         started = self.a.post('/navigation/start', json={
             "destination": {"lat": 31.00018, "lng": 121, "coord_type": "bd09ll"},
             "position": self.location()})
         self.assertEqual(started.status_code, 200)
         self.a.post('/navigation/activate')
 
-        from routes.guidance import vision_observer
+        from routes.guidance import vision_observer, _live_geometry_stream_id
+        calls = []
 
-        def fake_analyze(frame, frame_seq=None, captured_at_ms=None):
+        def fake_analyze(frame, frame_seq=None, captured_at_ms=None,
+                         geometry_stream_id=None, server_received_at_ms=None):
+            calls.append({"stream": geometry_stream_id,
+                          "server_received_at_ms": server_received_at_ms,
+                          "captured_at_ms": captured_at_ms})
             return {"visible": True, "detections": 1, "max_confidence": 0.9,
                     "boxes": [{"confidence": 0.9, "box": [300, 200, 380, 330]}],
                     "branch_status": "UNKNOWN",
@@ -129,21 +137,32 @@ class HttpGuidanceContract(unittest.TestCase):
                                  "confidence": 0.8, "selected_detection_count": 1,
                                  "candidate_count": 1},
                     "frame_seq": frame_seq, "captured_at_ms": captured_at_ms,
+                    "server_received_at_ms": server_received_at_ms,
                     "processed_at_ms": int(time.time() * 1000)}
 
+        # Deliberately make the browser clock one minute slow. Freshness must
+        # still be decided from the server receive clock, so steering works.
+        skewed_client_time = int(time.time() * 1000) - 60000
         with patch.object(vision_observer, "analyze", side_effect=fake_analyze):
             for seq in (1, 2, 3):
                 response = self.a.post('/vision/frame', data={
                     "frame": (BytesIO(b'fake'), 'f.jpg'), "frame_seq": str(seq),
-                    "captured_at_ms": str(int(time.time() * 1000))})
+                    "captured_at_ms": str(skewed_client_time)})
                 self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json["alignment"]["state"], "CORRECT_RIGHT")
             self.assertEqual(response.json["observation"]["geometry"]["status"], "VALID")
             self.assertEqual(response.json["observation"]["frame_seq"], 3)
+            self.assertTrue(all(call["stream"] == _live_geometry_stream_id(321)
+                                for call in calls))
+            self.assertTrue(all(isinstance(call["server_received_at_ms"], int)
+                                for call in calls))
+            self.assertTrue(all(call["captured_at_ms"] == skewed_client_time
+                                for call in calls))
+
             # An out-of-order frame sequence must not change anything.
             response = self.a.post('/vision/frame', data={
                 "frame": (BytesIO(b'fake'), 'f.jpg'), "frame_seq": "1",
-                "captured_at_ms": str(int(time.time() * 1000))})
+                "captured_at_ms": str(skewed_client_time)})
             self.assertEqual(response.json["alignment"]["state"], "CORRECT_RIGHT")
             # Malformed frame metadata is rejected at the boundary.
             bad = self.a.post('/vision/frame', data={
@@ -155,6 +174,21 @@ class HttpGuidanceContract(unittest.TestCase):
         self.assertEqual(len(alignment_events), 1)  # one hint per episode
         self.assertLessEqual(alignment_events[0]["ttl_ms"], 4000)
         self.assertIsNotNone(alignment_events[0]["alignment_epoch"])
+
+    def test_navigation_lifecycle_resets_live_geometry_stream(self):
+        from routes.guidance import vision_observer, _live_geometry_stream_id
+        stream_id = _live_geometry_stream_id(321)
+
+        with patch.object(vision_observer, "reset_geometry_stream") as reset:
+            started = self.a.post('/navigation/start', json={
+                "destination": {"lat": 31.00018, "lng": 121, "coord_type": "bd09ll"},
+                "position": self.location()})
+            self.assertEqual(started.status_code, 200)
+            reset.assert_any_call(stream_id)
+
+            stopped = self.a.post('/navigation/stop')
+            self.assertEqual(stopped.status_code, 200)
+            self.assertGreaterEqual(reset.call_count, 2)
 
     def test_family_message_authorization_and_delivery_receipt(self):
         with patch('routes.main.get_user_settings', return_value=({"user_mode": "家属端"}, "ok")), \

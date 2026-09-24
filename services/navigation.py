@@ -42,7 +42,10 @@ ALIGN_SPEECH_TTL_MS = 3000         # steering hints expire almost immediately
 ALIGN_PRAISE_TTL_MS = 6000
 ALIGN_SEVERE_REPEAT_MS = 12000
 ALIGN_TURN_SUPPRESS_DISTANCE_M = 12  # no steering this close to a planned turn
-ALIGN_STALE_FRAME_MS = 1500        # older captures never produce steering
+# Freshness is measured only with timestamps produced by the Flask host.
+# Browser Date.now() is kept as diagnostic metadata and is never compared
+# directly with the server wall clock.
+ALIGN_STALE_FRAME_MS = 1500
 
 # Alignment states (second layer, independent from the navigation state):
 # UNKNOWN, CENTERED, CORRECT_LEFT, CORRECT_RIGHT, RECOVERING, SEVERE,
@@ -377,6 +380,10 @@ class NavigationManager:
         ``VisionObserver.analyze`` (presence + geometry + frame metadata).
         A bare ``True`` / ``False`` / ``None`` is still accepted as a legacy
         presence-only observation without geometry.
+
+        Client ``captured_at_ms`` is diagnostic only. Steering freshness is
+        anchored to ``server_received_at_ms`` (or legacy ``processed_at_ms``)
+        because browser and server wall clocks are not guaranteed to agree.
         """
         publications = []
         with self._lock:
@@ -389,19 +396,34 @@ class NavigationManager:
                 geometry = observation.get("geometry")
                 frame_seq = observation.get("frame_seq")
                 captured_at_ms = observation.get("captured_at_ms")
+                server_received_at_ms = observation.get("server_received_at_ms")
+                processed_at_ms = observation.get("processed_at_ms")
                 try:
                     frame_seq = int(frame_seq) if frame_seq is not None else None
+                    # Parse client time for diagnostics/contract validation, but
+                    # never compare it to the server clock for control logic.
                     captured_at_ms = int(captured_at_ms) if captured_at_ms is not None else None
+                    server_received_at_ms = (int(server_received_at_ms)
+                                             if server_received_at_ms is not None else None)
+                    processed_at_ms = int(processed_at_ms) if processed_at_ms is not None else None
                 except (TypeError, ValueError):
-                    raise ValueError("无效的帧序号或采集时间")
+                    raise ValueError("无效的视觉帧元数据")
                 if frame_seq is not None:
                     if frame_seq <= session["last_frame_seq"]:
                         # An out-of-order frame must never roll state back.
                         return deepcopy(session)
                     session["last_frame_seq"] = frame_seq
-                # A stale capture may still update presence bookkeeping for
-                # the debug UI, but it must never steer the user.
-                stale = captured_at_ms is not None and now_ms - captured_at_ms > ALIGN_STALE_FRAME_MS
+
+                # Prefer the server receive timestamp so inference/network
+                # backlog inside the service is visible. Legacy structured
+                # observations may only carry processed_at_ms; use that as a
+                # weaker server-clock fallback. Browser captured_at_ms is not
+                # a freshness anchor because the two machines may be skewed.
+                freshness_anchor = (server_received_at_ms
+                                    if server_received_at_ms is not None
+                                    else processed_at_ms)
+                stale = (freshness_anchor is not None and
+                         now_ms - freshness_anchor > ALIGN_STALE_FRAME_MS)
             else:
                 visible = observation
                 geometry = None
@@ -552,14 +574,19 @@ class NavigationManager:
                 session["alignment_epoch"] += 1
             return
 
-        # Stable recovery: several consecutive centered frames are required,
-        # and praise additionally requires a played correction instruction.
+        # Stable recovery: first transition to the CENTERED epoch, then issue
+        # optional positive feedback inside that same epoch. Publishing praise
+        # before incrementing the epoch would make the browser immediately
+        # classify the newly-created event as stale when CENTERED context
+        # arrives a moment later.
         if streaks["centered"] >= ALIGN_RECOVERY_FRAMES:
-            if state in ("CORRECT_LEFT", "CORRECT_RIGHT", "RECOVERING") and episode:
-                self._maybe_praise(user_id, session, episode, now_ms)
+            completed_episode = (episode if state in ("CORRECT_LEFT", "CORRECT_RIGHT", "RECOVERING")
+                                 else None)
             if state != "CENTERED":
                 session["alignment_state"] = "CENTERED"
                 session["alignment_epoch"] += 1
+            if completed_episode:
+                self._maybe_praise(user_id, session, completed_episode, now_ms)
             self._close_episode(session)
             return
 
@@ -620,7 +647,9 @@ class NavigationManager:
         Every condition is required: an episode existed, its correction
         instruction actually entered playback, the offset measurably improved
         back into the centered band, the episode was not praised yet, and the
-        global praise cooldown has elapsed.
+        global praise cooldown has elapsed. The caller transitions into the
+        CENTERED alignment epoch before invoking this method, so the praise
+        cannot be invalidated by the very recovery event that created it.
         """
         episode["completed"] = True
         if episode["praised"] or not episode["speech_event_id"]:

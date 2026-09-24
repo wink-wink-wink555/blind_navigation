@@ -2,6 +2,8 @@
 
 Recorded frames have no relationship to a user's live location. This route
 never publishes navigation or audio events; live observations use /vision/frame.
+Each MJPEG reader also receives its own geometry stream so recorded playback
+can never contaminate live-camera temporal geometry (or another reader).
 """
 
 from threading import RLock
@@ -74,6 +76,9 @@ def generate_frames(user_id):
                 _release(item)
             continue
 
+        # One reader = one coherent recorded-video geometry stream. Even two
+        # tabs playing the same upload must not share previous-center state.
+        geometry_stream_id = ("recorded", int(user_id), uuid4().hex)
         fps = cap.get(cv2.CAP_PROP_FPS) or 10
         interval = 1 / max(1, min(10, fps))
         try:
@@ -90,7 +95,9 @@ def generate_frames(user_id):
                     yield _mjpeg(create_info_frame("视频已播放完毕"))
                     break
                 try:
-                    observation = vision_observer.analyze_frame(frame)
+                    observation = vision_observer.analyze_frame(
+                        frame, geometry_stream_id=geometry_stream_id
+                    )
                     for detection in observation["boxes"]:
                         x1, y1, x2, y2 = map(int, detection["box"])
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -100,6 +107,7 @@ def generate_frames(user_id):
                 yield _mjpeg(frame)
                 time.sleep(interval)
         finally:
+            vision_observer.reset_geometry_stream(geometry_stream_id)
             cap.release()
             _release(item)
 
