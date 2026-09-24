@@ -125,7 +125,7 @@ Baidu Walking Route + GPS
 
 The Baidu route answers where the route goes and when a turn is expected. YOLO and the near-field geometry layer only estimate where candidate tactile paving lies relative to the user's visual reference center. Detection boxes are never treated as proof of junction topology, paving connectivity, or a safe direction through an intersection.
 
-### Tactile-path alignment
+### Tactile-path alignment (V1)
 
 `services/vision_observer.py` obtains candidate bounding boxes and `services/path_alignment.py` estimates their near-field lateral geometry.
 
