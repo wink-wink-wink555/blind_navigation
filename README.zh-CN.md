@@ -120,9 +120,9 @@
 
 百度路线回答“接下来沿哪条路走、什么时候预计转弯”；YOLO 和近场几何估计只回答“当前候选盲道相对用户参考中心位于哪里”。视觉模块不会通过检测框推断真实路口拓扑、盲道连通性或安全转向。
 
-### V1 盲道横向对齐
+### 盲道横向对齐
 
-V1 不重新训练 YOLO，也不使用语义分割。`services/vision_observer.py` 继续加载 `yolo/best.pt` 获取候选盲道检测框，`services/path_alignment.py` 在其上执行近场横向几何估计。
+`services/vision_observer.py` 加载 `yolo/best.pt` 获取候选盲道检测框，`services/path_alignment.py` 在其上执行近场横向几何估计。
 
 几何估计优先使用画面高度约 50%–90% 的近场区域，而不是直接采用完整 bounding box 的中心。候选检测综合考虑 YOLO 置信度、与近场区域的重叠程度、靠近画面底部的程度及连续帧一致性；多个强候选在水平方向明显冲突时返回 `AMBIGUOUS`，而不是猜测左右方向。
 
