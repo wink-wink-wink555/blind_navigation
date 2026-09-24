@@ -33,14 +33,18 @@ English | [简体中文](README.zh-CN.md)
 
 ## 🌟 Introduction
 
-ARIADNE is a web demonstration that combines tactile-paving observations, Baidu walking routes, and a multi-agent assistant. The live camera reports whether candidate paving is visible; turn advisories come from walking-route steps and current location. Users must still verify intersections, paving connections, and road crossings themselves. In the browser, one speech scheduler arbitrates safety alerts, route advisories, authorized family voice messages, and assistant replies according to priority and validity. The application also includes account management, location sharing, and natural-language interaction.
+ARIADNE is a web-based mobility-assistance demonstration that combines live tactile-paving observation, Baidu walking routes, browser geolocation, and a multi-agent assistant. The live camera first uses YOLO to detect candidate tactile-paving regions. On eligible straight route segments, a near-field geometry layer further estimates the paving's lateral position relative to the user's visual reference center. A temporal alignment state machine then combines multiple observations, hysteresis, and navigation context to issue conservative micro-corrections such as “move slightly left” or “move slightly right.” If a correction was actually played and subsequent observations confirm a stable return to the centered region, the system may provide one low-priority positive-feedback message.
+
+Baidu walking routes and GPS remain responsible for macro-level navigation—where to go and when a turn is expected—while the vision subsystem is limited to local alignment under safe conditions. Near planned turns, at road crossings, when geometry is ambiguous, when paving disappears, or when lateral deviation becomes severe, normal steering hints are suppressed and the system falls back to route confirmation or safety guidance instead of guessing a walkable direction. Safety alerts, alignment corrections, route advisories, authorized family voice messages, assistant replies, and background feedback share one browser speech channel with explicit priority and validity rules.
 
 ### Tech Stack
 
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
 - **Backend**: Flask (Python 3.10 / 3.11 recommended)
-- **AI Models**:
-  - YOLO (You Only Look Once) - Tactile paving detection
+- **AI / Vision Models**:
+  - YOLO (You Only Look Once) - candidate tactile-paving region detection; the model itself does not predict left/right steering
+  - `PathGeometryEstimator` - near-field candidate filtering, lateral-center estimation, and geometry-confidence calculation from existing YOLO boxes
+  - `NavigationManager` Alignment State Machine - temporal filtering, hysteresis, route-aware gating, correction episodes, and recovery feedback
   - **AI Text Model**: server-configured cloud APIs (DeepSeek, OpenAI, DashScope/Qwen, or another OpenAI-compatible service) or a user-selected local Ollama model; cloud credentials remain on the server
   - Multi-Agent assistant for intent routing, map questions, settings management, and companion chat
 - **Multi-Agent Architecture**:
@@ -56,8 +60,8 @@ ARIADNE is a web demonstration that combines tactile-paving observations, Baidu 
 
 ## 🎯 Problems Solved
 
-1. **Paving Observations and Route Planning**: YOLO reports candidate paving visibility; Baidu walking steps supply planned turns for users to verify
-2. **Single-channel Speech Arbitration**: Time-sensitive safety alerts can interrupt route, family, and assistant audio; invalid route prompts expire
+1. **Paving Observation, Local Alignment, and Route Planning**: YOLO detects candidate paving regions; near-field geometry and a temporal state machine estimate stable lateral deviation, while Baidu walking routes and GPS independently provide macro-level route steps and planned turns
+2. **Single-channel Speech Arbitration and Freshness Control**: Safety, alignment, route, family, assistant, and background events share one scheduler; obsolete prompts are invalidated when route or alignment context changes
 3. **Multi-Agent AI Assistant**: Intent routing for map questions, settings changes, emails to family contacts, and companion chat
 4. **Family Location View**: Linked family accounts can view shared browser location
 5. **Personalized Experience**: Customizable voice speed, volume, address preferences, and more
@@ -65,8 +69,11 @@ ARIADNE is a web demonstration that combines tactile-paving observations, Baidu 
 
 ## ✨ Key Features
 
-- 🎥 **Live Paving Observations**: YOLO reports candidate paving visibility; it does not infer safe turns
-- 🔊 **Browser Speech Scheduling**: One priority queue for safety, route, family, and assistant messages; browser speech speed and volume follow user settings
+- 🎥 **Live Paving Observation and Alignment**: YOLO detects candidate tactile-paving regions; V1 evaluates near-field box geometry, normalized lateral offset, temporal consistency, and hysteresis before producing any steering hint
+- 🧭 **Separated Macro Navigation and Micro Alignment**: Baidu walking routes and GPS own route steps and planned turns; vision-based alignment is allowed only while confidently navigating away from planned turns and crossings
+- 🔁 **Closed-loop Correction Episodes**: A stable deviation opens one correction episode instead of generating speech every frame. Stable recovery can produce one low-priority positive-feedback message after the correction was actually played
+- 🛑 **Conservative Degradation**: Severe deviation, missing paving, ambiguous geometry, camera loss, and crossing scenarios suppress ordinary left/right nudges and fall back to stop-and-confirm behavior
+- 🔊 **Browser Speech Scheduling**: One priority queue arbitrates safety, alignment, route, family, assistant, and background messages with TTLs and context-based invalidation
 - 🤖 **Multi-Agent AI Assistant**: Speak naturally to:
   - 🗺️ **Map Questions**: Location queries, Baidu walking-route lookup, and nearby place search; live turn advisories use the navigation state machine
   - ⚙️ **Voice Settings**: Query or modify supported voice and profile settings via natural language
@@ -80,29 +87,136 @@ ARIADNE is a web demonstration that combines tactile-paving observations, Baidu 
 - 🎯 **Dual Mode**: Visually impaired user mode and family member mode
 - 🔧 **Flexible Text Backend**: Users can select a server-configured cloud service or a local Ollama text model without restarting the server
 
-## 🧭 Live Navigation and Speech Arbitration
+## 🧭 Live Navigation, Tactile-Path Alignment, and Speech Arbitration
+
+### Macro navigation vs. micro alignment
+
+Live guidance deliberately separates two responsibilities:
+
+```text
+Baidu Walking Route + GPS
+            │
+            ▼
+   Macro Navigation State
+ route steps / turns / deviation / crossings
+            │
+            ├────────────────────────┐
+            │                        │
+            ▼                        ▼
+      Route Advisories          Live Camera
+                                    │
+                                    ▼
+                              YOLO Detection
+                                    │
+                                    ▼
+                          PathGeometryEstimator
+                                    │
+                     near-field center / offset
+                                    │
+                                    ▼
+                         Alignment State Machine
+                                    │
+                   temporal filtering / hysteresis
+                   episode / safety gating / TTL
+                                    │
+                                    ▼
+                           Alignment Guidance
+```
+
+The Baidu route answers where the route goes and when a turn is expected. YOLO and the near-field geometry layer only estimate where candidate tactile paving lies relative to the user's visual reference center. Detection boxes are never treated as proof of junction topology, paving connectivity, or a safe direction through an intersection.
+
+### V1 tactile-path alignment
+
+V1 keeps the existing `yolo/best.pt` detector and does not require retraining or a segmentation model. `services/vision_observer.py` obtains candidate bounding boxes and `services/path_alignment.py` estimates their near-field lateral geometry.
+
+The estimator prioritizes approximately the lower 50%–90% portion of the image rather than blindly using the center of a full bounding box. Candidate scoring considers YOLO confidence, near-field overlap, bottom proximity, and temporal continuity. When multiple strong candidates conflict horizontally, the result becomes `AMBIGUOUS` instead of forcing a left/right decision.
+
+Temporal geometry state is scoped to one coherent visual stream. Live navigation uses an isolated per-user tracker that is reset on navigation start, replan, stop, and camera interruption. Each recorded-video MJPEG reader receives its own independent tracker. Therefore a historical video, another user, or another playback reader cannot change the previous-center cue used by the current live camera.
+
+The normalized lateral offset is defined as:
+
+`normalized_offset = (path_center_x - reference_center_x) / image_width`
+
+A positive value means candidate paving lies to the right of the reference center and may eventually produce `CORRECT_RIGHT`; a negative value may produce `CORRECT_LEFT`. The current default reference center is the image center, while the interface leaves room for future camera-mount calibration.
+
+A single frame never directly becomes speech. `NavigationManager` maintains a short history of valid offsets, applies a consistency window and hysteresis, and exposes a second state layer:
+
+`UNKNOWN / CENTERED / CORRECT_LEFT / CORRECT_RIGHT / RECOVERING / SEVERE / NOT_VISIBLE / AMBIGUOUS / SUPPRESSED`
+
+Only a stable multi-frame deviation opens a correction episode and produces one primary hint such as “the paving is on the right; move slightly right.” Short-lived noise remains silent. During improvement, the episode enters recovery. After several centered observations, the state first transitions into a new `CENTERED` alignment epoch. If the correction instruction actually entered browser playback and the feedback cooldown permits it, one low-priority positive-feedback event is then created inside that same new epoch. This ordering prevents the recovery context update from immediately invalidating the praise that it just generated.
+
+Persistent severe deviation does not trigger increasingly aggressive nudges. It is promoted to a safety event asking the user to stop and reacquire the path.
+
+### Route-aware safety gating
+
+Micro-alignment is active only while the navigation state is `NAVIGATING`.
+
+Within approximately 12 meters of a planned turn, alignment becomes `SUPPRESSED`, because sideways paving in the image may represent the path itself turning rather than user drift. If the next route step requires a road crossing, ordinary alignment guidance is prohibited and the existing crossing safety flow takes precedence. Poor GPS, camera interruption, repeated paving loss, or another uncertain navigation state also disables steering hints.
+
+Vision therefore does not replace the Baidu route's macro-level decisions, and the map route does not directly command foot-level left/right movement.
+
+### Latest-frame camera processing and freshness
+
+The browser uses latest-frame processing rather than a fixed concurrent upload interval. The next capture is scheduled only after the previous inference request returns, so at most one camera frame is in flight and stale frames cannot build up in an inference queue.
+
+Live requests carry a monotonic `frame_seq` plus browser capture time for diagnostics. The Flask endpoint records its own `server_received_at_ms` before inference, and `NavigationManager` uses server-side receive/process timestamps—not browser `Date.now()`—for freshness decisions. This avoids a client/server wall-clock difference from making every otherwise fresh frame appear stale. Browser capture time remains visible as metadata but is not compared directly with the server wall clock for steering.
+
+Out-of-order frame sequences are prevented from rolling alignment state backward. Visual results whose server-observed age exceeds the configured limit may still be returned for diagnostics, but they cannot produce new steering speech. A small debug panel exposes vision status, geometry status, alignment state, normalized offset, geometry confidence, candidate count, frame sequence, and observed latency for tuning and demonstration.
 
 ### One speech channel
 
-The web page speaks through the browser Web Speech API. `static/js/guidance.js` owns ordering, interruption, resumption, and validity checks. Lower numbers have higher priority:
+`static/js/guidance.js` owns ordering, interruption, expiry, and context validity for browser Web Speech. Lower numbers mean higher priority:
 
 | Priority | Message |
 |---|---|
 | 0 | Safety alerts |
-| 1 | Walking-route advisories |
-| 2 | Authorized family voice messages |
-| 3 | Assistant replies |
-| 4 | Background hints and voice tests |
+| 1 | Tactile-path alignment corrections |
+| 2 | Walking-route advisories |
+| 3 | Authorized family voice messages |
+| 4 | Assistant replies |
+| 5 | Background hints, positive feedback, and voice tests |
 
-A higher-priority message may interrupt playback. A family voice message can resume from its interrupted text segment while it remains valid; route advisories and assistant speech follow their own expiry and discard rules. Events have a time-to-live and can be tied to a navigation session, route revision, and step. Stopping or replanning a route, moving to another step, or entering an uncertain state invalidates obsolete turn advisories. Deduplication and throttling limit repeated prompts. The family interface can query queued and playback status; a queued message is not proof that the recipient heard it. The assistant **sending an email to a family contact** and a family user **sending a voice message to the recipient's browser** are separate flows.
+Alignment corrections use a short TTL of roughly three seconds and a discard-on-interruption policy. A left/right instruction that is no longer valid must not be played several seconds later.
+
+In addition to navigation session, route revision, and route step, alignment speech is associated with an `alignment_epoch`. When Alignment State changes, the epoch advances. The browser drops or interrupts steering events belonging to an older epoch, preventing stale instructions from surviving a recentering event or a direction reversal. Positive recovery feedback is emitted only after entering the new `CENTERED` epoch, so it remains valid under the same rule.
+
+Authorized family voice messages retain their own recovery behavior and playback receipts. A queued event is not proof that the recipient heard it. Assistant-sent **email to a family contact** and family-to-user **browser voice messaging** remain separate flows.
+
+### Default alignment parameters
+
+These values are engineering defaults for the current web demonstration, not field-validated mobility-device safety thresholds:
+
+| Parameter | Current value | Purpose |
+|---|---:|---|
+| Near-field ROI | `0.50H–0.90H` | Focus on paving the user is about to approach |
+| Evaluation row | `0.70H` | Evaluate near-field path center |
+| Geometry minimum confidence | `0.35` | Reject weak detections |
+| Centered threshold | `0.07` | Treat `abs(offset) <= 0.07` as centered |
+| Correction threshold | `0.12` | Require stable deviation beyond this value |
+| Severe threshold | `0.22` | Escalate persistent large deviation |
+| Alignment history | `5` frames | Recent valid lateral observations |
+| Consistency window | `4` frames | Direction-consistency window |
+| Required consistent frames | `3` frames | Frames needed before correction |
+| Recovery frames | `3` frames | Centered observations required for recovery |
+| Severe frames | `3` frames | Severe observations required before escalation |
+| Turn suppression distance | `12 m` | Disable steering near planned turns |
+| Correction repeat interval | `10 s` | Conservative repeat within one episode |
+| Positive-feedback cooldown | `20 s` | Minimum interval between feedback |
+| Alignment speech TTL | `3 s` | Rapidly expire obsolete steering |
+| Server-observed stale-frame threshold | `1.5 s` | Prevent old server-side visual results from steering |
+| Camera scheduling | `350 ms / 700 ms` | Normal / high-latency next-frame delay |
+
+The relevant constants are grouped in `services/path_alignment.py`, `services/navigation.py`, and `static/js/navigation_ui.js` so they can be recalibrated after hardware and field testing.
 
 ### Setup, verification, and limitations
 
-Python 3.10 or 3.11 is recommended. `BAIDU_MAP_CONFIG['api_key']` is the server-side Baidu Web Service key; `BAIDU_MAP_CONFIG['browser_api_key']` is the browser JSAPI key and should have an appropriate domain allowlist. Live GPS and camera access generally require HTTPS or localhost and browser permissions. Speech requires a browser supporting Web Speech and must be enabled on the page. An AI backend serves assistant conversations; fixed safety alerts and route advisories do not require an LLM.
+Python 3.10 or 3.11 is recommended. `BAIDU_MAP_CONFIG['api_key']` is the server-side Baidu Web Service key, while `BAIDU_MAP_CONFIG['browser_api_key']` is the browser JSAPI key and should use an appropriate domain allowlist. Live GPS and camera access generally require HTTPS or localhost plus browser permission. Speech requires Web Speech support and explicit activation on the page. AI text models serve assistant conversations; deterministic safety, route, and alignment guidance does not require an LLM.
 
-The event log, navigation sessions, and recent positions are held in the current server process. Closing the page, restarting the server, or opening multiple receiving pages does not guarantee continuous or exactly-once playback. Neither a walking route nor a paving detection certifies traffic signals, obstacles, crossing safety, or actual paving connectivity. This version is a web demonstration, not an independent mobility aid.
+V1 still operates on axis-aligned YOLO bounding boxes rather than pixel-level tactile-paving segmentation. It can provide only a conservative near-field lateral estimate. It cannot certify actual paving connectivity, traffic-signal state, obstacle clearance, crossing safety, or a traversable branch, and it does not claim centimeter-level physical lateral distance. Camera mounting and large hand-held rotations can also affect the visual reference frame; real deployment would require calibration and field evaluation.
 
-For local regression checks, run `python -m unittest discover -s tests` and `node tests/test_guidance.js`. These tests use simulated map and camera inputs; they do not constitute validation on real streets.
+The event log, navigation sessions, and recent positions live in the current server process. Closing the page, restarting the service, or using multiple receiving pages does not provide continuous or exactly-once speech delivery. This repository remains a web engineering demonstration and research prototype; it is not a replacement for a cane, guide dog, or certified mobility aid.
+
+For local regression checks, run `python -m unittest discover -s tests` and `node tests/test_guidance.js`. The test suite includes simulated near-field geometry, visual-stream isolation, temporal consistency, hysteresis, correction episodes, recovery feedback, turn suppression, crossing gating, severe deviation, out-of-order/server-stale frames, client/server clock skew, and alignment-epoch invalidation. Simulation is not equivalent to validation on real streets.
 
 <details>
 <summary><strong>🤖 Multi-Agent Architecture</strong></summary>
@@ -143,14 +257,16 @@ RouterAgent (Intent Classifier)
 
 ## 🎯 Pre-trained YOLO Model
 
-The repository includes trained tactile-paving detection weights at `yolo/best.pt` and training metrics in `yolo/`. The model reports candidate paving regions; it was not trained to certify connected branches, crossings, or safe walking directions.
+The repository includes trained tactile-paving detection weights at `yolo/best.pt` together with training and evaluation artifacts in `yolo/`. The detector itself still predicts candidate tactile-paving bounding boxes; it was not trained with explicit left/right steering classes and does not certify branch topology, crossing safety, or walkable direction.
+
+V1 alignment is built above the detector rather than inside it. `services/path_alignment.py` estimates near-field center and normalized lateral offset from the existing boxes, while `services/navigation.py` combines multiple observations, hysteresis, route context, and speech-event validity before deciding whether any correction should be issued.
 
 ## 📋 Requirements
 
 - Python 3.10 or 3.11 recommended (the pinned NumPy 1.24.3 does not support Python 3.12)
 - MySQL Database
 - Required Python libraries (see `requirements.txt`)
-- A cloud text-model key or local [Ollama](https://ollama.com/) model for assistant features; fixed safety and route speech does not require an LLM
+- A cloud text-model key or local [Ollama](https://ollama.com/) model for assistant features; fixed safety, route, and alignment speech does not require an LLM
 - Baidu Web Service and browser JSAPI keys, plus browser geolocation permission, for live walking-route guidance
 
 ## 🚀 Installation
@@ -253,9 +369,11 @@ Register with username, password, and email (email verification code required). 
 <details>
 <summary><strong>Tactile Paving Navigation</strong></summary>
 
-- **Recorded Video**: Upload a video to display tactile-paving detection boxes. A recording cannot trigger live navigation or speech.
-- **Live Route Demo**: Enable browser speech and grant accurate, recent GPS access; choose a destination, inspect the Baidu walking route, and activate navigation. The optional camera can pause route advisories if paving becomes unavailable. Verify actual junctions and crossings yourself.
-- **Manual Origin**: Selecting a starting point on the map previews a route only. Live guidance requires an accurate browser GPS fix.
+- **Recorded Video**: Upload a recording to display YOLO tactile-paving detection boxes. Recorded-video processing is isolated from live geometry state and does not trigger live route or alignment speech.
+- **Live Route Demo**: Enable browser speech, obtain a fresh and accurate GPS fix, choose a destination, inspect the Baidu walking route, and activate navigation. With the live camera enabled, eligible straight segments additionally use near-field visual geometry to detect stable lateral drift and may issue a small left/right correction.
+- **Recovery Feedback**: If a correction actually enters playback and later visual observations confirm stable recentering, one low-priority positive-feedback message may be emitted in the new centered alignment epoch. Remaining centered does not generate repeated praise.
+- **Turns and Crossings**: Micro-alignment is suppressed near planned turns. Crossings, ambiguous geometry, severe deviation, and paving loss use conservative route or safety behavior instead. Users must still verify actual junctions, paving connectivity, and crossing conditions.
+- **Manual Origin**: A manually selected map origin supports route preview only. Live guidance requires a valid browser GPS fix.
 
 </details>
 
@@ -298,11 +416,16 @@ Customize gender, preferred name, age group, voice speed, volume, user mode (vis
 
 ## ⚠️ Notes
 
-- An AI text backend is needed for assistant conversations; fixed safety alerts and walking-route advisories do not require an LLM.
-- SMTP configuration is needed for verification codes and assistant-sent emails to family; authorized family-to-user browser voice messages use the speech event channel.
-- Set separate Baidu Web Service and domain-restricted browser JSAPI keys for walking routes and map display.
-- DashScope requires an API key for cloud speech recognition. Local STT requires a working `/v1/audio/transcriptions` service; a text-only Ollama model does not provide this endpoint.
-- Live guidance requires fresh browser GPS; the camera is optional for paving observations. GPS/camera generally require HTTPS or localhost and the relevant permissions. Keep a supported browser page open for Web Speech playback.
+- An AI text backend is required for assistant conversations; deterministic safety alerts, walking-route advisories, and tactile-path alignment do not require an LLM.
+- SMTP is used for verification codes and assistant-sent emails to family contacts. Authorized family-to-user browser voice messages use the separate speech-event channel.
+- Walking routes and map rendering require separate Baidu Web Service and domain-restricted browser JSAPI keys.
+- DashScope requires an API key for cloud speech recognition. Local STT requires a working `/v1/audio/transcriptions` endpoint; a text-only Ollama model does not provide audio transcription.
+- Live route guidance requires a fresh browser GPS fix. Tactile-path alignment additionally requires the live camera.
+- V1 alignment is derived from YOLO bounding boxes rather than semantic segmentation or 3-D localization. It estimates image-relative direction and normalized lateral offset; it does not claim a physical deviation in centimeters.
+- Camera orientation directly affects the visual reference center. The current implementation defaults to the image center and leaves camera-mount calibration for future hardware deployment.
+- Browser capture timestamps are diagnostic only; real-time steering freshness is checked with timestamps generated by the server to avoid client/server clock-skew errors.
+- Intersections, tactile-paving branches, road crossings, traffic signals, temporary obstacles, and true traversability are not certified by the current detector. In uncertain cases the system deliberately suppresses steering and falls back to confirmation or safety guidance.
+- This repository remains a web demonstration and engineering research prototype. It is not a replacement for a cane, guide dog, or certified mobility aid.
 
 ## 📧 Contact
 
@@ -331,10 +454,10 @@ blind_navigation/
 │   ├── auth.py               # Authentication routes
 │   ├── chat.py               # Multi-Agent /chat endpoint
 │   ├── main.py               # Main page, settings, and family voice messages
-│   ├── video.py              # Recorded-video detection display
+│   ├── video.py              # Recorded-video detection with isolated geometry streams
 │   ├── map.py                # Map-related routes
 │   ├── ai_settings.py        # AI settings routes
-│   └── guidance.py           # Live navigation, vision, and event stream
+│   └── guidance.py           # Live navigation, scoped vision, freshness, and event stream
 ├── services/
 │   ├── ai_provider.py        # Cloud/local AI provider selection
 │   ├── baidu_map_mcp.py      # Baidu Map tools for the assistant
@@ -346,15 +469,17 @@ blind_navigation/
 │   ├── speech_agent.py       # Speech recognition
 │   ├── guidance_bus.py       # Per-user events and playback receipts
 │   ├── location_store.py     # Recent in-process positions
-│   ├── navigation.py         # Navigation state machine
-│   └── vision_observer.py    # Paving visibility observations
+│   ├── navigation.py         # Macro navigation + alignment state, episodes, and safety gating
+│   ├── path_alignment.py     # Near-field lateral geometry from YOLO detection boxes
+│   └── vision_observer.py    # YOLO presence, scoped geometry trackers, and frame metadata
 ├── static/js/
 │   ├── guidance.js           # Browser speech scheduler
-│   └── navigation_ui.js      # GPS, map, camera, and event integration
+│   └── navigation_ui.js      # GPS, map, latest-frame camera loop, and event integration
 ├── tests/
-│   ├── test_guidance.js      # Scheduler scenarios
-│   ├── test_http_guidance.py # HTTP boundary scenarios
-│   └── test_navigation.py    # Navigation state and event scenarios
+│   ├── test_guidance.js      # Speech priority, interruption, TTL, and alignment epoch
+│   ├── test_http_guidance.py # HTTP, stream scoping, frame metadata, and isolation boundaries
+│   ├── test_navigation.py    # Macro navigation state and event scenarios
+│   └── test_path_alignment.py# Geometry, stream isolation, hysteresis, correction loop, and gating
 ├── utils/
 │   ├── decorators.py
 │   ├── email_utils.py
