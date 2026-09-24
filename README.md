@@ -82,12 +82,6 @@ ARIADNE is a web demonstration that combines tactile-paving observations, Baidu 
 
 ## 🧭 Live Navigation and Speech Arbitration
 
-### Route planning and visual observations
-
-After a destination is selected, the application obtains walking steps from Baidu Map Web Services. It converts browser GPS coordinates from WGS84 to BD09 for route matching. Live turn advisories require a recent, sufficiently accurate position, route confirmation, and explicit navigation activation. A manually selected origin supports route preview only; it cannot start live spoken guidance.
-
-The optional live camera uses YOLO to observe candidate tactile paving. Detection boxes indicate visibility; they cannot establish whether a branch is connected or safe, and they do not choose left or right turns. Repeatedly missing paving observations, an interrupted camera feed, inaccurate GPS, or route deviation suspend route advisories and trigger a request to stop and verify the surroundings. A crossing indicated by the route is not automatically certified as safe. Uploaded recordings display detection results only and do not produce live navigation speech. The assistant's MapAgent answers map questions; it does not control the live turn state machine.
-
 ### One speech channel
 
 The web page speaks through the browser Web Speech API. `static/js/guidance.js` owns ordering, interruption, resumption, and validity checks. Lower numbers have higher priority:
