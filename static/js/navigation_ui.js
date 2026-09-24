@@ -6,6 +6,13 @@
     const modePanel = document.getElementById('guidanceMode');
     const camera = document.getElementById('liveCamera');
     const cameraStatus = document.getElementById('liveVisionStatus');
+    const visionDebug = document.getElementById('visionDebug');
+    // Camera sampling: one frame in flight at most; the next capture is
+    // scheduled only after the previous response arrives (~2-3 FPS typical).
+    const CAMERA_BASE_INTERVAL_MS = 350;
+    const CAMERA_SLOW_INTERVAL_MS = 700;
+    const CAMERA_SLOW_LATENCY_MS = 800;
+    let cameraFrameSeq = 0;
     let latestFix = null;
     let watchId = null;
     let cameraStream = null;
@@ -53,7 +60,7 @@
         const context = serverContext || (value ? {
             session_id: value.session_id, route_revision: value.route_revision,
             step_index: value.step_index, nav_state: value.state,
-            context_epoch: value.context_epoch
+            context_epoch: value.context_epoch, alignment_epoch: value.alignment_epoch
         } : null);
         if (context && !scheduler.setContext(context)) return false;
         const previous = navigation;
@@ -246,19 +253,19 @@
 
     window.playHintVoice = async function (text) {
         window.enableGuidanceVoice();
-        submitLocal(text, 4, 'BACKGROUND', 7000, 'thinking');
+        submitLocal(text, 5, 'BACKGROUND', 7000, 'thinking');
     };
     window.playAiSpeech = async function (text, intent) {
         window.enableGuidanceVoice();
         if (intent === 'map' && navigation && navigation.state !== 'PLANNED') {
             text = '地图问答已显示在屏幕上。当前路线请以导航状态提示为准。';
         }
-        submitLocal(text, 3, 'ASSISTANT', 45000, 'assistant_reply');
+        submitLocal(text, 4, 'ASSISTANT', 45000, 'assistant_reply');
     };
     window.stopAiSpeech = async function () { scheduler.cancelAssistant(); };
     window.testVoice = async function () {
         window.enableGuidanceVoice();
-        submitLocal('这是一条本机语音测试。', 4, 'BACKGROUND', 10000, 'test_voice');
+        submitLocal('这是一条本机语音测试。', 5, 'BACKGROUND', 10000, 'test_voice');
     };
 
     window.sendMessage = async function () {
@@ -292,19 +299,40 @@
     window.stopLiveCamera = function () {
         if (cameraStream && navigation && navigation.state === 'NAVIGATING')
             api('/vision/unavailable').catch(console.warn);
-        if (cameraTimer) clearInterval(cameraTimer);
+        if (cameraTimer) clearTimeout(cameraTimer);
         cameraTimer = null;
         if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
         camera.srcObject = null;
         camera.style.display = 'none';
+        if (visionDebug) visionDebug.style.display = 'none';
         cameraStatus.textContent = '实时摄像头已关闭。';
         document.getElementById('liveCameraButton').textContent = '启用实时摄像头观察';
     };
 
+    function updateVisionDebug(result, latencyMs) {
+        if (!visionDebug) return;
+        const observation = result.observation || {};
+        const geometry = observation.geometry || {};
+        const alignment = result.alignment || {};
+        const offset = alignment.offset != null ? Number(alignment.offset).toFixed(3) : '—';
+        const confidence = geometry.confidence != null ? Number(geometry.confidence).toFixed(2) : '—';
+        visionDebug.style.display = 'block';
+        visionDebug.textContent =
+            `Vision: ${result.vision_status || '—'} | Geometry: ${geometry.status || '—'} | ` +
+            `Alignment: ${alignment.state || '—'} (epoch ${alignment.epoch != null ? alignment.epoch : '—'}) | ` +
+            `Offset: ${offset} | Confidence: ${confidence} | ` +
+            `Candidates: ${geometry.candidate_count != null ? geometry.candidate_count : 0} | ` +
+            `Frame: ${observation.frame_seq != null ? observation.frame_seq : '—'} | ` +
+            `Latency: ${latencyMs != null ? latencyMs + ' ms' : '—'}`;
+    }
+
     async function sendCameraFrame() {
-        if (cameraRequestRunning || !cameraStream || camera.readyState < 2) return;
+        if (cameraRequestRunning || !cameraStream || camera.readyState < 2) return null;
         cameraRequestRunning = true;
+        const frameSeq = ++cameraFrameSeq;
+        const capturedAtMs = Date.now();
+        const startedAtMs = capturedAtMs;
         try {
             const canvas = document.createElement('canvas');
             canvas.width = 480;
@@ -314,20 +342,38 @@
             if (!blob) throw new Error('无法编码摄像头图像');
             const form = new FormData();
             form.append('frame', blob, 'camera.jpg');
+            form.append('frame_seq', String(frameSeq));
+            form.append('captured_at_ms', String(capturedAtMs));
             const response = await fetch('/vision/frame', {method: 'POST', body: form});
             const result = await response.json();
             if (!response.ok || result.status !== 'success') throw new Error(result.message);
+            const latency = Date.now() - startedAtMs;
             cameraStatus.textContent = result.observation.visible ?
                 `检测到盲道候选区域（${result.observation.detections}）；尚不能验证路口分支。` :
                 '本帧未检测到盲道；连续未检测到时会发出停下确认提示。';
+            updateVisionDebug(result, latency);
+            return latency;
         } catch (error) {
             cameraStatus.textContent = `观察失败：${error.message}`;
             if (Date.now() - lastCameraWarningAt > 12000) {
                 lastCameraWarningAt = Date.now();
                 api('/vision/unavailable').catch(console.warn);
             }
+            return null;
         }
         finally { cameraRequestRunning = false; }
+    }
+
+    async function cameraLoop() {
+        // Latest-frame processing: the next capture is only scheduled after
+        // the previous inference finished, so at most one frame is ever in
+        // flight and stale frames can never pile up behind a slow network.
+        if (!cameraStream) return;
+        const latency = await sendCameraFrame();
+        if (!cameraStream) return;
+        let delay = CAMERA_BASE_INTERVAL_MS;
+        if (latency == null || latency > CAMERA_SLOW_LATENCY_MS) delay = CAMERA_SLOW_INTERVAL_MS;
+        cameraTimer = setTimeout(cameraLoop, delay);
     }
 
     window.toggleLiveCamera = async function () {
@@ -340,8 +386,7 @@
             await camera.play();
             document.getElementById('liveCameraButton').textContent = '关闭实时摄像头';
             cameraStatus.textContent = '摄像头已连接，正在观察盲道。';
-            cameraTimer = setInterval(sendCameraFrame, 1500);
-            sendCameraFrame();
+            cameraLoop();
         } catch (error) {
             window.stopLiveCamera();
             if (navigation && navigation.state === 'NAVIGATING')

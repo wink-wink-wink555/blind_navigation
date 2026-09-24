@@ -2508,6 +2508,7 @@
                         <span id="liveVisionStatus" role="status">上传视频仅用于检测展示，不作为实时导航依据。</span>
                     </div>
                     <video id="liveCamera" autoplay muted playsinline style="display:none;width:100%;max-width:480px;margin-top:0.5rem;"></video>
+                    <div id="visionDebug" role="status" style="display:none;font-family:monospace;font-size:0.75rem;color:#495057;background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:0.4rem 0.6rem;margin-top:0.4rem;max-width:480px;word-break:break-all;"></div>
                 </div>
 
                 <!-- 语音提示卡片 -->
@@ -3061,7 +3062,7 @@
                         <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                             <i class="fas fa-walking"></i> 盲道导航——让摄像头帮您看路
                         </h3>
-                        <p style="line-height: 1.8; color: #495057;">这是本平台最核心的功能。系统通过摄像头实时识别地面盲道，判断盲道是否在拐弯，并第一时间用语音告诉您"请向左转"或"请向右转"，帮助您沿盲道安全行走。</p>
+                        <p style="line-height: 1.8; color: #495057;">这是本平台最核心的功能。系统通过摄像头实时检测画面中的候选盲道，在您沿直线盲道行走时，如果检测到盲道持续偏向身体一侧，会用语音轻柔提示"稍向左靠"或"稍向右靠"，帮助您保持与盲道对齐。地图路线的转弯预告仍由步行路线提供；路口、拐弯与过街始终需要您自行确认。</p>
 
                         <!-- 实际产品：摄像头实时导航 -->
                         <div style="margin: 1.5rem 0;">
@@ -3077,7 +3078,7 @@
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
                                     <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">3</div>
-                                    <p style="margin: 0; line-height: 1.7;">系统开始自动分析画面。当盲道出现拐弯时，耳机或扬声器会立刻播报语音提示</p>
+                                    <p style="margin: 0; line-height: 1.7;">系统开始自动分析画面。当您逐渐偏离盲道中心时，会播报简短的纠偏提示；接近路口或需要过街时，会提示您停下并自行确认</p>
                                 </div>
                                 <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
                                     <div style="min-width: 28px; height: 28px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; flex-shrink: 0;">4</div>
@@ -3103,7 +3104,7 @@
                         <div style="margin: 1.5rem 0; padding: 1.2rem; background: #e6fcf5; border-radius: 8px; border-left: 4px solid #20c997;">
                             <h4 style="margin: 0 0 0.6rem 0; color: #087f5b;"><i class="fas fa-volume-up"></i> 语音提示是什么样的？</h4>
                             <p style="margin: 0; line-height: 1.8; color: #495057;">系统不会只说"左转"这么简单——它会根据您在「个人设置」里填写的姓名、年龄和喜好，生成温暖自然的提示语，比如：<br>
-                            <span style="font-style: italic; color: #20c997;">「小明，前方盲道向右转，请注意调整方向，加油哦！」</span><br>
+                            <span style="font-style: italic; color: #20c997;">「盲道在右侧，稍向右靠。」（回正后还会收到一次简短鼓励）</span><br>
                             老人、年轻人、不同性别的语气都会有所不同，更贴心也更有温度。</p>
                         </div>
                     </div>

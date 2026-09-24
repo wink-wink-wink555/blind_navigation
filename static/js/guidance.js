@@ -26,7 +26,7 @@
             this.limit = limit;
             this.enabled = false;
             this.context = {session_id: null, route_revision: 0, step_index: null,
-                nav_state: null, context_epoch: 0};
+                nav_state: null, context_epoch: 0, alignment_epoch: null};
             this.queue = [];
             this.active = null;
             this.sequence = 0;
@@ -51,7 +51,9 @@
                 route_revision: revision,
                 step_index: context && context.step_index != null ? context.step_index : null,
                 nav_state: context && context.nav_state || null,
-                context_epoch: epoch
+                context_epoch: epoch,
+                alignment_epoch: context && context.alignment_epoch != null ?
+                    context.alignment_epoch : this.context.alignment_epoch
             };
             this.queue = this.queue.filter(entry => this._valid(entry));
             if (this.active && !this._valid(this.active)) {
@@ -68,6 +70,12 @@
             if (event.session_id && (event.session_id !== this.context.session_id ||
                 event.route_revision !== this.context.route_revision)) return false;
             if (event.step_id != null && event.step_id !== this.context.step_index) return false;
+            // A steering hint belongs to the alignment epoch that produced it.
+            // Events arrive in publish order, so a fresh hint may legitimately
+            // precede its context update; only an epoch OLDER than the current
+            // context proves the hint is stale and must never play.
+            if (event.alignment_epoch != null && this.context.alignment_epoch != null &&
+                event.alignment_epoch < this.context.alignment_epoch) return false;
             if (event.source === 'ROUTE' && event.session_id &&
                 this.context.nav_state !== 'NAVIGATING' &&
                 !(this.context.nav_state === 'ARRIVAL_UNCONFIRMED' &&
@@ -84,7 +92,7 @@
                 return true;
             }
             if (event.kind !== 'speech' || typeof event.text !== 'string' ||
-                !Number.isInteger(event.priority) || event.priority < 0 || event.priority > 4 ||
+                !Number.isInteger(event.priority) || event.priority < 0 || event.priority > 5 ||
                 !Number.isFinite(event.created_at_ms) || !Number.isFinite(event.ttl_ms)) return false;
             if (event.event_id && this.seen.has(event.event_id)) return false;
             if (event.event_id) {

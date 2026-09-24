@@ -9,7 +9,8 @@ import time
 import uuid
 
 
-PRIORITIES = {"SAFETY": 0, "ROUTE": 1, "FAMILY": 2, "ASSISTANT": 3, "BACKGROUND": 4}
+PRIORITIES = {"SAFETY": 0, "ALIGNMENT": 1, "ROUTE": 2, "FAMILY": 3,
+              "ASSISTANT": 4, "BACKGROUND": 5}
 
 
 class GuidanceBus:
@@ -22,7 +23,8 @@ class GuidanceBus:
 
     def publish(self, user_id, kind, text="", *, priority="BACKGROUND", ttl_ms=10000,
                 session_id=None, route_revision=None, step_id=None, dedupe_key=None,
-                resume_policy="discard", sender_id=None, nav_state=None, context_epoch=None):
+                resume_policy="discard", sender_id=None, nav_state=None, context_epoch=None,
+                alignment_epoch=None):
         if priority not in PRIORITIES or resume_policy not in ("discard", "restart", "continue"):
             raise ValueError("无效的语音事件策略")
         if kind == "speech" and (not text or len(text) > 400):
@@ -39,6 +41,7 @@ class GuidanceBus:
                 "route_revision": route_revision, "step_id": step_id,
                 "dedupe_key": dedupe_key, "resume_policy": resume_policy,
                 "nav_state": nav_state, "context_epoch": context_epoch,
+                "alignment_epoch": alignment_epoch,
             }
             self._events[user_id].append(event)
             self._receipts[event["event_id"]] = {

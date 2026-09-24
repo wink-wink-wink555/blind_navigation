@@ -111,6 +111,51 @@ class HttpGuidanceContract(unittest.TestCase):
         self.assertEqual(invalid.status_code, 400)
         self.assertEqual(self.a.get('/navigation/status').json["context"]["nav_state"], "UNCERTAIN")
 
+    def test_frame_metadata_alignment_and_out_of_order_rejection(self):
+        started = self.a.post('/navigation/start', json={
+            "destination": {"lat": 31.00018, "lng": 121, "coord_type": "bd09ll"},
+            "position": self.location()})
+        self.assertEqual(started.status_code, 200)
+        self.a.post('/navigation/activate')
+
+        from routes.guidance import vision_observer
+
+        def fake_analyze(frame, frame_seq=None, captured_at_ms=None):
+            return {"visible": True, "detections": 1, "max_confidence": 0.9,
+                    "boxes": [{"confidence": 0.9, "box": [300, 200, 380, 330]}],
+                    "branch_status": "UNKNOWN",
+                    "geometry": {"status": "VALID", "path_center_x": 336.0,
+                                 "reference_center_x": 240, "normalized_offset": 0.2,
+                                 "confidence": 0.8, "selected_detection_count": 1,
+                                 "candidate_count": 1},
+                    "frame_seq": frame_seq, "captured_at_ms": captured_at_ms,
+                    "processed_at_ms": int(time.time() * 1000)}
+
+        with patch.object(vision_observer, "analyze", side_effect=fake_analyze):
+            for seq in (1, 2, 3):
+                response = self.a.post('/vision/frame', data={
+                    "frame": (BytesIO(b'fake'), 'f.jpg'), "frame_seq": str(seq),
+                    "captured_at_ms": str(int(time.time() * 1000))})
+                self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json["alignment"]["state"], "CORRECT_RIGHT")
+            self.assertEqual(response.json["observation"]["geometry"]["status"], "VALID")
+            self.assertEqual(response.json["observation"]["frame_seq"], 3)
+            # An out-of-order frame sequence must not change anything.
+            response = self.a.post('/vision/frame', data={
+                "frame": (BytesIO(b'fake'), 'f.jpg'), "frame_seq": "1",
+                "captured_at_ms": str(int(time.time() * 1000))})
+            self.assertEqual(response.json["alignment"]["state"], "CORRECT_RIGHT")
+            # Malformed frame metadata is rejected at the boundary.
+            bad = self.a.post('/vision/frame', data={
+                "frame": (BytesIO(b'fake'), 'f.jpg'), "frame_seq": "abc"})
+            self.assertEqual(bad.status_code, 400)
+
+        alignment_events = [e for e in self.bus.events_since(321)
+                            if e["kind"] == "speech" and e["source"] == "ALIGNMENT"]
+        self.assertEqual(len(alignment_events), 1)  # one hint per episode
+        self.assertLessEqual(alignment_events[0]["ttl_ms"], 4000)
+        self.assertIsNotNone(alignment_events[0]["alignment_epoch"])
+
     def test_family_message_authorization_and_delivery_receipt(self):
         with patch('routes.main.get_user_settings', return_value=({"user_mode": "家属端"}, "ok")), \
              patch('routes.main.resolve_caregiver_recipient', return_value=322):

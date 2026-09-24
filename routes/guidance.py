@@ -93,10 +93,23 @@ def observe_frame():
     if not frame or len(frame) > 600000:
         return jsonify({"status": "error", "message": "图像帧为空或超过600KB"}), 400
     try:
-        observation = vision_observer.analyze(frame)
-        navigation = navigation_manager.report_visual(session["user_id"], observation["visible"])
+        frame_seq = request.form.get("frame_seq")
+        captured_at_ms = request.form.get("captured_at_ms")
+        frame_seq = int(frame_seq) if frame_seq not in (None, "") else None
+        captured_at_ms = int(captured_at_ms) if captured_at_ms not in (None, "") else None
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "无效的帧序号或采集时间"}), 400
+    try:
+        observation = vision_observer.analyze(frame, frame_seq=frame_seq,
+                                              captured_at_ms=captured_at_ms)
+        navigation = navigation_manager.report_visual(session["user_id"], observation)
         return jsonify({"status": "success", "observation": observation,
-                        "vision_status": navigation["vision_status"] if navigation else "NO_SESSION"})
+                        "vision_status": navigation["vision_status"] if navigation else "NO_SESSION",
+                        "alignment": ({"state": navigation["alignment_state"],
+                                       "epoch": navigation["alignment_epoch"],
+                                       "offset": (navigation["alignment_history"][-1]
+                                                  if navigation["alignment_history"] else None)}
+                                      if navigation else None)})
     except (RuntimeError, ValueError) as exc:
         return jsonify({"status": "error", "message": str(exc)}), 400
 

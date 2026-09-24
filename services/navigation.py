@@ -2,15 +2,58 @@
 
 Map steps are intentions. Detection boxes cannot certify an accessible branch,
 so this module never issues an unconditional instruction to turn.
+
+Two state layers live here on purpose:
+1. the navigation state (PLANNED / NAVIGATING / UNCERTAIN / ...), driven by
+   GPS and the walking route;
+2. the alignment state (CENTERED / CORRECT_LEFT / CORRECT_RIGHT / ...), driven
+   by near-field geometry observations from services.path_alignment.
+
+The alignment layer only runs while NAVIGATING on a straight-enough segment;
+it is suppressed near planned turns and forbidden around road crossings.
 """
 
 from copy import deepcopy
 from math import asin, cos, radians, sin, sqrt
+from statistics import median
 from threading import RLock
 import time
 import uuid
 
 from services.baidu_navigation import require_bd09, validate_point
+
+
+# ---------------------------------------------------------------------------
+# Alignment subsystem parameters. Grouped here on purpose; do not scatter
+# these numbers through the logic below. See README "Alignment parameters".
+# ---------------------------------------------------------------------------
+ALIGN_CENTERED_THRESHOLD = 0.07    # |offset| <= this counts as centered
+ALIGN_CORRECTION_THRESHOLD = 0.12  # |offset| >= this may start a correction
+ALIGN_SEVERE_THRESHOLD = 0.22      # |offset| >= this is a safety issue
+ALIGN_HISTORY_LENGTH = 5           # valid geometry observations kept
+ALIGN_CONSISTENCY_WINDOW = 4       # window used for direction agreement
+ALIGN_MIN_CONSISTENT_FRAMES = 3    # agreeing frames required in the window
+ALIGN_RECOVERY_FRAMES = 3          # consecutive centered frames to recover
+ALIGN_SEVERE_FRAMES = 3            # consecutive severe frames to escalate
+ALIGN_UNCERTAIN_FRAMES = 2         # inconclusive frames before AMBIGUOUS
+ALIGN_CORRECTION_REPEAT_MS = 10000  # conservative in-episode repeat interval
+ALIGN_PRAISE_COOLDOWN_MS = 20000   # minimum gap between positive feedback
+ALIGN_SPEECH_TTL_MS = 3000         # steering hints expire almost immediately
+ALIGN_PRAISE_TTL_MS = 6000
+ALIGN_SEVERE_REPEAT_MS = 12000
+ALIGN_TURN_SUPPRESS_DISTANCE_M = 12  # no steering this close to a planned turn
+ALIGN_STALE_FRAME_MS = 1500        # older captures never produce steering
+
+# Alignment states (second layer, independent from the navigation state):
+# UNKNOWN, CENTERED, CORRECT_LEFT, CORRECT_RIGHT, RECOVERING, SEVERE,
+# NOT_VISIBLE, AMBIGUOUS, SUPPRESSED.
+
+ALIGNMENT_SPEECH = {
+    "CORRECT_LEFT": "盲道在左侧，稍向左靠。",
+    "CORRECT_RIGHT": "盲道在右侧，稍向右靠。",
+}
+SEVERE_SPEECH = "与盲道位置偏差较大，请停下重新确认路径。"
+PRAISE_SPEECH = "很好，位置已经回正，继续保持。"
 
 
 def meters(a, b):
@@ -124,6 +167,12 @@ class NavigationManager:
                 "missing_frames": 0, "endpoint_hits": 0, "deviation_hits": 0,
                 "recovery_hits": 0, "last_warning_ms": 0, "last_advisory_ms": 0,
                 "uncertain_reason": None, "visible_frames": 0, "context_epoch": 0,
+                # Alignment subsystem (second state layer).
+                "alignment_state": "UNKNOWN", "alignment_epoch": 0,
+                "alignment_history": [],
+                "alignment_streaks": {"centered": 0, "severe": 0, "uncertain": 0},
+                "alignment_episode": None, "episode_seq": 0,
+                "last_praise_ms": 0, "last_severe_ms": 0, "last_frame_seq": 0,
             }
             self._sessions[user_id] = session
             result = deepcopy(session)
@@ -166,12 +215,14 @@ class NavigationManager:
                     "route_revision": self._generation.get(user_id, 0),
                     "step_id": session["step_index"] if session else None,
                     "nav_state": session["state"] if session else None,
-                    "context_epoch": session["context_epoch"] if session else 0}
+                    "context_epoch": session["context_epoch"] if session else 0,
+                    "alignment_epoch": session["alignment_epoch"] if session else 0}
 
     def _context(self, user_id, session=None):
         context = ({"session_id": session["session_id"], "route_revision": session["route_revision"],
                     "step_id": session["step_index"], "nav_state": session["state"],
-                    "context_epoch": session["context_epoch"]} if session else self.context(user_id))
+                    "context_epoch": session["context_epoch"],
+                    "alignment_epoch": session["alignment_epoch"]} if session else self.context(user_id))
         self.bus.publish(user_id, "context", priority="SAFETY", ttl_ms=300000,
                          **context)
 
@@ -197,6 +248,7 @@ class NavigationManager:
             session["uncertain_reason"] = "VISION" if camera_stale else "GPS"
             session["recovery_hits"] = 0
             session["context_epoch"] += 1
+            self._reset_alignment(session, "UNKNOWN")
             result = deepcopy(session)
         self._context(user_id, result)
         message = ("摄像头观察已中断，请停下确认路径。" if camera_stale else
@@ -304,6 +356,10 @@ class NavigationManager:
                         publications.append(("定位显示已接近目的地，请确认实际入口。", "ROUTE", "arrival", session["step_index"]))
             if session["state"] != previous_state or session["step_index"] != previous_step:
                 session["context_epoch"] += 1
+            if session["state"] != "NAVIGATING":
+                # Leaving NAVIGATING invalidates any queued steering hint at
+                # once, even before the next camera frame arrives.
+                self._reset_alignment(session, "UNKNOWN")
             snapshot = deepcopy(session)
         if snapshot["state"] != previous_state or snapshot["step_index"] != previous_step:
             self._context(user_id, snapshot)
@@ -314,13 +370,42 @@ class NavigationManager:
                              dedupe_key=key)
         return {"position": position, "navigation": snapshot}
 
-    def report_visual(self, user_id, visible):
+    def report_visual(self, user_id, observation):
+        """Consume one visual observation.
+
+        ``observation`` is the structured dict returned by
+        ``VisionObserver.analyze`` (presence + geometry + frame metadata).
+        A bare ``True`` / ``False`` / ``None`` is still accepted as a legacy
+        presence-only observation without geometry.
+        """
         publications = []
         with self._lock:
             session = self._sessions.get(user_id)
             if not session:
                 return None
             now_ms = int(time.time() * 1000)
+            if isinstance(observation, dict):
+                visible = bool(observation.get("visible"))
+                geometry = observation.get("geometry")
+                frame_seq = observation.get("frame_seq")
+                captured_at_ms = observation.get("captured_at_ms")
+                try:
+                    frame_seq = int(frame_seq) if frame_seq is not None else None
+                    captured_at_ms = int(captured_at_ms) if captured_at_ms is not None else None
+                except (TypeError, ValueError):
+                    raise ValueError("无效的帧序号或采集时间")
+                if frame_seq is not None:
+                    if frame_seq <= session["last_frame_seq"]:
+                        # An out-of-order frame must never roll state back.
+                        return deepcopy(session)
+                    session["last_frame_seq"] = frame_seq
+                # A stale capture may still update presence bookkeeping for
+                # the debug UI, but it must never steer the user.
+                stale = captured_at_ms is not None and now_ms - captured_at_ms > ALIGN_STALE_FRAME_MS
+            else:
+                visible = observation
+                geometry = None
+                stale = False
             session["vision_at_ms"] = now_ms
             session["missing_frames"] = 0 if visible else (3 if visible is None else session["missing_frames"] + 1)
             session["visible_frames"] = session["visible_frames"] + 1 if visible else 0
@@ -336,11 +421,219 @@ class NavigationManager:
                     session["last_warning_ms"] = now_ms
                     publications.append("摄像头观察不可用，请停下并确认路径。" if visible is None else
                                         "当前未识别到盲道，请停下并确认脚下路径。")
+            epoch_before = session["alignment_epoch"]
+            self._update_alignment(user_id, session, geometry, stale, now_ms)
+            alignment_changed = session["alignment_epoch"] != epoch_before
             result = deepcopy(session)
-        if publications:
+        if publications or alignment_changed:
             self._context(user_id, result)
         for text in publications:
             self.bus.publish(user_id, "speech", text, priority="SAFETY", ttl_ms=4000,
                              session_id=result["session_id"], route_revision=result["route_revision"],
                              dedupe_key="tactile_not_visible")
         return result
+
+    # ------------------------------------------------------------------
+    # Alignment subsystem (second state layer). All steering decisions are
+    # made here; the vision layer only supplies geometry observations.
+    # ------------------------------------------------------------------
+
+    def _reset_alignment(self, session, state):
+        """Drop all alignment state and invalidate queued steering speech."""
+        if session["alignment_state"] != state:
+            session["alignment_state"] = state
+            session["alignment_epoch"] += 1
+        session["alignment_history"] = []
+        session["alignment_streaks"] = {"centered": 0, "severe": 0, "uncertain": 0}
+        self._close_episode(session)
+
+    def _in_turn_zone(self, session):
+        """Near a planned turn, sideways paving means the path turns, not drift."""
+        steps = session["route"]["steps"]
+        step = steps[session["step_index"]]
+        next_step = steps[session["step_index"] + 1] if session["step_index"] + 1 < len(steps) else None
+        if not next_step:
+            return False
+        distance_to_end = meters(session["last_position"], step["end"])
+        if distance_to_end > ALIGN_TURN_SUPPRESS_DISTANCE_M:
+            return False
+        return bool(planned_turn(next_step)) or requires_road_crossing(next_step)
+
+    def _speak_alignment(self, user_id, session, text, priority, ttl_ms, dedupe_key):
+        """Publish inside the session lock so the episode can record the id.
+
+        Lock ordering is always navigation -> bus; the bus never calls back
+        into the navigation manager, so this cannot deadlock.
+        """
+        return self.bus.publish(
+            user_id, "speech", text, priority=priority, ttl_ms=ttl_ms,
+            session_id=session["session_id"], route_revision=session["route_revision"],
+            dedupe_key=dedupe_key, resume_policy="discard",
+            alignment_epoch=session["alignment_epoch"])
+
+    def _open_episode(self, session, direction, offset, now_ms):
+        session["episode_seq"] += 1
+        session["alignment_episode"] = {
+            "id": session["episode_seq"], "direction": direction,
+            "start_offset": round(offset, 4), "start_time_ms": now_ms,
+            "speech_event_id": None, "speech_count": 0, "last_speech_ms": 0,
+            "best_offset": abs(offset), "praised": False, "completed": False,
+        }
+
+    def _close_episode(self, session):
+        session["alignment_episode"] = None
+
+    def _update_alignment(self, user_id, session, geometry, stale, now_ms):
+        # Steering only exists while confidently navigating.
+        if session["state"] != "NAVIGATING":
+            self._reset_alignment(session, "UNKNOWN")
+            return
+        # Approaching a planned turn or a crossing: pavements legitimately
+        # shift sideways. Pause micro-correction; ROUTE advisories continue.
+        if self._in_turn_zone(session):
+            self._reset_alignment(session, "SUPPRESSED")
+            return
+        if session["vision_status"] != "VISIBLE":
+            self._reset_alignment(session, "NOT_VISIBLE")
+            return
+        if stale or not geometry:
+            return  # debug-grade data never changes alignment state
+
+        streaks = session["alignment_streaks"]
+        if geometry.get("status") != "VALID":
+            streaks["uncertain"] += 1
+            streaks["centered"] = 0
+            streaks["severe"] = 0
+            if streaks["uncertain"] >= ALIGN_UNCERTAIN_FRAMES:
+                # Never guess left/right from unreliable geometry.
+                self._reset_alignment(session, "AMBIGUOUS")
+            return
+        streaks["uncertain"] = 0
+
+        try:
+            offset = float(geometry.get("normalized_offset"))
+        except (TypeError, ValueError):
+            return
+        history = session["alignment_history"]
+        history.append(offset)
+        del history[:-ALIGN_HISTORY_LENGTH]
+        streaks["centered"] = streaks["centered"] + 1 if abs(offset) <= ALIGN_CENTERED_THRESHOLD else 0
+        streaks["severe"] = streaks["severe"] + 1 if abs(offset) >= ALIGN_SEVERE_THRESHOLD else 0
+        med = median(history)
+        window = history[-ALIGN_CONSISTENCY_WINDOW:]
+
+        def consistent(sign):
+            return (len(window) >= ALIGN_MIN_CONSISTENT_FRAMES and
+                    sum(1 for o in window
+                        if (o > 0) == (sign > 0) and abs(o) >= ALIGN_CORRECTION_THRESHOLD)
+                    >= ALIGN_MIN_CONSISTENT_FRAMES)
+
+        state = session["alignment_state"]
+        episode = session["alignment_episode"]
+
+        # Severe deviation degrades to a stop-and-confirm safety prompt
+        # instead of endless "a bit more" nudges.
+        if streaks["severe"] >= ALIGN_SEVERE_FRAMES:
+            if state != "SEVERE":
+                session["alignment_state"] = "SEVERE"
+                session["alignment_epoch"] += 1
+                self._close_episode(session)
+            if now_ms - session["last_severe_ms"] >= ALIGN_SEVERE_REPEAT_MS:
+                session["last_severe_ms"] = now_ms
+                self._speak_alignment(user_id, session, SEVERE_SPEECH,
+                                      "SAFETY", 7000, "alignment_severe")
+            return
+
+        # While the filtered offset is still in severe territory (e.g. the
+        # median lags during early recovery), never start a nudging episode.
+        if abs(med) >= ALIGN_SEVERE_THRESHOLD:
+            if state in ("SEVERE", "CORRECT_LEFT", "CORRECT_RIGHT"):
+                session["alignment_state"] = "RECOVERING"
+                session["alignment_epoch"] += 1
+            return
+
+        # Stable recovery: several consecutive centered frames are required,
+        # and praise additionally requires a played correction instruction.
+        if streaks["centered"] >= ALIGN_RECOVERY_FRAMES:
+            if state in ("CORRECT_LEFT", "CORRECT_RIGHT", "RECOVERING") and episode:
+                self._maybe_praise(user_id, session, episode, now_ms)
+            if state != "CENTERED":
+                session["alignment_state"] = "CENTERED"
+                session["alignment_epoch"] += 1
+            self._close_episode(session)
+            return
+
+        direction = 1 if med >= ALIGN_CORRECTION_THRESHOLD else (
+            -1 if med <= -ALIGN_CORRECTION_THRESHOLD else 0)
+        if direction and consistent(direction):
+            target = "CORRECT_RIGHT" if direction > 0 else "CORRECT_LEFT"
+            if state == "SEVERE":
+                # After a severe alert, never jump straight back into nudging;
+                # the user must first recover through RECOVERING.
+                session["alignment_state"] = "RECOVERING"
+                session["alignment_epoch"] += 1
+                return
+            if episode and episode["direction"] == target:
+                # Same-direction episode continues (possibly after a brief
+                # improvement): no new episode, no new main hint. A repeat is
+                # allowed only after a long quiet interval while the deviation
+                # stays consistent.
+                if state != target:
+                    session["alignment_state"] = target
+                    session["alignment_epoch"] += 1
+                if now_ms - episode["last_speech_ms"] >= ALIGN_CORRECTION_REPEAT_MS:
+                    episode["speech_count"] += 1
+                    episode["last_speech_ms"] = now_ms
+                    event = self._speak_alignment(user_id, session,
+                                                  ALIGNMENT_SPEECH[target], "ALIGNMENT",
+                                                  ALIGN_SPEECH_TTL_MS, "alignment_correction")
+                    episode["speech_event_id"] = event["event_id"]
+                episode["best_offset"] = min(episode["best_offset"], abs(med))
+                return
+            # New correction direction: the old episode ends without praise.
+            self._close_episode(session)
+            session["alignment_state"] = target
+            session["alignment_epoch"] += 1
+            self._open_episode(session, target, med, now_ms)
+            episode = session["alignment_episode"]
+            episode["speech_count"] = 1
+            episode["last_speech_ms"] = now_ms
+            event = self._speak_alignment(user_id, session,
+                                          ALIGNMENT_SPEECH[target], "ALIGNMENT",
+                                          ALIGN_SPEECH_TTL_MS, "alignment_correction")
+            episode["speech_event_id"] = event["event_id"]
+            return
+
+        # Dead zone or improving offset: never chatter here.
+        if episode:
+            episode["best_offset"] = min(episode["best_offset"], abs(med))
+        if state in ("CORRECT_LEFT", "CORRECT_RIGHT", "SEVERE"):
+            session["alignment_state"] = "RECOVERING"
+            session["alignment_epoch"] += 1
+        elif state in ("UNKNOWN", "NOT_VISIBLE", "AMBIGUOUS", "SUPPRESSED"):
+            session["alignment_state"] = "CENTERED"
+            session["alignment_epoch"] += 1
+
+    def _maybe_praise(self, user_id, session, episode, now_ms):
+        """One short positive feedback after a genuinely completed correction.
+
+        Every condition is required: an episode existed, its correction
+        instruction actually entered playback, the offset measurably improved
+        back into the centered band, the episode was not praised yet, and the
+        global praise cooldown has elapsed.
+        """
+        episode["completed"] = True
+        if episode["praised"] or not episode["speech_event_id"]:
+            return
+        if now_ms - session["last_praise_ms"] < ALIGN_PRAISE_COOLDOWN_MS:
+            return
+        if session["state"] != "NAVIGATING":
+            return
+        receipt = self.bus.status(user_id, episode["speech_event_id"])
+        if receipt not in ("PLAYING", "PAUSED", "FINISHED"):
+            return  # the user never heard the correction; do not claim success
+        episode["praised"] = True
+        session["last_praise_ms"] = now_ms
+        self._speak_alignment(user_id, session, PRAISE_SPEECH,
+                              "BACKGROUND", ALIGN_PRAISE_TTL_MS,
+                              f"alignment_praise:{episode['id']}")
