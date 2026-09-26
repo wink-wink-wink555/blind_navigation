@@ -15,15 +15,12 @@
 
 > 📹 项目视频: [项目展示 I](https://www.bilibili.com/video/BV1kD57zGE68), [项目展示 II](https://openatom.tech/enterprise-ai/614b385486d53533dd74f9428aa83087/blob/master/A_%E9%A1%B9%E7%9B%AE%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91.mp4)
 
-<details>
-<summary><strong>🏆 荣誉与奖项</strong>  <em>（点击查看）</em></summary>
+## 🏆 荣誉与奖项
 
 - **2026.1** 英特尔平台企业AI解决方案创新实践赛决赛 — 10强
 - **2025.12** 英特尔平台企业AI解决方案创新实践赛 — 20强，*成功晋级决赛*
 - **2025.8** 中国大学生计算机设计大赛 — 国家级三等奖
 - **2025.5** 上海市大学生计算机应用能力大赛 — 省级一等奖
-
-</details>
 
 ---
 
