@@ -19,7 +19,7 @@ MODEL_WEIGHTS = 'yolo/best.pt'
 本模型基于ultralytics的YOLOv8框架训练，使用了：
 - 自定义收集的盲道数据集
 - 团队成员人工标注的高质量标签
-- 优化的训练参数（见 `args.yaml`）
+- 优化的训练参数
 
 ## 🙏 致谢
 
