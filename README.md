@@ -21,7 +21,7 @@ English | [简体中文](README.zh-CN.md)
 
 ## 🏆 HONORS & AWARDS
 
-- **Jan 2026** | **Top 10**, Intel Platform Corporate AI Solution Innovation Practice Competition (Global Finals)
+- **Jan 2026** | **Top 10**, Intel Platform Corporate AI Solution Innovation Practice Competition
 - **Dec 2025** | **Top 20**, Intel Platform Corporate AI Solution Innovation Practice Competition (Preliminary Round) — *Advanced to Global Finals*
 - **Aug 2025** | **Third Prize (National Level)**, Chinese Collegiate Computing Competition (CCCC)
 - **May 2025** | **First Prize (Provincial Level)**, Shanghai Computer Application Competence Competition for College Students
